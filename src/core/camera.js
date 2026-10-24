@@ -4,8 +4,8 @@
    with speed-driven FOV, acceleration lag, cornering lean and impact shake. */
 import * as THREE from 'three';
 
-export const CAMERA_MODES = ['chase', 'far', 'tcam', 'cockpit'];
-const LABEL = { chase: 'Chase cam', far: 'Far chase', tcam: 'T-cam', cockpit: 'Cockpit' };
+export const CAMERA_MODES = ['toy', 'chase', 'far', 'tcam', 'cockpit'];
+const LABEL = { toy: 'Toy cam', chase: 'Chase cam', far: 'Far chase', tcam: 'T-cam', cockpit: 'Cockpit' };
 
 function damp(current, target, lambda, dt) { return current + (target - current) * (1 - Math.exp(-lambda * dt)); }
 
@@ -13,7 +13,7 @@ export class CameraRig {
   constructor(camera, groundFn) {
     this.camera = camera;
     this.groundFn = groundFn;      // (x, z, yRef) → ground height, to keep the camera above terrain
-    this.mode = 'chase';
+    this.mode = 'toy';
     this.pos = new THREE.Vector3(0, 10, -20);
     this.look = new THREE.Vector3();
     this.vel = new THREE.Vector3();
@@ -24,6 +24,8 @@ export class CameraRig {
     this.travelDir = new THREE.Vector3(0, 0, 1);
     this.script = null;            // {update(dt, rig) → bool done}
     this.fovBase = 62;
+    this.occluder = null;          // (x, z) → true if a building occupies that spot
+    this.pull = 1;                 // 0..1 how far out the camera may sit (smoothed)
   }
   label() { return LABEL[this.mode]; }
   cycle() { const i = CAMERA_MODES.indexOf(this.mode); this.mode = CAMERA_MODES[(i + 1) % CAMERA_MODES.length]; return this.label(); }
@@ -32,7 +34,8 @@ export class CameraRig {
   snapTo(carPos, carQuat) {
     const f = new THREE.Vector3(0, 0, 1).applyQuaternion(carQuat); f.y = 0; f.normalize();
     this.travelDir.copy(f);
-    this.pos.copy(carPos).addScaledVector(f, -7).add(new THREE.Vector3(0, 2.4, 0));
+    const toy = this.mode === 'toy';
+    this.pos.copy(carPos).addScaledVector(f, toy ? -15.5 : -7).add(new THREE.Vector3(0, toy ? 9.2 : 2.4, 0));
     this.look.copy(carPos).addScaledVector(f, 3);
   }
 
@@ -65,7 +68,15 @@ export class CameraRig {
 
     let targetPos, targetLook, stiff;
     const d = this.travelDir;
-    if (this.mode === 'chase' || this.mode === 'far') {
+    let fovBase = this.fovBase;
+    if (this.mode === 'toy') {
+      const v = Math.min(speed, 85);
+      const dist = 15.5 + v * 0.075 + this.accelLag * 0.05;
+      const height = 9.2 + v * 0.045;
+      targetPos = carPos.clone().addScaledVector(d, -dist); targetPos.y = carPos.y + height;
+      targetLook = carPos.clone().addScaledVector(d, 4.5 + v * 0.09); targetLook.y = carPos.y + 0.3;
+      stiff = 5.5; fovBase = 38;
+    } else if (this.mode === 'chase' || this.mode === 'far') {
       const far = this.mode === 'far';
       const dist = (far ? 9.6 : 6.6) + Math.min(speed, 80) * (far ? 0.03 : 0.022) + this.accelLag * 0.035;
       const height = (far ? 3.4 : 2.05) + Math.min(speed, 80) * 0.004;
@@ -80,6 +91,18 @@ export class CameraRig {
       targetPos = carPos.clone().addScaledVector(fwd, 0.55).addScaledVector(up, 0.66);
       targetLook = carPos.clone().addScaledVector(fwd, 12).addScaledVector(up, 0.42);
       stiff = 80;
+    }
+    // keep buildings from getting between the car and the camera: slide in along the boom
+    if (stiff <= 20 && this.occluder) {
+      let free = 1;
+      for (let k = 1; k <= 12; k++) {
+        const t = k / 12;
+        const x = carPos.x + (targetPos.x - carPos.x) * t, z = carPos.z + (targetPos.z - carPos.z) * t;
+        if (this.occluder(x, z)) { free = Math.max(0.18, (k - 1.5) / 12); break; }
+      }
+      this.pull += (free - this.pull) * (1 - Math.exp(-dt * (free < this.pull ? 14 : 2.5)));
+      targetPos.lerpVectors(carPos, targetPos, this.pull);
+      targetPos.y = Math.max(targetPos.y, carPos.y + 2.2 + (1 - this.pull) * 4);
     }
     if (stiff > 20) { this.pos.copy(targetPos); this.look.copy(targetLook); }
     else {
@@ -103,7 +126,7 @@ export class CameraRig {
     if (stiff > 20) cam.up.copy(up);
     cam.lookAt(this.look);
     if (stiff <= 20) cam.rotateZ(this.roll);
-    const fov = this.fovBase + (this.mode === 'cockpit' ? 6 : 0) + Math.min(speed, 90) * 0.17;
+    const fov = fovBase + (this.mode === 'cockpit' ? 6 : 0) + Math.min(speed, 90) * (this.mode === 'toy' ? 0.1 : 0.17);
     cam.fov = damp(cam.fov, fov, 3, dt);
     cam.updateProjectionMatrix();
   }
@@ -121,15 +144,20 @@ export class ShotScript {
   update(dt, rig) {
     this.t += dt;
     const u = Math.min(1, this.t / this.total);
-    const e = u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;   // ease in-out
+    // map time → curve parameter per segment so each key is reached at its own time;
+    // ease in on the first segment and out on the last
+    const K = this.keys, n = K.length - 1;
+    let si = 0; while (si < n - 1 && K[si + 1].t <= this.t) si++;
+    let f = Math.max(0, Math.min(1, (this.t - K[si].t) / (K[si + 1].t - K[si].t)));
+    if (si === 0) f = f * f * (2 - f) * 0.5 + f * 0.5;
+    if (si === n - 1) f = 1 - (1 - f) * (1 - f);
+    const e = (si + f) / n;
     const cam = rig.camera;
     cam.position.copy(this.pc.getPoint(e));
     cam.up.set(0, 1, 0);
     cam.lookAt(this.lc.getPoint(e));
-    let i = 0; while (i < this.keys.length - 2 && this.keys[i + 1].t < this.t) i++;
-    const a = this.keys[i], b = this.keys[i + 1];
-    const f = THREE.MathUtils.clamp((this.t - a.t) / (b.t - a.t), 0, 1);
-    cam.fov = THREE.MathUtils.lerp(a.fov || 50, b.fov || 50, f);
+    const fl = THREE.MathUtils.clamp((this.t - K[si].t) / (K[si + 1].t - K[si].t), 0, 1);
+    cam.fov = THREE.MathUtils.lerp(K[si].fov || 50, K[si + 1].fov || 50, fl);
     cam.updateProjectionMatrix();
     rig.pos.copy(cam.position);
     if (u >= 1) { if (this.onDone) this.onDone(); return true; }

@@ -6,6 +6,7 @@ import { buildTerrain, buildTerrainMeshes } from './terrain.js';
 import { buildRoadMeshes } from './roads-mesh.js';
 import { buildWater } from './water.js';
 import { ColliderWorld } from './colliders.js';
+import { buildDiorama } from './diorama.js';
 
 const tick = () => new Promise(r => setTimeout(r, 0));
 
@@ -26,13 +27,15 @@ export async function buildWorld({ scene, atmo, quality, progress = () => {}, ex
   scene.add(terrainMesh);
   const water = await step('Filling the Arabian Sea', 0.4, () => buildWater(atmo));
   scene.add(water.mesh);
+  scene.add(buildDiorama(terr));
 
-  const ctx = { scene, atmo, quality, net, terr, colliders, roads, water };
-  // later layers (buildings, landmarks, props…) register here
+  // later layers (buildings, landmarks, props…) register here and can see earlier ones
   const layers = {};
+  const surfaces = [];   // extra drivable surfaces (ramps) registered by layers
+  const ctx = { scene, atmo, quality, net, terr, colliders, roads, water, layersRef: layers, surfaces };
   let frac = 0.45;
   for (const [label, fn] of extras) {
-    layers[label] = await step(label, frac, () => fn(ctx));
+    layers[fn.layerName || label] = await step(label, frac, () => fn(ctx));
     frac += (0.97 - 0.45) / extras.length;
   }
 
@@ -41,11 +44,13 @@ export async function buildWorld({ scene, atmo, quality, progress = () => {}, ex
     net, terr, colliders, roads, water, layers, timings,
     buildMs: Math.round(performance.now() - t0),
     surface(x, z, yRef, out) {
-      if (net.roadSurface(x, z, yRef, out)) return out;
-      return terr.groundSurface(x, z, out);
+      if (!net.roadSurface(x, z, yRef, out)) terr.groundSurface(x, z, out);
+      for (const fn of surfaces) fn(x, z, yRef, out);
+      return out;
     },
     collide(sim) { return colliders.collideCar(sim); },
     groundAt(x, z, yRef = 1e4) { return world.surface(x, z, yRef, groundOut).h; },
+    setNight(v) { for (const l of Object.values(layers)) if (l && l.setNight) l.setNight(v); },
     update(t, dt, camera) {
       water.update(t);
       for (const l of Object.values(layers)) if (l && l.update) l.update(t, dt, camera);

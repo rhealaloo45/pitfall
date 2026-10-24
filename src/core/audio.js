@@ -134,6 +134,46 @@ export class CarAudio {
     o.connect(g).connect(this.master); o.start(t); o.stop(t + 0.32);
     this.pop(0.35 * strength, 700);
   }
+  /** Two-tone car horn; `pitch` lets other vehicles answer in a different voice. */
+  horn(pitch = 1, dur = 0.42, gain = 0.16) {
+    if (!this.started) return;
+    const ctx = this.ctx, t = ctx.currentTime;
+    const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 2400;
+    const g = ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + 0.02); g.gain.setValueAtTime(gain, t + dur - 0.05); g.gain.linearRampToValueAtTime(0, t + dur);
+    for (const fr of [415 * pitch, 523 * pitch]) { const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = fr; o.connect(f); o.start(t); o.stop(t + dur + 0.02); }
+    f.connect(g).connect(this.master);
+  }
+  /** Bright arpeggio for pickups. */
+  pickup(n = 0) {
+    if (!this.started) return;
+    const ctx = this.ctx, t = ctx.currentTime;
+    const base = 740 * Math.pow(2, (n % 5) / 12);
+    [1, 1.26, 1.5, 2].forEach((m, i) => {
+      const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = base * m;
+      const g = ctx.createGain(); g.gain.setValueAtTime(0, t + i * 0.05); g.gain.linearRampToValueAtTime(0.14, t + i * 0.05 + 0.01); g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.05 + 0.25);
+      o.connect(g).connect(this.master); o.start(t + i * 0.05); o.stop(t + i * 0.05 + 0.3);
+    });
+  }
+  /** Hollow plastic "tock" for knocking props over. */
+  tock(strength = 0.5, pitch = 1) {
+    if (!this.started) return;
+    const now = this.ctx.currentTime;
+    if (this._lastTock && now - this._lastTock < 0.04) return; this._lastTock = now;
+    const ctx = this.ctx, t = now;
+    const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(320 * pitch, t); o.frequency.exponentialRampToValueAtTime(140 * pitch, t + 0.12);
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.25 * strength, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    o.connect(g).connect(this.master); o.start(t); o.stop(t + 0.16);
+  }
+  /** Wing flutter for pigeons. */
+  flutter() {
+    if (!this.started) return;
+    const ctx = this.ctx, t = ctx.currentTime;
+    const s = ctx.createBufferSource(); s.buffer = this.noise;
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 0.7;
+    const g = ctx.createGain(); g.gain.setValueAtTime(0, t);
+    for (let k = 0; k < 14; k++) { g.gain.linearRampToValueAtTime(0.12 * (1 - k / 14), t + k * 0.05 + 0.02); g.gain.linearRampToValueAtTime(0.01, t + k * 0.05 + 0.045); }
+    s.connect(f).connect(g).connect(this.master); s.start(t, Math.random()); s.stop(t + 0.8);
+  }
   /** UI blip for discoveries. */
   chime() {
     if (!this.started) return;

@@ -120,7 +120,7 @@ export function buildNetwork() {
     for (const { road } of nd.roads) { hw = Math.max(hw, road.T.hw); sw = Math.max(sw, road.T.sidewalk); }
     nd.sw = sw;
     nd.R = nd.roads.length >= 3 ? hw + 3 : nd.roads.length === 2 ? hw * 0.8 : hw + 8;
-    if (nd.id === 'gateway') nd.R = 30;
+    if (nd.id === 'gateway') nd.R = 15;
     if (nd.id === 'kjsit') nd.R = 18;
   }
   for (const r of roads) {

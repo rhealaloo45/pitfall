@@ -142,19 +142,19 @@ export function buildTerrainMeshes(THREE, terr, { tile = 128, step = 1 } = {}) {
   const group = new THREE.Group(); group.name = 'terrain';
   const per = Math.round(tile / cell);
   const col = new THREE.Color();
-  const grassA = new THREE.Color(0x5b7a37), grassB = new THREE.Color(0x7a8f45), grassC = new THREE.Color(0x46652c);
-  const sand = new THREE.Color(0xd6c29a), wetSand = new THREE.Color(0xa99772), dirt = new THREE.Color(0x8a7556), paved = new THREE.Color(0xa49c90), rock = new THREE.Color(0x4f4b45), sea = new THREE.Color(0x3d5f62);
+  const grassA = new THREE.Color(0x8cc152), grassB = new THREE.Color(0xa8d46a), grassC = new THREE.Color(0x76b04a);
+  const sand = new THREE.Color(0xf3d9a4), wetSand = new THREE.Color(0xe6c48c), dirt = new THREE.Color(0xd9a974), paved = new THREE.Color(0xf0dcb4), rock = new THREE.Color(0xb5aaa0), sea = new THREE.Color(0x56c4c4);
   const detail = (() => {
     const c = document.createElement('canvas'); c.width = c.height = 256;
     const g = c.getContext('2d'); const img = g.createImageData(256, 256);
     let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-    for (let p = 0; p < 256 * 256; p++) { const v = 200 + rnd() * 55; img.data[p * 4] = v; img.data[p * 4 + 1] = v; img.data[p * 4 + 2] = v; img.data[p * 4 + 3] = 255; }
+    for (let p = 0; p < 256 * 256; p++) { const v = 238 + rnd() * 17; img.data[p * 4] = v; img.data[p * 4 + 1] = v; img.data[p * 4 + 2] = v; img.data[p * 4 + 3] = 255; }
     g.putImageData(img, 0, 0);
-    for (let n = 0; n < 2200; n++) { g.fillStyle = `rgba(${rnd() < 0.5 ? '255,255,240' : '30,40,20'},${0.08 + rnd() * 0.1})`; g.fillRect(rnd() * 256, rnd() * 256, 1 + rnd() * 2, 2 + rnd() * 5); }
+    for (let n = 0; n < 500; n++) { g.fillStyle = `rgba(${rnd() < 0.6 ? '255,255,235' : '60,90,30'},${0.06 + rnd() * 0.08})`; g.beginPath(); g.arc(rnd() * 256, rnd() * 256, 2 + rnd() * 5, 0, 7); g.fill(); }
     const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.colorSpace = THREE.SRGBColorSpace;
     return t;
   })();
-  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, map: detail, roughness: 0.95, metalness: 0 });
+  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, map: detail, roughness: 0.92, metalness: 0 });
   mat.onBeforeCompile = sh => {
     // world-space detail tiling so tiles line up seamlessly
     sh.vertexShader = sh.vertexShader.replace('#include <uv_vertex>', '#include <uv_vertex>\n vMapUv = (modelMatrix * vec4(position,1.0)).xz / 9.0;');
@@ -174,7 +174,7 @@ export function buildTerrainMeshes(THREE, terr, { tile = 128, step = 1 } = {}) {
       pos[p * 3] = x; pos[p * 3 + 1] = H[k]; pos[p * 3 + 2] = z;
       const kk = K[k];
       const nz = vnoise(x / 30, z / 30), nz2 = vnoise(x / 7, z / 7);
-      if (kk === KIND.grass) { col.copy(grassA).lerp(grassB, nz * 0.8).lerp(grassC, Math.max(0, nz2 - 0.55) * 1.4); }
+      if (kk === KIND.grass) { col.copy(grassA).lerp(grassB, Math.round(nz * 3) / 3 * 0.9).lerp(grassC, Math.max(0, nz2 - 0.6) * 1.2); }
       else if (kk === KIND.sand) col.copy(sand).lerp(wetSand, Math.max(0, 1 - SD[k] / 10));
       else if (kk === KIND.dirt) col.copy(dirt).lerp(grassA, nz * 0.3);
       else if (kk === KIND.paved) col.copy(paved).multiplyScalar(0.9 + nz2 * 0.15);
