@@ -27,7 +27,7 @@ export function facadeMaterial(nightU) {
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', '#include <common>\nuniform float uNight; varying vec2 vFuv; varying vec4 vFac;\n' + FACADE_GLSL + '\nfloat gGlass; float gLit; vec3 gLitCol;')
       .replace('#include <color_fragment>', `#include <color_fragment>
-        float style = vFac.x, fh = vFac.y, bw = vFac.z, seed = vFac.w;
+        float style = floor(vFac.x + 0.5), fh = vFac.y, bw = vFac.z, seed = floor(vFac.w + 0.5);   // rounded: interpolated varyings jitter, and hashes amplify jitter
         vec2 fu = vFuv;
         float fl = floor(fu.y / fh);
         vec2 cell = vec2(floor(fu.x / bw), fl);
@@ -459,7 +459,7 @@ export function buildBuildings(ctx) {
     gy -= 0.6;
     col.set(pick(PALETTES[style] || PALETTES.mid));
     const S = STYLE_OF[style] ?? STYLE.residential;
-    const seed = R() * 100;
+    const seed = Math.floor(R() * 997);
     const bw = style === 'glass' ? 2.2 : style === 'office' ? 2.6 : style === 'deco' ? 2.8 : style === 'heritage' ? 3.6 : style === 'industrial' || style === 'warehouse' ? 6 : 3.4;
     const fac = [S, fh, bw, seed];
     roofCol.copy(col).multiplyScalar(0.82).lerp(new THREE.Color(0xb9b2aa), 0.35);

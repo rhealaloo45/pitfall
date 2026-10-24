@@ -110,6 +110,7 @@ async function boot() {
   const head = new THREE.SpotLight(0xfff1dc, 0, 70, 0.55, 0.6, 1.4);
   head.position.set(0, 0.6, 1.2); head.target.position.set(0, -1.5, 22);
   car.body.add(head, head.target); car.headlight = head;
+  atmo.listeners.push(() => updateHeadlight());
   updateHeadlight();
   // pre-compile shaders so the first frames don't hitch
   carPose();
@@ -173,8 +174,8 @@ function endIntro() {
   $('introTitle').classList.add('hidden'); $('skipIntro').style.display = 'none';
   rig.snapTo(sim.pos, sim.quat);
   startDrive();
-  toast(state.gp ? 'Mumbai GP — go!' : 'Free roam', state.gp ? 'Follow the red line. Timer runs until the finish at the Gateway.' : 'Explore — destinations are marked on the map');
-  if (state.gp) { state.lapStart = performance.now(); state.lapRunning = true; }
+  if (state.gp) startLights();
+  else toast('Free roam', 'Explore — destinations are marked on the map');
   setTimeout(() => { $('help').style.opacity = 0; }, 12000);
 }
 function startDrive() {
@@ -184,6 +185,23 @@ function startDrive() {
   input.setEnabled(true);
   stepper.resync();
   audio.resume();
+}
+
+/* five red lights, then lights out */
+function startLights() {
+  const L = (world.layers.landmarks && world.layers.landmarks.startLights) || [];
+  input.setEnabled(false);
+  state.lightsOut = false;
+  L.forEach(m => { m.emissiveIntensity = 0; });
+  for (let k = 0; k < 5; k++) setTimeout(() => { if (L[k]) L[k].emissiveIntensity = 5; audio.beep(false); }, 600 + k * 750);
+  setTimeout(() => {
+    L.forEach(m => { m.emissiveIntensity = 0; });
+    audio.beep(true);
+    input.setEnabled(state.mode === 'drive');
+    state.lightsOut = true;
+    state.lapStart = performance.now(); state.lapRunning = true;
+    toast('Lights out — go!', 'Follow the red line to every chapter; the clock stops at the Pit Wall.');
+  }, 600 + 4 * 750 + 700 + Math.random() * 700);
 }
 
 /* ---------------- targets / route ---------------- */
@@ -225,7 +243,7 @@ function checkPlaces() {
     near = pl;
     if (!state.visited.has(pl.id)) {
       state.visited.add(pl.id); minimap.found.add(pl.id); bigmap.found.add(pl.id);
-      if (world.layers.landmarks) world.layers.landmarks.setVisited(pl.id);
+      if (world.layers.landmarks) { world.layers.landmarks.setVisited(pl.id); world.layers.landmarks.celebrate(pl.id); }
       progressStore.set('mumbai.visited', [...state.visited]);
       audio.chime();
       toast(pl.kind === 'chapter' ? 'Chapter unlocked' : 'Landmark discovered', pl.name);

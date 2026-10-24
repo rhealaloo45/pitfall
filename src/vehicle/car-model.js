@@ -19,7 +19,7 @@ function materials() {
   carbonTex.repeat.set(6, 6);
   return {
     paint: new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.38, metalness: 0.05, clearcoat: 0.55, clearcoatRoughness: 0.08, envMapIntensity: 0.7 }),
-    red: new THREE.MeshPhysicalMaterial({ color: 0x8f0a12, roughness: 0.38, metalness: 0.05, clearcoat: 0.55, clearcoatRoughness: 0.08, envMapIntensity: 0.7 }),
+    red: new THREE.MeshPhysicalMaterial({ color: 0xb3121b, roughness: 0.38, metalness: 0.05, clearcoat: 0.55, clearcoatRoughness: 0.08, envMapIntensity: 0.7 }),
     paintDark: new THREE.MeshPhysicalMaterial({ color: 0x6e0a10, roughness: 0.35, metalness: 0.15, clearcoat: 1, clearcoatRoughness: 0.1 }),
     white: new THREE.MeshPhysicalMaterial({ color: 0xf1f1ee, roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.1 }),
     carbon: new THREE.MeshStandardMaterial({ color: 0xffffff, map: carbonTex, roughness: 0.5, metalness: 0.05 }),
@@ -113,7 +113,7 @@ export function buildCar() {
   ], { radial: 32, sub: 5 });
   // livery: red with a carbon lower half and a white pinstripe
   const liv = canvasTexture(512, 1024, (g, W, H) => {
-    g.fillStyle = '#8f0a12'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#b3121b'; g.fillRect(0, 0, W, H);
     g.fillStyle = '#141416'; g.fillRect(0, 0, W * 0.12, H); g.fillRect(W * 0.88, 0, W * 0.12, H);
     g.fillStyle = '#f1f1ee'; g.fillRect(W * 0.12, H * 0.08, W * 0.01, H * 0.5); g.fillRect(W * 0.87, H * 0.08, W * 0.01, H * 0.5);
     // white nose tip band
@@ -318,7 +318,7 @@ export function buildCar() {
       const gold = name === 'gold';
       M.paint.map = gold ? canvasTexture(512, 1024, (g, W, H) => { g.fillStyle = '#c99a2e'; g.fillRect(0, 0, W, H); g.fillStyle = '#141416'; g.fillRect(0, 0, W * 0.12, H); g.fillRect(W * 0.88, 0, W * 0.12, H); g.fillStyle = '#fff3c4'; g.fillRect(0, 0, W, H * 0.035); }) : liv;
       M.paint.metalness = gold ? 0.55 : 0.05; M.paint.roughness = gold ? 0.28 : 0.38;
-      M.red.color.set(gold ? 0xc99a2e : 0x8f0a12); M.red.metalness = gold ? 0.55 : 0.05;
+      M.red.color.set(gold ? 0xc99a2e : 0xb3121b); M.red.metalness = gold ? 0.55 : 0.05;
       M.paint.needsUpdate = true;
     },
     /** Pose the car from the interpolated sim state. */

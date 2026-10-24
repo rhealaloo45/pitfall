@@ -336,12 +336,21 @@ export function buildProps(ctx) {
   boats.count = boatList.length; boats.castShadow = true;
   group.add(boats);
 
+  /* distance culling: small props vanish into the haze anyway */
+  const cullables = group.children.filter(m => m.isInstancedMesh && m !== boats);
+  const farSq = (quality.key === 'low' ? 420 : quality.key === 'medium' ? 650 : 900) ** 2;
+  let cullT = 0;
+  function cull(cam) {
+    if ((cullT = (cullT + 1) % 10) !== 0) return;
+    for (const m of cullables) { const c = m.boundingSphere.center, r = m.boundingSphere.radius; const dx = c.x - cam.position.x, dz = c.z - cam.position.z; m.visible = dx * dx + dz * dz < farSq + r * r + 2 * r * Math.sqrt(farSq) || cam.position.y > 300; }
+  }
   scene.add(group);
-  const setNight = v => { headMat.emissiveIntensity = v * 2.2; poolMat.opacity = v * 0.75; };
+  const setNight = v => { headMat.emissiveIntensity = v * 3; poolMat.opacity = v; };
   setNight(atmo.night.value);
   return {
     group, counts: { trees: nTrees, lamps: nl, vehicles: nv, boats: boatList.length }, setNight,
-    update(t) {
+    update(t, dt, camera) {
+      if (camera) cull(camera);
       boatList.forEach((b, i) => {
         D.position.set(b.x, Math.sin(t * 1.3 + b.ph) * 0.15 - 0.1, b.z);
         D.rotation.set(Math.sin(t * 1.1 + b.ph) * 0.05, b.ry, Math.cos(t * 0.9 + b.ph) * 0.06); D.scale.setScalar(b.s); D.updateMatrix();

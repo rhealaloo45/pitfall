@@ -7,7 +7,7 @@ export const TIMES = {
   morning: { label: 'Morning',     top: '#9cc2f2', mid: '#cfe0f5', bottom: '#f7dccb', sun: 0xffe2b8, sunI: 3.4, elev: 44, azim: 140, hemiSky: 0xc8d6ff, hemiGround: 0xe9c39a, hemiI: 0.95, fog: 0xdfe2ef, fogD: 0.00042, night: 0, exposure: 0.8 },
   golden:  { label: 'Golden hour', top: '#8fb0ea', mid: '#f3c9b8', bottom: '#ffc58f', sun: 0xffc27a, sunI: 3.0, elev: 22, azim: 250, hemiSky: 0xc6c8f2, hemiGround: 0xf2b788, hemiI: 1.05, fog: 0xf0cdb8, fogD: 0.00048, night: 0.1, exposure: 0.8 },
   dusk:    { label: 'Dusk',        top: '#3b4a8f', mid: '#a06aa8', bottom: '#f39c7a', sun: 0xff9a6a, sunI: 1.4, elev: 10, azim: 262, hemiSky: 0x8a86d0, hemiGround: 0xa0607a, hemiI: 0.9, fog: 0xa77a9e, fogD: 0.0005, night: 0.65, exposure: 0.95 },
-  night:   { label: 'Night',       top: '#141c4a', mid: '#2a2f7a', bottom: '#6a3f86', sun: 0x8fa6ff, sunI: 0.55, elev: 55, azim: 320, hemiSky: 0x4b55b8, hemiGround: 0x3a2850, hemiI: 0.75, fog: 0x2b2f6e, fogD: 0.0005, night: 1, exposure: 1.05 },
+  night:   { label: 'Night',       top: '#16205a', mid: '#36358a', bottom: '#8a4f9a', sun: 0xa9b8ff, sunI: 0.9, elev: 55, azim: 320, hemiSky: 0x6670d8, hemiGround: 0x4a3060, hemiI: 1.15, fog: 0x34357a, fogD: 0.00045, night: 1, exposure: 1.25 },
 };
 export const DEFAULT_TIME = 'morning';
 
@@ -46,6 +46,7 @@ export class Atmosphere {
     this.envScene.add(new THREE.Mesh(new THREE.SphereGeometry(100, 32, 16), this.envMat));
     this.sunDir = new THREE.Vector3();
     this.horizon = new THREE.Color(); this.zenith = new THREE.Color();
+    this.listeners = [];
   }
 
   setShadowQuality(size) {
@@ -75,6 +76,7 @@ export class Atmosphere {
     this.envRT = this.pmrem.fromScene(this.envScene, 0.03);
     this.scene.environment = this.envRT.texture;
     if (this.onChange) this.onChange(T);
+    for (const fn of this.listeners) fn(T);
   }
 
   /** Keep the shadow frustum centred on the player (texel-snapped to avoid shimmer). */
