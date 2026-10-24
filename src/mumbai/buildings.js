@@ -1,10 +1,11 @@
-/* Procedural city blocks. Facades (windows, mullions, arches, shopfronts,
-   monsoon stains, lit windows at night) are computed in the shader from
-   per-vertex facade coordinates, so the whole city needs no texture files. */
+/* Toy-diorama city blocks: pillowy rounded buildings with bold framed windows,
+   doors and striped awnings drawn in the shader, plus real 3D street-front
+   details (AC units, awnings, shop signs) on buildings facing the road. */
 import * as THREE from 'three';
 import { DISTRICTS, RESERVED, PARKS, PLAZAS, WORLD_BOUNDS as WB } from './layout.js';
 import { landSD } from './geo2d.js';
-import { rng } from '../core/geo.js';
+import { rng, canvasTexture } from '../core/geo.js';
+import { insideSlab } from './diorama.js';
 
 export const STYLE = { roof: 0, residential: 1, glass: 2, deco: 3, heritage: 4, office: 5, chawl: 6, industrial: 7, bungalow: 8, tiles: 9, plain: 10 };
 
@@ -12,95 +13,92 @@ const FACADE_GLSL = /* glsl */`
 float h21(vec2 p){ p = fract(p*vec2(123.34, 456.21)); p += dot(p, p+45.32); return fract(p.x*p.y); }
 float vnoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
   return mix(mix(h21(i),h21(i+vec2(1,0)),f.x), mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x), f.y); }
-float box2(vec2 f, vec2 a, vec2 b){ vec2 s = step(a, f) * step(f, b); return s.x * s.y; }
+float rbox(vec2 p, vec2 b, float r){ vec2 q = abs(p) - b + r; return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r; }
 `;
 
+/** Window, frame, door and awning shapes per style, in metres within one facade cell. */
 export function facadeMaterial(nightU) {
-  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0 });
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0 });
   m.onBeforeCompile = sh => {
     sh.uniforms.uNight = nightU;
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute vec2 fuv; attribute vec4 fac; varying vec2 vFuv; varying vec4 vFac; varying vec3 vWPos2;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\n vFuv = fuv; vFac = fac; vWPos2 = (modelMatrix * vec4(position,1.0)).xyz;');
+      .replace('#include <common>', '#include <common>\nattribute vec2 fuv; attribute vec4 fac; varying vec2 vFuv; varying vec4 vFac;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\n vFuv = fuv; vFac = fac;');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uNight; varying vec2 vFuv; varying vec4 vFac; varying vec3 vWPos2;\n' + FACADE_GLSL + '\nfloat gWin; float gLit; vec3 gLitCol;')
+      .replace('#include <common>', '#include <common>\nuniform float uNight; varying vec2 vFuv; varying vec4 vFac;\n' + FACADE_GLSL + '\nfloat gGlass; float gLit; vec3 gLitCol;')
       .replace('#include <color_fragment>', `#include <color_fragment>
         float style = vFac.x, fh = vFac.y, bw = vFac.z, seed = vFac.w;
         vec2 fu = vFuv;
         float fl = floor(fu.y / fh);
         vec2 cell = vec2(floor(fu.x / bw), fl);
-        vec2 f = vec2(fract(fu.x / bw), fract(fu.y / fh));
+        vec2 pm = (vec2(fract(fu.x / bw), fract(fu.y / fh)) - 0.5) * vec2(bw, fh);   // metres from cell centre
         float r = h21(cell + seed * 17.13);
+        float aw = max(fwidth(pm.x), fwidth(pm.y)) * 1.2 + 0.004;
         vec3 wall = diffuseColor.rgb;
-        vec3 glass = mix(vec3(0.05, 0.07, 0.09), vec3(0.11, 0.15, 0.18), r);
-        float win = 0.0, dark = 0.0;
-        gLitCol = vec3(1.0, 0.72, 0.42);
-        bool shops = fract(seed * 7.31) > 0.35;
-        if (style < 0.5) {
-          wall *= 0.82 + 0.25 * vnoise(vWPos2.xz * 0.35);
-        } else if (style < 1.5) {               // residential: punched windows, sills, AC boxes
-          win = box2(f, vec2(0.24, 0.30), vec2(0.76, 0.80));
-          dark = box2(f, vec2(0.2, 0.25), vec2(0.8, 0.30)) * 0.35 + box2(f, vec2(0.78, 0.36), vec2(0.95, 0.56)) * step(0.7, r) * 0.25;
-          if (r > 0.88) { win = 0.0; dark += box2(f, vec2(0.24, 0.30), vec2(0.76, 0.80)) * 0.15; }
-        } else if (style < 2.5) {               // glass curtain wall
-          win = 1.0 - max(step(0.94, f.x), step(0.86, f.y)) * 0.92;
-          glass = mix(vec3(0.06, 0.11, 0.13), vec3(0.12, 0.2, 0.22), vnoise(cell * 0.3 + seed));
-          gLitCol = vec3(0.85, 0.92, 1.0);
-        } else if (style < 3.5) {               // art deco: ribbons + eyebrow shades
-          win = box2(f, vec2(0.18, 0.18), vec2(0.82, 0.74));
-          dark = box2(f, vec2(0.1, 0.76), vec2(0.9, 0.84)) * 0.45;
-          wall *= 1.0 + 0.06 * step(0.92, fract(fu.y / (fh * 4.0)));
-        } else if (style < 4.5) {               // heritage stone: arched windows, rusticated base
-          vec2 c = vec2(0.5, 0.62);
-          float arch = step(length((f - c) * vec2(1.0, 1.4)), 0.24) * step(c.y, f.y);
-          win = max(box2(f, vec2(0.26, 0.2), vec2(0.74, 0.62)), arch);
-          if (fl < 0.5) { win = min(1.0, box2(f, vec2(0.18, 0.0), vec2(0.82, 0.66)) + step(length((f - vec2(0.5,0.66))*vec2(1.0,1.2)), 0.32) * step(0.66, f.y)); dark = step(0.94, fract(fu.y / 0.6)) * 0.3; }
-          wall *= 0.9 + 0.2 * vnoise(fu * vec2(1.6, 2.4));
-        } else if (style < 5.5) {               // office: ribbon windows + spandrels
-          win = box2(f, vec2(-1.0, 0.36), vec2(2.0, 0.9)) * (1.0 - step(0.965, f.x) * 0.9);
-          gLitCol = vec3(0.92, 0.95, 1.0);
-        } else if (style < 6.5) {               // chawl: open corridors with railings
-          win = box2(f, vec2(0.3, 0.32), vec2(0.7, 0.78));
-          float corridor = box2(f, vec2(-1.0, 0.0), vec2(2.0, 0.24));
-          dark = corridor * (0.55 - 0.25 * step(0.5, fract(fu.x * 3.0)));
-        } else if (style < 7.5) {               // industrial: corrugated + clerestory
-          wall *= 0.86 + 0.14 * step(0.5, fract(fu.x * 2.5));
-          win = box2(f, vec2(0.1, 0.78), vec2(0.9, 0.92)) * step(fu.y, fh);
-          dark = step(fu.y, 4.5) * box2(f, vec2(0.25, 0.0), vec2(0.75, 1.0)) * step(0.6, r) * 0.5;
-        } else if (style < 8.5) {               // bungalow: shuttered windows
-          win = box2(f, vec2(0.32, 0.3), vec2(0.68, 0.75)) * step(0.35, r);
-          dark = (box2(f, vec2(0.2, 0.3), vec2(0.32, 0.75)) + box2(f, vec2(0.68, 0.3), vec2(0.8, 0.75))) * step(0.35, r) * 0.4;
-        } else if (style < 9.5) {               // Mangalore tile roof
-          wall *= 0.8 + 0.2 * step(0.18, fract(fu.y * 3.2)) + 0.08 * vnoise(fu * 4.0);
+        vec3 frameCol = vec3(0.96, 0.93, 0.86);
+        vec3 glassTop = vec3(0.42, 0.6, 0.82), glassBot = vec3(0.13, 0.2, 0.38);
+        float d = 9.0, frameW = 0.14, glassOnly = 0.0;
+        vec2 wsize = vec2(0.55, 0.7); vec2 wofs = vec2(0.0, 0.15); float wr = 0.18;
+        gLitCol = vec3(1.0, 0.78, 0.45);
+        bool ground = fl < 0.5;
+        bool shop = fract(seed * 7.31) > 0.3 && ground;
+        if (style < 0.5 || style > 8.5) {
+          if (style > 8.5 && style < 9.5) wall *= 0.86 + 0.14 * step(0.25, fract(fu.y * 2.6));    // tile courses
         } else {
-          wall *= 0.9 + 0.1 * vnoise(fu * 0.8);
+          if (style < 1.5) { wsize = vec2(0.55, 0.68); }
+          else if (style < 2.5) { wsize = vec2(bw * 0.5 - 0.08, fh * 0.5 - 0.06); wofs = vec2(0.0); wr = 0.05; frameW = 0.0; glassOnly = 1.0; glassTop = vec3(0.45, 0.72, 0.9); glassBot = vec3(0.18, 0.42, 0.66); gLitCol = vec3(0.85, 0.94, 1.0); }
+          else if (style < 3.5) { wsize = vec2(0.42, 0.95); wofs = vec2(0.0, 0.1); wr = 0.4; }
+          else if (style < 4.5) { wsize = vec2(0.6, 1.05); wofs = vec2(0.0, 0.05); wr = 0.58; }
+          else if (style < 5.5) { wsize = vec2(bw * 0.5 + 0.02, 0.62); wofs = vec2(0.0, 0.25); wr = 0.0; frameW = 0.0; glassOnly = 1.0; gLitCol = vec3(0.92, 0.96, 1.0); }
+          else if (style < 6.5) { wsize = vec2(0.45, 0.62); wofs = vec2(0.0, 0.25); }
+          else if (style < 7.5) { wsize = vec2(bw * 0.4, 0.35); wofs = vec2(0.0, fh * 0.28); wr = 0.1; wall *= 0.9 + 0.1 * step(0.5, fract(fu.x * 1.6)); }
+          else { wsize = vec2(0.5, 0.6); wofs = vec2(0.0, 0.1); }
+          d = rbox(pm - wofs, wsize, min(wr, min(wsize.x, wsize.y)));
+          // chawl: open corridor band with white railing on every floor
+          if (style > 5.5 && style < 6.5) {
+            float band = step(pm.y, -fh * 0.5 + 0.9);
+            wall = mix(wall, wall * 0.62, band);
+            wall = mix(wall, frameCol, band * step(0.75, fract(fu.x * 1.25)) * step(-fh * 0.5 + 0.1, pm.y));
+          }
+          // bungalow shutters
+          if (style > 7.5) { float sh = step(abs(abs(pm.x) - 0.72), 0.17) * step(abs(pm.y - 0.1), 0.6); wall = mix(wall, mix(vec3(0.2,0.55,0.45), vec3(0.75,0.3,0.25), step(0.5, fract(seed))), sh); }
+          // ground floor: doors, shop openings and striped awnings
+          if (ground && style < 7.5 && !(style > 1.5 && style < 2.5)) {
+            if (shop) {
+              d = rbox(pm - vec2(0.0, -0.25), vec2(bw * 0.5 - 0.3, fh * 0.5 - 0.6), 0.1);
+              float awn = step(abs(pm.y - (fh * 0.5 - 0.45)), 0.32) * step(abs(pm.x), bw * 0.5 - 0.15);
+              vec3 ac = h21(vec2(cell.x * 0.37, seed)) < 0.33 ? vec3(0.86, 0.18, 0.16) : h21(vec2(cell.x * 0.37, seed)) < 0.66 ? vec3(0.13, 0.55, 0.42) : vec3(0.2, 0.4, 0.78);
+              wall = mix(wall, mix(ac, vec3(0.97), step(0.5, fract(fu.x * 1.4))), awn);
+              glassTop = vec3(0.98, 0.85, 0.55); glassBot = vec3(0.55, 0.32, 0.18);
+              gLitCol = vec3(1.0, 0.86, 0.6);
+            } else if (fract(cell.x * 0.334 + seed) < 0.34) {
+              d = rbox(pm - vec2(0.0, -0.35), vec2(0.6, 1.25), 0.25);
+              glassTop = vec3(0.55, 0.32, 0.2); glassBot = vec3(0.38, 0.2, 0.12);
+            }
+          }
         }
-        if (((style > 0.5 && style < 1.5) || (style > 2.5 && style < 3.5) || (style > 5.5 && style < 6.5)) && fl < 0.5 && shops) {
-          float bay = h21(vec2(cell.x, seed));
-          win = box2(f, vec2(0.06, 0.0), vec2(0.94, 0.7)) * step(0.3, bay);
-          vec3 shutter = mix(vec3(0.45, 0.47, 0.5), vec3(0.6, 0.62, 0.64), bay);
-          vec3 awn = bay < 0.45 ? vec3(0.55, 0.12, 0.1) : bay < 0.7 ? vec3(0.1, 0.32, 0.5) : vec3(0.75, 0.6, 0.15);
-          wall = mix(wall, awn, box2(f, vec2(0.02, 0.72), vec2(0.98, 0.86)));
-          glass = mix(glass, shutter, step(0.8, bay));
-          gLitCol = vec3(1.0, 0.85, 0.6);
-        }
-        if (style > 0.5 && (style < 1.5 || style > 2.5) && style < 9.5) {
-          float streak = vnoise(vec2(fu.x * 0.9, fu.y * 0.04 + seed)) * smoothstep(0.0, 6.0, fu.y);
-          wall *= 1.0 - 0.22 * smoothstep(0.55, 0.85, streak);
-          wall *= 0.86 + 0.14 * smoothstep(0.0, 1.4, fu.y);
-        }
-        wall *= 1.0 - dark;
-        // anti-alias: far away, blend the pattern to its average so windows don't shimmer
-        float aa = smoothstep(0.25, 0.7, max(fwidth(fu.x / bw), fwidth(fu.y / fh)));
-        float avgWin = style > 1.5 && style < 2.5 ? 0.85 : style > 4.5 && style < 5.5 ? 0.5 : style > 6.5 ? 0.12 : style < 0.5 || style > 8.5 ? 0.0 : 0.26;
-        win = mix(win, avgWin, aa); dark *= 1.0 - aa;
-        gWin = clamp(win, 0.0, 1.0);
-        gLit = step(0.52, h21(cell + seed * 3.7 + 0.5)) * gWin;
-        diffuseColor.rgb = mix(wall, glass, gWin);
+        float inside = 1.0 - smoothstep(-aw, aw, d + frameW);
+        float framed = (1.0 - smoothstep(-aw, aw, d)) - inside;
+        // bevelled frame: lit from above
+        float bevel = clamp(0.5 + (pm.y - wofs.y) * 0.35, 0.0, 1.0);
+        vec3 fc = frameCol * (0.82 + 0.25 * bevel);
+        float gy = clamp((pm.y - wofs.y) / (wsize.y * 2.0) + 0.5, 0.0, 1.0);
+        vec3 gc = mix(glassBot, glassTop, gy);
+        gc += 0.18 * step(0.82, fract((pm.x + pm.y) * 0.9 + 0.2)) * (1.0 - glassOnly * 0.5);   // diagonal highlight
+        if (r > 0.9 && style > 0.5 && style < 8.5 && !(style > 1.5 && style < 2.5) && !ground) { gc = mix(wall, vec3(0.95, 0.9, 0.82), 0.5); }  // a few curtains drawn
+        // soft ambient occlusion at the base and a little sky light at the top
+        wall *= mix(0.72, 1.0, smoothstep(0.0, 2.2, fu.y));
+        // far away: blend to average so windows don't shimmer
+        float far = smoothstep(0.08, 0.25, aw);
+        inside *= 1.0 - far * 0.6; framed *= 1.0 - far;
+        vec3 col = mix(wall, fc, framed);
+        col = mix(col, gc, inside);
+        gGlass = inside;
+        gLit = step(0.5, h21(cell + seed * 3.7 + 0.5)) * inside;
+        diffuseColor.rgb = col;
       `)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = mix(roughnessFactor, 0.12, gWin);')
-      .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor = mix(metalnessFactor, 0.55, gWin);')
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += gLitCol * gLit * uNight * 1.6;');
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = mix(roughnessFactor, 0.18, gGlass);')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += gLitCol * gLit * uNight * 1.7;');
   };
   return m;
 }
@@ -110,7 +108,7 @@ const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a
 const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const norm = a => { const l = Math.hypot(...a) || 1; return a.map(v => v / l); };
 
-/* ---------- geometry accumulator (indexed, flat normals, winding fixed to the normal) ---------- */
+/* ---------- geometry accumulator (indexed; winding fixed to the intended normal) ---------- */
 export class FacadeBuilder {
   constructor() { this.P = []; this.N = []; this.C = []; this.U = []; this.F = []; this.I = []; this.n = 0; }
   vert(p, n, col, uv, fac) {
@@ -121,12 +119,10 @@ export class FacadeBuilder {
     const a = this.P.slice(i0 * 3, i0 * 3 + 3), b = this.P.slice(i1 * 3, i1 * 3 + 3), c = this.P.slice(i2 * 3, i2 * 3 + 3);
     if (dot(cross(sub(b, a), sub(c, a)), n) >= 0) this.I.push(i0, i1, i2); else this.I.push(i0, i2, i1);
   }
-  /** Quad a,b,c,d (perimeter order) facing `nrm`. */
   quad(a, b, c, d, nrm, col, uvs, fac) {
     const i = [a, b, c, d].map((p, k) => this.vert(p, nrm, col, uvs[k], fac));
     this.tri3(i[0], i[1], i[2], nrm); this.tri3(i[0], i[2], i[3], nrm);
   }
-  /** Vertical wall from (x0,z0) to (x1,z1); outward normal is to the right of travel when footprints run clockwise-in-screen (x right, z down). */
   wall(x0, z0, x1, z1, y0, y1, col, fac, u0 = 0, vBase = 0) {
     const L = Math.hypot(x1 - x0, z1 - z0); if (L < 0.01) return;
     const n = [(z1 - z0) / L, 0, -(x1 - x0) / L];
@@ -147,23 +143,93 @@ export class FacadeBuilder {
     }
     if (roofCol) this.cap(pts, y1, roofCol, roofFac);
   }
-  /** Gable roof over a rectangle; ridge runs along the longer side. */
+  /**
+   * Pillowy block: rounded vertical corners (radius r) and a rounded roof edge (radius b),
+   * smooth normals so it shades like a soft toy. Facade u runs around the perimeter starting
+   * at local (−hx + r, −hz), heading +x.
+   */
+  pillow(cx, cz, hx, hz, rot, y0, y1, { r = 1, b = 0.8, col, fac, roofCol, vBase = 0, bevelCol = null }) {
+    r = Math.max(0.05, Math.min(r, hx * 0.48, hz * 0.48));
+    b = Math.min(b, (y1 - y0) * 0.3, r + 0.6, hx * 0.4, hz * 0.4);
+    const c = Math.cos(rot), s = Math.sin(rot);
+    const W = (x, z) => [cx + x * c + z * s, cz - x * s + z * c];
+    const Wn = (nx, nz) => [nx * c + nz * s, -nx * s + nz * c];
+    // footprint ring (local) with outward normals
+    const ring = [];
+    const seg = r > 1.5 ? 5 : 3;
+    const corners = [[hx - r, -hz + r, -Math.PI / 2], [hx - r, hz - r, 0], [-hx + r, hz - r, Math.PI / 2], [-hx + r, -hz + r, Math.PI]];
+    for (const [ax, az, a0] of corners) for (let i = 0; i <= seg; i++) {
+      const a = a0 + i / seg * Math.PI / 2;
+      ring.push([ax + Math.cos(a) * r, az + Math.sin(a) * r, Math.cos(a), Math.sin(a)]);
+    }
+    // perimeter u, starting at (−hx + r, −hz): ring[] starts at the end of edge 1, so rotate it
+    ring.unshift(ring.pop());
+    const start = [-hx + r, -hz, 0, -1];
+    ring.unshift(start);
+    // remove duplicate start/end
+    const R2 = [];
+    for (const p of ring) { const q = R2[R2.length - 1]; if (!q || Math.hypot(p[0] - q[0], p[1] - q[1]) > 1e-4) R2.push(p); }
+    const loopPts = R2;
+    const us = [0]; for (let i = 1; i <= loopPts.length; i++) { const a = loopPts[i - 1], q = loopPts[i % loopPts.length]; us.push(us[i - 1] + Math.hypot(q[0] - a[0], q[1] - a[1])); }
+    const yW = y1 - b;
+    const nL = loopPts.length;
+    // wall band
+    const wallIdx = [];
+    for (let i = 0; i <= nL; i++) {
+      const p = loopPts[i % nL];
+      const [wx, wz] = W(p[0], p[1]); const [nx, nz] = Wn(p[2], p[3]);
+      const a = this.vert([wx, y0, wz], [nx, 0, nz], col, [us[i], vBase], fac);
+      const q = this.vert([wx, yW, wz], [nx, 0, nz], col, [us[i], vBase + yW - y0], fac);
+      wallIdx.push([a, q, [nx, 0, nz]]);
+    }
+    for (let i = 0; i < nL; i++) {
+      const [a0, q0, n0] = wallIdx[i], [a1, q1, n1] = wallIdx[i + 1];
+      const n = norm([n0[0] + n1[0], 0, n0[2] + n1[2]]);
+      this.tri3(a0, a1, q1, n); this.tri3(a0, q1, q0, n);
+    }
+    // rounded roof edge
+    const bc = bevelCol || col;
+    const plain = [STYLE.plain, 3, 3, fac[3]];
+    const steps = 3;
+    let prev = null;
+    for (let k = 0; k <= steps; k++) {
+      const th = k / steps * Math.PI / 2;
+      const inset = b * (1 - Math.cos(th)), y = yW + b * Math.sin(th);
+      const row = [];
+      for (let i = 0; i <= nL; i++) {
+        const p = loopPts[i % nL];
+        const [wx, wz] = W(p[0] - p[2] * inset, p[1] - p[3] * inset); const [nx, nz] = Wn(p[2], p[3]);
+        const n = norm([nx * Math.cos(th), Math.sin(th), nz * Math.cos(th)]);
+        row.push([this.vert([wx, y, wz], n, k === steps ? roofCol || bc : bc, [us[i], vBase + y - y0], k === steps && roofCol ? [STYLE.roof, 3, 3, fac[3]] : plain), n]);
+      }
+      if (prev) for (let i = 0; i < nL; i++) {
+        const n = norm([prev[i][1][0] + row[i + 1][1][0], prev[i][1][1] + row[i + 1][1][1], prev[i][1][2] + row[i + 1][1][2]]);
+        this.tri3(prev[i][0], prev[i + 1][0], row[i + 1][0], n); this.tri3(prev[i][0], row[i + 1][0], row[i][0], n);
+      }
+      prev = row;
+    }
+    // roof cap
+    const capPts = loopPts.map(p => W(p[0] - p[2] * b, p[1] - p[3] * b));
+    this.cap(capPts, y1, roofCol || bc, [STYLE.roof, 3, 3, fac[3]]);
+    return { us, loopPts, r };
+  }
+  /** Gable roof over a rectangle; ridge along the longer side. */
   gable(cx, cz, hx, hz, rot, y0, rise, col, fac, endCol) {
     if (hz > hx) return this.gable(cx, cz, hz, hx, rot + Math.PI / 2, y0, rise, col, fac, endCol);
     const c = Math.cos(rot), s = Math.sin(rot);
     const T = (x, z, y) => [cx + x * c + z * s, y, cz - x * s + z * c];
-    const ex = hx + 0.5, ez = hz + 0.6;
+    const ex = hx + 0.6, ez = hz + 0.7;
     const A = T(-ex, -ez, y0), B = T(ex, -ez, y0), C = T(ex, 0, y0 + rise), D = T(-ex, 0, y0 + rise), E = T(ex, ez, y0), F = T(-ex, ez, y0);
     let n1 = norm(cross(sub(B, A), sub(D, A))); if (n1[1] < 0) n1 = n1.map(v => -v);
     let n2 = norm(cross(sub(E, F), sub(D, F))); if (n2[1] < 0) n2 = n2.map(v => -v);
     const slope = Math.hypot(ez, rise);
     this.quad(A, B, C, D, n1, col, [[0, 0], [ex * 2, 0], [ex * 2, slope], [0, slope]], fac);
     this.quad(F, E, C, D, n2, col, [[0, 0], [ex * 2, 0], [ex * 2, slope], [0, slope]], fac);
-    const ec = endCol || new THREE.Color(0.9, 0.88, 0.84);
+    const ec = endCol || new THREE.Color(0.95, 0.92, 0.86);
     for (const sx of [-1, 1]) {
-      const a = T(sx * hx, -hz, y0), b = T(sx * hx, hz, y0), ap = T(sx * hx, 0, y0 + rise);
+      const a = T(sx * hx, -hz, y0), b2 = T(sx * hx, hz, y0), ap = T(sx * hx, 0, y0 + rise);
       const out = norm([c * sx, 0, -s * sx]);
-      const i0 = this.vert(a, out, ec, [0, 0], [STYLE.plain, 3, 3, 0]), i1 = this.vert(b, out, ec, [1, 0], [STYLE.plain, 3, 3, 0]), i2 = this.vert(ap, out, ec, [0.5, 1], [STYLE.plain, 3, 3, 0]);
+      const i0 = this.vert(a, out, ec, [0, 0], [STYLE.plain, 3, 3, 0]), i1 = this.vert(b2, out, ec, [1, 0], [STYLE.plain, 3, 3, 0]), i2 = this.vert(ap, out, ec, [0.5, 1], [STYLE.plain, 3, 3, 0]);
       this.tri3(i0, i1, i2, out);
     }
   }
@@ -180,7 +246,7 @@ export class FacadeBuilder {
   }
 }
 
-/** Rectangle footprint, optionally with rounded street-side corners (art deco). */
+/** Rectangle footprint, optionally with rounded street-side corners. */
 export function rectPts(cx, cz, hx, hz, rot, chamfer = 0) {
   const c = Math.cos(rot), s = Math.sin(rot);
   let local;
@@ -194,20 +260,21 @@ export function rectPts(cx, cz, hx, hz, rot, chamfer = 0) {
   return local.map(([x, z]) => [cx + x * c + z * s, cz - x * s + z * c]);
 }
 
-/* ---------- city generation ---------- */
-const PALETTES = {
-  heritage: [0xb19d80, 0x9c8b74, 0xc2ad8e, 0xa59074, 0xb9a487],
-  deco: [0xece2c8, 0xeed6c8, 0xdbe5d6, 0xf3ead6, 0xe5d9bb, 0xd9e1e6],
-  mid: [0xddd4c4, 0xcdbda6, 0xbdc8cc, 0xe6d6b4, 0xd2c8d9, 0xd8bba5, 0xc7cfb8, 0xe9e1d2],
-  tower: [0xece9e1, 0xdedad1, 0xe6e0d3, 0xd5d8da, 0xefe8da],
-  glass: [0x39424a, 0x2f383f, 0x48525a],
-  office: [0xbdb9b1, 0xa9aaa6, 0xcac3b6],
-  chawl: [0xc9a96a, 0xa4b38c, 0xbc9372, 0xd5c492, 0xb7b6a4],
-  industrial: [0x938e84, 0xa39b8c, 0x8d9399],
-  warehouse: [0x9ea3a6, 0xa9a196, 0x8e979b],
-  bungalow: [0xf0ede4, 0xeee4cf, 0xe8efe8],
+/* ---------- toy palette ---------- */
+export const PALETTES = {
+  heritage: [0xe7b989, 0xd9a274, 0xefc89a, 0xdcae82],
+  deco: [0xf6e6c8, 0xf9c9b6, 0xc4e7d4, 0xf4dc9e, 0xcadcf4, 0xf3bdc8],
+  mid: [0xf28c62, 0xf5c85c, 0x6fbcab, 0xb79bdc, 0xf3a7a2, 0x8fc4ec, 0xf4e3c3, 0xe7796a, 0x9fd27f, 0xf0a65a],
+  tower: [0xf9e7d2, 0xd9cdf2, 0xc9ebe2, 0xfbd3c0, 0xcfe0f6, 0xf6efe2, 0xf5d68e],
+  glass: [0xeef3f6, 0xcfe7f2, 0xe9e3f5],
+  office: [0xe9e2d6, 0xd9dde3, 0xf0e1cf],
+  chawl: [0xf3c46b, 0x9fd08e, 0xf29e7b, 0xa9c8ee, 0xeeb2c9],
+  industrial: [0xbac5cc, 0xd8c8a6, 0xa9c3b9],
+  warehouse: [0xe86f52, 0x4f9fd6, 0x6cc29e, 0xf1b34a],
+  bungalow: [0xfdf8ee, 0xfbeedb, 0xeff6ee],
 };
 const STYLE_OF = { heritage: STYLE.heritage, deco: STYLE.deco, mid: STYLE.residential, tower: STYLE.residential, glass: STYLE.glass, office: STYLE.office, chawl: STYLE.chawl, industrial: STYLE.industrial, warehouse: STYLE.industrial, bungalow: STYLE.bungalow };
+const CORNER = { deco: 4.5, mid: 1.4, tower: 2.4, glass: 1.6, office: 1.2, heritage: 0.7, chawl: 0.9, industrial: 0.6, warehouse: 0.4, bungalow: 0.5 };
 
 export function districtAt(x, z) {
   let best = DISTRICTS[0], bd = Infinity;
@@ -215,6 +282,75 @@ export function districtAt(x, z) {
   return best;
 }
 
+/* ---------- street-front detail atlas: shop signs, AC grille, awning stripes ---------- */
+export const SHOP_NAMES = ['CUTTING CHAI', 'VADA PAV CORNER', 'IRANI CAFE', 'BOMBAY TAILORS', 'LALOO MOTORS', 'PIT STOP DHABA', 'KEBAB KING', 'MITHAI HOUSE',
+  'CYBER CAFE', 'FAST FIX MOBILES', 'BHEL PURI', 'PAAN PALACE', 'SHARMA STORES', 'DOSA EXPRESS', 'JUICE CENTRE', 'CHEMIST 24x7',
+  'MODERN BAKERY', 'RADIO REPAIR', 'FILMI POSTERS', 'TYRE & TUBE'];
+const SIGN_COLS = [['#d93a2b', '#fff6e0'], ['#1d6fb8', '#ffffff'], ['#f4c542', '#2a2420'], ['#2e9e6e', '#ffffff'], ['#7b4fc9', '#fff2d6'], ['#fafafa', '#d93a2b'], ['#2b2b33', '#ffd166'], ['#f08a3c', '#ffffff']];
+function detailAtlas() {
+  // 1024×1024: column of 20 signs (each 512×48) at left; right half: AC grille + solid white
+  return canvasTexture(1024, 1024, (g) => {
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, 1024, 1024);
+    SHOP_NAMES.forEach((name, i) => {
+      const [bg, fg] = SIGN_COLS[i % SIGN_COLS.length];
+      const y = i * 50;
+      g.fillStyle = bg; g.fillRect(0, y, 512, 48);
+      g.fillStyle = fg; g.font = '900 34px "Titillium Web", Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      let s = 34; while (g.measureText(name).width > 480 && s > 14) { s -= 2; g.font = `900 ${s}px "Titillium Web", Arial, sans-serif`; }
+      g.fillText(name, 256, y + 26);
+      g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(0, y + 44, 512, 4);
+    });
+    // AC unit front at (512..640, 0..96)
+    g.fillStyle = '#f4f4f2'; g.fillRect(512, 0, 128, 96);
+    g.fillStyle = '#c8c9cc'; g.beginPath(); g.arc(560, 48, 34, 0, 7); g.fill();
+    g.fillStyle = '#9fa1a6'; for (let k = 0; k < 6; k++) { g.save(); g.translate(560, 48); g.rotate(k * Math.PI / 3); g.fillRect(-3, -30, 6, 26); g.restore(); }
+    g.fillStyle = '#8a8c90'; for (let k = 0; k < 6; k++) g.fillRect(604, 14 + k * 12, 28, 5);
+  }, { aniso: 8 });
+}
+const ATLAS = { sign: i => [0, 1 - (i * 50 + 48) / 1024, 0.5, 1 - (i * 50) / 1024], ac: [0.5, 1 - 96 / 1024, 0.625, 1], white: [0.9, 0.5, 0.95, 0.55] };
+
+class DetailBuilder {
+  constructor() { this.P = []; this.N = []; this.C = []; this.UV = []; this.I = []; this.n = 0; }
+  /** Oriented box; faces get `uv` rect on the front (+z local) and white elsewhere. */
+  box(cx, cy, cz, w, h, d, rot, col, front = ATLAS.white, tilt = 0) {
+    const c = Math.cos(rot), s = Math.sin(rot);
+    const faces = [
+      [[0, 0, 1], front], [[0, 0, -1], ATLAS.white], [[1, 0, 0], ATLAS.white], [[-1, 0, 0], ATLAS.white], [[0, 1, 0], ATLAS.white], [[0, -1, 0], ATLAS.white],
+    ];
+    const ct = Math.cos(tilt), st = Math.sin(tilt);
+    const X = (lx, ly, lz) => { const y2 = ly * ct - lz * st, z2 = ly * st + lz * ct; return [cx + lx * c + z2 * s, cy + y2, cz - lx * s + z2 * c]; };
+    const NR = (nx, ny, nz) => { const y2 = ny * ct - nz * st, z2 = ny * st + nz * ct; return [nx * c + z2 * s, y2, -nx * s + z2 * c]; };
+    for (const [n, uv] of faces) {
+      const [nx, ny, nz] = n;
+      const t1 = Math.abs(ny) > 0.5 ? [1, 0, 0] : [-nz, 0, nx];
+      const t2 = [ny * t1[2] - nz * t1[1], nz * t1[0] - nx * t1[2], nx * t1[1] - ny * t1[0]];
+      const local = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => [
+        (nx * 0.5 + t1[0] * a * 0.5 + t2[0] * b * 0.5) * w, (ny * 0.5 + t1[1] * a * 0.5 + t2[1] * b * 0.5) * h, (nz * 0.5 + t1[2] * a * 0.5 + t2[2] * b * 0.5) * d]);
+      const pts = local.map(([lx, ly, lz]) => X(lx, ly, lz));
+      const nn = NR(nx, ny, nz);
+      // front face: map the texture upright as seen from outside (+x right, +y up)
+      const uvs = local.map(([lx, ly]) => nz > 0.5
+        ? [uv[0] + (uv[2] - uv[0]) * (lx / w + 0.5), uv[1] + (uv[3] - uv[1]) * (ly / h + 0.5)]
+        : [uv[0], uv[1]]);
+      const base = this.n;
+      pts.forEach((p, k) => { this.P.push(...p); this.N.push(...nn); this.C.push(col.r, col.g, col.b); this.UV.push(...uvs[k]); this.n++; });
+      const A = pts[0], Bp = pts[1], C = pts[2];
+      if (dot(cross(sub(Bp, A), sub(C, A)), nn) >= 0) this.I.push(base, base + 1, base + 2, base, base + 2, base + 3);
+      else this.I.push(base, base + 2, base + 1, base, base + 3, base + 2);
+    }
+  }
+  geometry() {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(this.P, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.N, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(this.C, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(this.UV, 2));
+    g.setIndex(this.I); g.computeBoundingSphere();
+    return g;
+  }
+}
+
+/* ---------- city generation ---------- */
 export function buildBuildings(ctx) {
   const { scene, net, terr, colliders, atmo, quality } = ctx;
   const R = rng(20240611);
@@ -249,11 +385,11 @@ export function buildBuildings(ctx) {
     return true;
   };
   const lots = [];
-  const tryLot = (cx, cz, hx, hz, rot, d, kind) => {
-    const ok = sampleRect(cx, cz, hx, hz, rot, (x, z) => !(landSD(x, z) < 5 || !roadClear(x, z, 1.2) || !freeOf(x, z, 2) || occAt(x, z)));
+  const tryLot = (cx, cz, hx, hz, rot, d, kind, side = 0) => {
+    const ok = sampleRect(cx, cz, hx, hz, rot, (x, z) => !(landSD(x, z) < 5 || !insideSlab(x, z, 14) || !roadClear(x, z, 1.2) || !freeOf(x, z, 2) || occAt(x, z)));
     if (!ok) return false;
     sampleRect(cx, cz, hx + 1.5, hz + 1.5, rot, (x, z) => { const i = Math.floor((x - OX) / occCell), j = Math.floor((z - OZ) / occCell); if (i >= 0 && j >= 0 && i < ONX && j < ONZ) occ[j * ONX + i] = 1; });
-    lots.push({ cx, cz, hx, hz, rot, d, kind });
+    lots.push({ cx, cz, hx, hz, rot, d, kind, side });
     return true;
   };
 
@@ -267,14 +403,14 @@ export function buildBuildings(ctx) {
         const d = districtAt(r.x[i], r.z[i]);
         const marine = r.id.startsWith('marineDrive');
         const bkc = d.id === 'bkc', bung = d.id === 'bandra';
-        const width = marine ? 24 + R() * 8 : bkc ? 36 + R() * 24 : bung ? 14 + R() * 8 : 16 + R() * 18;
-        const depth = marine ? 20 + R() * 6 : bkc ? 30 + R() * 20 : bung ? 12 + R() * 8 : 14 + R() * 14;
-        const setback = marine ? 3 : bkc ? 10 + R() * 8 : bung ? 5 + R() * 4 : 1.2 + R() * 3;
+        const width = marine ? 24 + R() * 8 : bkc ? 36 + R() * 24 : bung ? 14 + R() * 8 : 15 + R() * 15;
+        const depth = marine ? 20 + R() * 6 : bkc ? 30 + R() * 20 : bung ? 12 + R() * 8 : 14 + R() * 12;
+        const setback = marine ? 3 : bkc ? 10 + R() * 8 : bung ? 5 + R() * 4 : 1.2 + R() * 2.5;
         const off = r.T.hw + r.T.sidewalk + setback + depth / 2;
         const cx = r.x[i] + r.tz[i] * off * side, cz = r.z[i] - r.tx[i] * off * side;
         const rot = Math.atan2(r.tx[i], r.tz[i]) + Math.PI / 2;
-        tryLot(cx, cz, width / 2, depth / 2, rot, d, marine ? 'marine' : null);
-        s += width + (marine ? 3 : bkc ? 14 + R() * 10 : 2 + R() * 4);
+        tryLot(cx, cz, width / 2, depth / 2, rot, d, marine ? 'marine' : 'front', side);
+        s += width + (marine ? 3 : bkc ? 14 + R() * 10 : 1.5 + R() * 3);
       }
     }
   }
@@ -295,12 +431,15 @@ export function buildBuildings(ctx) {
 
   /* 3. geometry, chunked for frustum culling */
   const CH = 320;
-  const chunks = new Map();
-  const getChunk = (x, z) => { const k = Math.floor((x - OX) / CH) + ',' + Math.floor((z - OZ) / CH); let b = chunks.get(k); if (!b) chunks.set(k, b = new FacadeBuilder()); return b; };
-  const col = new THREE.Color(), roofCol = new THREE.Color(), trim = new THREE.Color();
-  const tanks = [], boxes = [];
+  const chunks = new Map(), dchunks = new Map();
+  const key = (x, z) => Math.floor((x - OX) / CH) + ',' + Math.floor((z - OZ) / CH);
+  const getChunk = (x, z) => { const k = key(x, z); let b = chunks.get(k); if (!b) chunks.set(k, b = new FacadeBuilder()); return b; };
+  const getD = (x, z) => { const k = key(x, z); let b = dchunks.get(k); if (!b) dchunks.set(k, b = new DetailBuilder()); return b; };
+  const col = new THREE.Color(), roofCol = new THREE.Color();
+  const tanks = [];
   const pick = arr => arr[Math.floor(R() * arr.length)];
-  let towers = 0;
+  const white = new THREE.Color(0xffffff), acCol = new THREE.Color(0xf4f2ee);
+  let towers = 0, details = 0;
   for (const L of lots) {
     const d = L.d;
     let style = L.kind === 'marine' ? 'deco' : pick(d.styles);
@@ -311,56 +450,88 @@ export function buildBuildings(ctx) {
     if (style === 'chawl') floors = Math.min(floors, 3 + Math.round(R() * 2));
     if (style === 'heritage') floors = Math.min(floors, 3 + Math.round(R() * 3));
     if (style === 'warehouse') floors = 1;
-    if (style === 'mid') floors = Math.min(floors, 12);
+    if (style === 'mid') floors = Math.min(floors, 10);
     if ((style === 'tower' || style === 'glass' || style === 'office') && L.hx * L.hz < 90) floors = Math.min(floors, 12);
-    const fh = style === 'warehouse' ? 9 : style === 'industrial' ? 5 : style === 'heritage' ? 4.4 : style === 'glass' || style === 'office' ? 3.8 : 3.2;
-    const H = Math.max(4, floors * fh + (style === 'heritage' ? 1.5 : 0.6));
+    const fh = style === 'warehouse' ? 9 : style === 'industrial' ? 5 : style === 'heritage' ? 4.2 : style === 'glass' || style === 'office' ? 3.8 : 3.4;
+    const H = Math.max(4, floors * fh + 0.8);
     const corners = rectPts(L.cx, L.cz, L.hx, L.hz, L.rot);
     let gy = Infinity; for (const [x, z] of [[L.cx, L.cz], ...corners]) gy = Math.min(gy, terr.heightAt(x, z));
     gy -= 0.6;
     col.set(pick(PALETTES[style] || PALETTES.mid));
     const S = STYLE_OF[style] ?? STYLE.residential;
     const seed = R() * 100;
-    const bw = style === 'glass' ? 1.6 : style === 'office' ? 2.0 : style === 'deco' ? 2.6 : style === 'heritage' ? 3.4 : style === 'industrial' || style === 'warehouse' ? 6 : 3.2;
+    const bw = style === 'glass' ? 2.2 : style === 'office' ? 2.6 : style === 'deco' ? 2.8 : style === 'heritage' ? 3.6 : style === 'industrial' || style === 'warehouse' ? 6 : 3.4;
     const fac = [S, fh, bw, seed];
-    roofCol.setRGB(0.36 + R() * 0.12, 0.35 + R() * 0.1, 0.33 + R() * 0.08);
+    roofCol.copy(col).multiplyScalar(0.82).lerp(new THREE.Color(0xb9b2aa), 0.35);
     const B = getChunk(L.cx, L.cz);
-    const roofFac = [STYLE.roof, 3, 3, seed];
-    const plainFac = [STYLE.plain, 3, 3, seed];
+    const cr = CORNER[style] ?? 1;
+    const bevelCol = col.clone().lerp(white, 0.25);
+    let geomInfo = null;
     if (style === 'bungalow') {
-      B.prism(corners, gy, gy + H, col, fac, null, null, -0.6);
-      B.gable(L.cx, L.cz, L.hx, L.hz, L.rot, gy + H, 2.4 + R(), new THREE.Color(0x8a3a28).offsetHSL(0, 0, (R() - 0.5) * 0.08), [STYLE.tiles, 1, 1, seed], col.clone());
+      geomInfo = B.pillow(L.cx, L.cz, L.hx, L.hz, L.rot, gy, gy + H, { r: 0.5, b: 0.3, col, fac, roofCol: col, vBase: -0.6 });
+      B.gable(L.cx, L.cz, L.hx, L.hz, L.rot, gy + H, 2.4 + R(), new THREE.Color(0xd2603f).offsetHSL(0, 0, (R() - 0.5) * 0.08), [STYLE.tiles, 1, 1, seed], col.clone());
     } else if ((style === 'tower' || style === 'glass' || style === 'office') && floors > 12) {
       towers++;
-      const podH = 3 * fh + 1;
-      const podCol = style === 'glass' ? new THREE.Color(0x8d8f8c) : col.clone();
-      B.prism(corners, gy, gy + podH, podCol, [style === 'glass' ? STYLE.office : S, fh, bw, seed], roofCol, roofFac, -0.6);
+      const podH = 3 * fh + 0.8;
+      const podCol = new THREE.Color(pick(PALETTES.mid));
+      geomInfo = B.pillow(L.cx, L.cz, L.hx, L.hz, L.rot, gy, gy + podH, { r: cr + 0.6, b: 0.8, col: podCol, fac: [style === 'glass' ? STYLE.office : S, fh, bw, seed], roofCol: podCol.clone().multiplyScalar(0.85), vBase: -0.6 });
       const k = 0.62 + R() * 0.2;
-      const tp = rectPts(L.cx, L.cz, L.hx * k, L.hz * k, L.rot, style === 'tower' && R() < 0.3 ? 4 : 0);
-      B.prism(tp, gy + podH, gy + H, col, fac, roofCol, roofFac, podH - 0.6);
-      const cp = rectPts(L.cx, L.cz, L.hx * k * 0.55, L.hz * k * 0.55, L.rot);
-      const crown = style === 'glass' ? new THREE.Color(0x2a3036) : col.clone().multiplyScalar(0.92);
-      B.prism(cp, gy + H, gy + H + 4 + R() * 4, crown, plainFac, roofCol, roofFac);
+      B.pillow(L.cx, L.cz, L.hx * k, L.hz * k, L.rot, gy + podH - 0.2, gy + H, { r: cr + (style === 'tower' ? 2 : 0.8), b: 1.4, col, fac, roofCol, vBase: podH - 0.8, bevelCol });
+      const crownCol = style === 'glass' ? new THREE.Color(0x5fa8d8) : new THREE.Color(pick(PALETTES.mid));
+      B.pillow(L.cx, L.cz, L.hx * k * 0.5, L.hz * k * 0.5, L.rot, gy + H - 0.4, gy + H + 3 + R() * 4, { r: 1.2, b: 1, col: crownCol, fac: [STYLE.plain, 3, 3, seed], roofCol: crownCol });
     } else {
-      const chamfer = style === 'deco' && R() < 0.6 ? 3 + R() * 2 : 0;
-      const pts = rectPts(L.cx, L.cz, L.hx, L.hz, L.rot, chamfer);
-      B.prism(pts, gy, gy + H, col, fac, roofCol, roofFac, -0.6);
-      const cp = rectPts(L.cx, L.cz, L.hx + 0.35, L.hz + 0.35, L.rot, chamfer ? chamfer + 0.35 : 0);
-      trim.copy(col).multiplyScalar(style === 'deco' ? 1.05 : 0.88);
-      B.prism(cp, gy + H, gy + H + 0.7, trim, plainFac, roofCol, roofFac);
+      geomInfo = B.pillow(L.cx, L.cz, L.hx, L.hz, L.rot, gy, gy + H, { r: cr, b: style === 'warehouse' ? 0.3 : 0.9, col, fac, roofCol: style === 'warehouse' ? null : roofCol, vBase: -0.6, bevelCol });
       if (style === 'deco' && R() < 0.7) {
-        const tw = rectPts(L.cx, L.cz, Math.min(3, L.hx * 0.25), L.hz * 0.35, L.rot);
-        B.prism(tw, gy + H + 0.7, gy + H + 4 + R() * 2, trim, plainFac, roofCol, roofFac);
+        const tc = col.clone().lerp(white, 0.4);
+        B.pillow(L.cx, L.cz, Math.min(3, L.hx * 0.25), L.hz * 0.4, L.rot, gy + H - 0.4, gy + H + 3.5 + R() * 2, { r: 1.2, b: 0.8, col: tc, fac: [STYLE.plain, 3, 3, seed], roofCol: tc });
       }
-      if (style === 'warehouse') B.gable(L.cx, L.cz, L.hx, L.hz, L.rot, gy + H + 0.7, 2.2, new THREE.Color(0x7d8487), [STYLE.industrial, 9, 0.4, seed], col.clone());
+      if (style === 'warehouse') B.gable(L.cx, L.cz, L.hx, L.hz, L.rot, gy + H, 2.2, new THREE.Color(pick([0xe9eef2, 0xd5dde3, 0xf0ece4])), [STYLE.industrial, 9, 0.6, seed], col.clone());
       if (style !== 'warehouse' && style !== 'heritage' && floors >= 2) {
         const nT = style === 'chawl' || style === 'mid' ? 1 + Math.floor(R() * 3) : Math.floor(R() * 2);
-        for (let t = 0; t < nT; t++) tanks.push([L.cx + (R() - 0.5) * L.hx, gy + H + 0.7, L.cz + (R() - 0.5) * L.hz, 0.8 + R() * 0.5]);
-        if (R() < 0.6) boxes.push([L.cx + (R() - 0.5) * L.hx * 0.8, gy + H + 0.7, L.cz + (R() - 0.5) * L.hz * 0.8, 2 + R() * 3, 2 + R() * 1.5, 2 + R() * 3, L.rot]);
+        for (let t = 0; t < nT; t++) tanks.push([L.cx + (R() - 0.5) * L.hx, gy + H, L.cz + (R() - 0.5) * L.hz, 0.8 + R() * 0.5]);
       }
     }
     colliders.box(L.cx, L.cz, L.hx, L.hz, L.rot, gy - 1, gy + H + 6, 'building');
+
+    /* 3D street-front details on the road-facing wall, aligned to the shader's window grid */
+    if ((L.kind === 'front' || L.kind === 'marine') && L.side && geomInfo && style !== 'warehouse' && style !== 'glass' && quality.props >= 0.45) {
+      const DB = getD(L.cx, L.cz);
+      const r = geomInfo.r, hx = L.hx, hz = L.hz;
+      const Lx = 2 * hx - 2 * r, Lz = 2 * hz - 2 * r, arc = Math.PI * r / 2;
+      const front = -L.side;                       // local z of the street facade (±1)
+      const U0 = front < 0 ? 0 : Lx + Lz + 2 * arc;
+      const c = Math.cos(L.rot), s = Math.sin(L.rot);
+      const W = (x, y, z) => [L.cx + x * c + z * s, y, L.cz - x * s + z * c];
+      const faceRot = L.rot + (front < 0 ? Math.PI : 0);   // local +z of the detail box points away from the wall
+      const nCells = Math.floor((U0 + Lx) / bw) + 1;
+      const shopRow = style !== 'bungalow' && fract(seed * 7.31) > 0.3;
+      for (let k = 0; k < nCells; k++) {
+        const u = (k + 0.5) * bw;
+        if (u < U0 + 0.8 || u > U0 + Lx - 0.8) continue;
+        const lx = front < 0 ? u - hx + r : hx - r - (u - U0);
+        const zf = front * (hz + 0.02);
+        // shop signs above ground-floor openings, chunky tilted awnings over some
+        if (shopRow && bw >= 2.8) {
+          const si = Math.floor(R() * SHOP_NAMES.length);
+          const [x, y, z] = W(lx, gy + 0.6 + fh - 0.75, zf + front * 0.12);
+          DB.box(x, y, z, bw - 0.5, 0.62, 0.18, faceRot, white, ATLAS.sign(si));
+          if (R() < 0.55) {
+            const [ax, ay, az] = W(lx, gy + 0.6 + fh - 1.35, zf + front * 0.62);
+            DB.box(ax, ay, az, bw - 0.6, 0.12, 1.25, faceRot, new THREE.Color(pick([0xd93a2b, 0x2e9e6e, 0x1d6fb8, 0xf0a33c])), ATLAS.white, 0.32);
+          }
+          details++;
+        }
+        // AC units hanging under upper-floor windows
+        for (let f = 1; f < Math.min(floors, 9); f++) {
+          if (R() > 0.22) continue;
+          const [x, y, z] = W(lx + 0.85 * (R() < 0.5 ? -1 : 1), gy + 0.6 + f * fh + 0.35, zf + front * 0.25);
+          DB.box(x, y, z, 0.85, 0.55, 0.45, faceRot, acCol, ATLAS.ac);
+          details++;
+        }
+      }
+    }
   }
+  function fract(v) { return v - Math.floor(v); }
 
   const mat = facadeMaterial(atmo.night);
   const group = new THREE.Group(); group.name = 'buildings';
@@ -369,17 +540,48 @@ export function buildBuildings(ctx) {
     m.castShadow = true; m.receiveShadow = true;
     group.add(m);
   }
+  const atlas = detailAtlas();
+  const dmat = new THREE.MeshStandardMaterial({ vertexColors: true, map: atlas, roughness: 0.6, emissive: 0xffffff, emissiveMap: atlas, emissiveIntensity: 0 });
+  for (const D of dchunks.values()) {
+    if (!D.n) continue;
+    const m = new THREE.Mesh(D.geometry(), dmat);
+    m.castShadow = true; m.receiveShadow = true;
+    group.add(m);
+  }
+  /* soft contact shadow skirt around every footprint (cheap ambient occlusion) */
+  {
+    const P = [], UV = [], I = [];
+    for (const L of lots) {
+      const pts = rectPts(L.cx, L.cz, L.hx + 0.05, L.hz + 0.05, L.rot), out = rectPts(L.cx, L.cz, L.hx + 3.2, L.hz + 3.2, L.rot);
+      const y = terr.heightAt(L.cx, L.cz) + 0.06;
+      for (let k = 0; k < 4; k++) {
+        const a = pts[k], b = pts[(k + 1) % 4], c = out[(k + 1) % 4], e = out[k];
+        const base = P.length / 3;
+        for (const [q, v] of [[a, 0], [b, 0], [c, 1], [e, 1]]) { P.push(q[0], Math.max(y, terr.heightAt(q[0], q[1]) + 0.06), q[1]); UV.push(0.5, v); }
+        I.push(base, base + 2, base + 1, base, base + 3, base + 2);
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(UV, 2));
+    g.setIndex(I); g.computeBoundingSphere();
+    const tex = canvasTexture(4, 64, (g2) => { const grd = g2.createLinearGradient(0, 0, 0, 64); grd.addColorStop(0, 'rgba(40,30,60,0.42)'); grd.addColorStop(1, 'rgba(40,30,60,0)'); g2.fillStyle = grd; g2.fillRect(0, 0, 4, 64); }, { srgb: false });
+    tex.flipY = false;
+    const skirt = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -6 }));
+    skirt.renderOrder = 1;
+    group.add(skirt);
+  }
   const d = new THREE.Object3D();
-  const tankGeo = new THREE.CylinderGeometry(1, 1, 1.6, 10); tankGeo.translate(0, 0.8, 0);
-  const tankMesh = new THREE.InstancedMesh(tankGeo, new THREE.MeshStandardMaterial({ color: 0x1b1c1e, roughness: 0.6 }), Math.max(1, tanks.length));
-  tanks.forEach(([x, y, z, r], i) => { d.position.set(x, y, z); d.scale.set(r, r, r); d.rotation.set(0, 0, 0); d.updateMatrix(); tankMesh.setMatrixAt(i, d.matrix); });
+  const tankGeo = new THREE.CylinderGeometry(1, 1, 1.6, 12); tankGeo.translate(0, 0.8, 0);
+  const tankMesh = new THREE.InstancedMesh(tankGeo, new THREE.MeshStandardMaterial({ color: 0x3b6fd1, roughness: 0.5 }), Math.max(1, tanks.length));
+  const tc = new THREE.Color();
+  tanks.forEach(([x, y, z, r], i) => { d.position.set(x, y, z); d.scale.set(r, r, r); d.rotation.set(0, 0, 0); d.updateMatrix(); tankMesh.setMatrixAt(i, d.matrix); tankMesh.setColorAt(i, tc.set(i % 5 === 0 ? 0xf0f0ea : i % 3 ? 0x2b2d33 : 0x3b6fd1)); });
   tankMesh.count = tanks.length;
-  const boxGeo = new THREE.BoxGeometry(1, 1, 1); boxGeo.translate(0, 0.5, 0);
-  const boxMesh = new THREE.InstancedMesh(boxGeo, new THREE.MeshStandardMaterial({ color: 0x9a978f, roughness: 0.9 }), Math.max(1, boxes.length));
-  boxes.forEach(([x, y, z, w, h, dd, rot], i) => { d.position.set(x, y, z); d.scale.set(w, h, dd); d.rotation.set(0, rot, 0); d.updateMatrix(); boxMesh.setMatrixAt(i, d.matrix); });
-  boxMesh.count = boxes.length;
-  tankMesh.castShadow = boxMesh.castShadow = true;
-  group.add(tankMesh, boxMesh);
+  tankMesh.castShadow = true;
+  group.add(tankMesh);
   scene.add(group);
-  return { group, material: mat, count: lots.length, towers };
+  return {
+    group, material: mat, count: lots.length, towers, details, occAt, lots,
+    setNight(v) { dmat.emissiveIntensity = v * 0.55; },
+  };
 }

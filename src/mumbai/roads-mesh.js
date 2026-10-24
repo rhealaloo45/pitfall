@@ -53,7 +53,7 @@ function trimRange(r, pad = 0) {
 }
 
 function asphaltMaterial() {
-  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, metalness: 0 });
+  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, metalness: 0, side: THREE.DoubleSide });
   m.onBeforeCompile = sh => {
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nattribute vec2 ruv; attribute vec4 rinfo; attribute vec4 rext; varying vec2 vRuv; varying vec4 vRinfo; varying vec4 vRext; varying vec3 vWPos;')
@@ -64,12 +64,12 @@ function asphaltMaterial() {
         float lat = vRuv.x, s = vRuv.y; float hw = vRinfo.x, lanes = max(vRinfo.y, 1.0), med = vRinfo.z, kind = vRinfo.w;
         vec2 wp = vWPos.xz;
         float n1 = vnoise(wp*0.35), n2 = vnoise(wp*1.1), n3 = vnoise(wp*0.045);
-        vec3 base = mix(vec3(0.026,0.026,0.028), vec3(0.046,0.045,0.044), n1*0.55 + n3*0.45);
-        base *= 0.95 + n2*0.07;
+        vec3 base = mix(vec3(0.075,0.066,0.092), vec3(0.092,0.082,0.11), n1*0.5 + n3*0.5);
+        base *= 0.97 + n2*0.04;
         float patchM = smoothstep(0.6, 0.64, vnoise(wp*0.06 + 17.0));
-        base = mix(base, base*0.72 + vec3(0.01), patchM*0.85);
+        base = mix(base, base*0.9, patchM*0.5);
         float crack = smoothstep(0.035, 0.0, abs(vnoise(wp*0.9 + 3.1) - 0.5)) * smoothstep(0.55, 0.75, vnoise(wp*0.11 + 9.0));
-        base *= 1.0 - crack*0.45;
+        base *= 1.0 - crack*0.0;
         float al = abs(lat);
         gMark = 0.0;
         if (kind < 1.5) {
@@ -77,22 +77,22 @@ function asphaltMaterial() {
           float o = al - med*0.5;
           float f = fract(o / lw);
           float wheel = exp(-pow((f-0.27)*lw/0.5, 2.0)) + exp(-pow((f-0.73)*lw/0.5, 2.0));
-          base *= 1.0 - 0.07*wheel;
+          base *= 1.0 - 0.03*wheel;
           gMark += step(hw-0.5, al) * step(al, hw-0.3);
           if (med > 0.01) {
             gMark += step(med*0.5+0.15, al) * step(al, med*0.5+0.3);
             for (int k = 1; k < 4; k++) { if (float(k) >= lanes) break;
               float c = med*0.5 + float(k)*lw;
-              gMark += step(fract(s/9.0), 0.4) * step(abs(al-c), 0.075); }
+              gMark += step(fract(s/8.0), 0.5) * step(abs(al-c), 0.11); }
           } else {
-            gMark += step(fract(s/8.0), 0.5) * step(al, 0.075);
+            gMark += step(fract(s/7.0), 0.55) * step(al, 0.11);
           }
           float dz = min(s - vRext.x, vRext.y - s);
           if (vRext.z > 0.5 && dz > 1.5 && dz < 5.5) gMark = max(gMark, step(fract((lat+hw)/1.1), 0.55) * step(al, hw-0.7));
-          gMark = clamp(gMark, 0.0, 1.0) * smoothstep(0.2, 0.55, vnoise(wp*1.3 + 5.0) + 0.35);
+          gMark = clamp(gMark, 0.0, 1.0);
           float fw = fwidth(lat); gMark *= 1.0 - smoothstep(0.08, 0.3, fw);
         }
-        diffuseColor.rgb = mix(base, vec3(0.78, 0.78, 0.74), gMark);
+        diffuseColor.rgb = mix(base, vec3(0.92, 0.92, 0.9), gMark);
       `)
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = mix(0.86, 0.55, gMark);');
   };
@@ -100,7 +100,7 @@ function asphaltMaterial() {
 }
 
 function pavementMaterial() {
-  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 });
+  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, side: THREE.DoubleSide, shadowSide: THREE.FrontSide });
   m.onBeforeCompile = sh => {
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nattribute vec2 ruv; attribute vec4 pinfo; varying vec2 vRuv; varying vec4 vPinfo; varying vec3 vWPos;')
@@ -111,26 +111,25 @@ function pavementMaterial() {
         float k = vPinfo.x; vec2 wp = vWPos.xz;
         vec3 col;
         if (k < 0.5) {            // paver tiles
-          vec2 t = vec2(vRuv.x, vRuv.y) / vec2(0.6, 0.6);
+          vec2 t = vec2(vRuv.x, vRuv.y) / vec2(1.2, 1.2);
           vec2 cell = floor(t); vec2 f = fract(t);
-          float grout = step(0.06, f.x) * step(0.06, f.y);
-          float tone = h21(cell) * 0.12;
-          col = mix(vec3(0.42,0.40,0.37), vec3(0.62 + tone, 0.58 + tone, 0.52 + tone*0.8) * (0.92 + vnoise(wp*0.5)*0.12), grout);
-          col *= 0.9 + vPinfo.y * 0.25;  // tint variation per district
+          float grout = step(0.04, f.x) * step(0.04, f.y);
+          float tone = h21(cell) * 0.05;
+          vec3 pv = mix(vec3(0.94, 0.6, 0.22), vec3(0.95, 0.7, 0.34), vPinfo.y);
+          col = mix(pv * 0.84, pv * (0.97 + tone), grout);
         } else if (k < 1.5) {     // painted kerb: black & yellow
           float band = step(0.5, fract(vRuv.y / 1.2));
-          col = mix(vec3(0.07), vec3(0.85, 0.66, 0.08), band) * (0.85 + vnoise(wp*3.0)*0.2);
+          col = mix(vec3(0.05, 0.05, 0.07), vec3(0.96, 0.7, 0.08), band);
         } else if (k < 2.5) {     // plain kerb stone
-          col = vec3(0.55, 0.54, 0.51) * (0.88 + vnoise(wp*2.0)*0.2);
+          col = vec3(0.9, 0.88, 0.84);
         } else if (k < 3.5) {     // concrete
-          col = vec3(0.62, 0.61, 0.58) * (0.82 + vnoise(wp*0.7)*0.18 + vnoise(wp*5.0)*0.06);
-          col *= 1.0 - 0.18 * smoothstep(0.62, 0.9, vnoise(vec2(wp.x + wp.y, vWPos.y) * 0.4));  // streaks
+          col = vec3(0.86, 0.82, 0.78) * (0.95 + vnoise(wp*0.7)*0.05);
         } else if (k < 4.5) {     // planter soil / median garden
-          col = mix(vec3(0.22,0.17,0.12), vec3(0.24,0.33,0.15), smoothstep(0.35, 0.7, vnoise(wp*1.7)));
+          col = mix(vec3(0.3,0.6,0.16), vec3(0.42,0.7,0.2), smoothstep(0.35, 0.7, vnoise(wp*0.6)));
         } else {                  // basalt sea wall
           vec2 t = vec2(vRuv.y / 1.4, vWPos.y / 0.7); vec2 cell = floor(vec2(t.x + floor(t.y)*0.5, t.y)); vec2 f = fract(vec2(t.x + floor(t.y)*0.5, t.y));
           float joint = step(0.05, f.x) * step(0.08, f.y);
-          col = mix(vec3(0.16,0.15,0.14), vec3(0.36,0.33,0.30) * (0.8 + h21(cell)*0.4), joint);
+          col = mix(vec3(0.55,0.5,0.45), vec3(0.85,0.76,0.62) * (0.9 + h21(cell)*0.15), joint);
         }
         diffuseColor.rgb = col;
       `);

@@ -11,6 +11,7 @@ import { buildWorld } from './world.js';
 import { buildBuildings } from './buildings.js';
 import { buildLandmarks } from './landmarks.js';
 import { buildProps } from './props.js';
+import { buildPlay } from './play.js';
 import { renderBaseMap, Minimap } from './minimap.js';
 import { Navigator, pointAlong } from './navigation.js';
 import { PLACES, GP_ROUTE, SPAWN } from './layout.js';
@@ -80,7 +81,7 @@ async function boot() {
   try {
     world = await buildWorld({
       scene, atmo, quality: Q, progress,
-      extras: [['Raising Marine Drive & the skyline', buildBuildings], ['Carving the landmarks', buildLandmarks], ['Planting palms and street lights', buildProps]],
+      extras: [['Raising Marine Drive & the skyline', Object.assign(buildBuildings, { layerName: 'buildings' })], ['Carving the landmarks', Object.assign(buildLandmarks, { layerName: 'landmarks' })], ['Planting palms and parking taxis', Object.assign(buildProps, { layerName: 'props' })], ['Scattering cones, chai and pigeons', Object.assign(buildPlay, { layerName: 'play' })]],
     });
   } catch (e) {
     console.error(e);
@@ -91,15 +92,16 @@ async function boot() {
   await setupBloom();
   car = buildCar();
   scene.add(car.root, car.contactShadow);
+  nav = new Navigator(world.net);
   sim = new VehicleSim(CAR_SPEC, world);
   applyAssists();
-  sim.reset(new THREE.Vector3(SPAWN.x, 0, SPAWN.z), SPAWN.heading);
+  spawnAtStart();
   stepper = new FixedStepper(sim, 120);
   rig = new CameraRig(camera, (x, z, y) => world.groundAt(x, z, y));
   rig.mode = settings.camera;
+  if (world.layers.buildings) rig.occluder = (x, z) => world.layers.buildings.occAt(x, z);
   input = new Input();
   audio = new CarAudio(); audio.volume = settings.volume; audio.muted = settings.muted;
-  nav = new Navigator(world.net);
   const base = renderBaseMap(world.net);
   minimap = new Minimap($('minimap'), base, world.net);
   bigmap = new Minimap($('bigmapCanvas'), base, world.net); bigmap.big = true;
@@ -119,8 +121,9 @@ async function boot() {
   $('btnGP').disabled = false; $('btnFree').disabled = false;
   $('btnGP').focus();
   wireUI();
+  wirePlay();
   state.mode = 'ready';
-  window.__game = { sim, world, state, rig, camera, input, nav, atmo, startDrive, recover };   // debugging / automated tests
+  window.__game = { sim, world, state, rig, camera, input, nav, atmo, startDrive, recover, renderer, scene, advanceSim, openPanel, closePanel };   // debugging / automated tests
   requestAnimationFrame(loop);
 }
 
@@ -129,7 +132,7 @@ function applyAssists() {
   sim.assists.abs = a.abs; sim.assists.tc = a.tc; sim.assists.stability = a.stability;
   sim.assists.autoGear = settings.gearbox !== 'manual';
 }
-function updateHeadlight() { if (car && car.headlight) car.headlight.intensity = atmo.night.value > 0.3 ? 60 * atmo.night.value : 0; }
+function updateHeadlight() { if (car && car.headlight) car.headlight.intensity = atmo.night.value > 0.3 ? 60 * atmo.night.value : 0; if (world) world.setNight(atmo.night.value); }
 
 /* ---------------- start / intro ---------------- */
 function start(gp) {
@@ -145,21 +148,28 @@ function playIntro() {
   state.mode = 'intro';
   $('introTitle').classList.remove('hidden'); $('skipIntro').style.display = 'inline-flex';
   const sp = sim.pos, f = sim.forward(new THREE.Vector3());
-  const behind = [sp.x - f.x * 7, sp.y + 2.4, sp.z - f.z * 7];
+  const toy = rig.mode === 'toy';
+  const behind = toy ? [sp.x - f.x * 15.5, sp.y + 9.2, sp.z - f.z * 15.5] : [sp.x - f.x * 7, sp.y + 2.4, sp.z - f.z * 7];
   const keys = [
-    { t: 0, pos: [1040, 26, 1120], look: [905, 14, 1048], fov: 45 },
-    { t: 3.2, pos: [965, 9, 1010], look: [905, 16, 1050], fov: 50 },
-    { t: 6.0, pos: [880, 70, 1120], look: [420, 10, 820], fov: 55 },
-    { t: 8.6, pos: [sp.x + 14, sp.y + 6, sp.z + 10], look: [sp.x, sp.y + 0.6, sp.z], fov: 55 },
-    { t: 10.2, pos: behind, look: [sp.x + f.x * 4, sp.y + 0.6, sp.z + f.z * 4], fov: 62 },
+    { t: 0, pos: [2500, 1750, 3000], look: [250, 0, -380], fov: 30 },
+    { t: 3.6, pos: [1500, 460, 1750], look: [860, 0, 1000], fov: 36 },
+    { t: 6.6, pos: [1012, 38, 1118], look: [905, 14, 1048], fov: 44 },
+    { t: 9.0, pos: [sp.x + 16, sp.y + 7, sp.z + 12], look: [sp.x, sp.y + 0.6, sp.z], fov: 48 },
+    { t: 10.6, pos: behind, look: [sp.x + f.x * 4.5, sp.y + 0.3, sp.z + f.z * 4.5], fov: toy ? 38 : 62 },
   ];
-  const titles = [[0, 'Apollo Bunder · Colaba', 'MUMBAI <span>GP</span>'], [3.2, 'Gateway of India', 'GRID <span>FORMING</span>'], [6.0, 'Next: Marine Drive', state.gp ? 'FOLLOW THE <span>ROUTE</span>' : 'FREE <span>ROAM</span>'], [8.6, 'Car 27 · Laloo Racing', 'LIGHTS <span>OUT</span>']];
+  const titles = [[0, 'A tabletop Mumbai', 'MUMBAI <span>GP</span>'], [3.6, 'Apollo Bunder · Colaba', 'GRID <span>FORMING</span>'], [6.6, 'Gateway of India', state.gp ? 'FOLLOW THE <span>ROUTE</span>' : 'FREE <span>ROAM</span>'], [9.0, 'Car 27 · Laloo Racing', 'LIGHTS <span>OUT</span>']];
+  // open the view for the overview shot, then ease the haze back in
+  camera.far = 9000; camera.updateProjectionMatrix();
+  const fog0 = atmo.T.fogD;
   rig.script = new ShotScript(keys, () => endIntro());
+  const upd = rig.script.update.bind(rig.script);
+  rig.script.update = (dt, r) => { const k = Math.min(1, rig.script.t / 7); scene.fog.density = fog0 * (0.15 + 0.85 * k * k); return upd(dt, r); };
   rig.script.titles = titles;
 }
 function endIntro() {
   if (state.mode !== 'intro') return;
   rig.script = null;
+  camera.far = Q.far; camera.updateProjectionMatrix(); scene.fog.density = atmo.T.fogD;
   $('introTitle').classList.add('hidden'); $('skipIntro').style.display = 'none';
   rig.snapTo(sim.pos, sim.quat);
   startDrive();
@@ -215,6 +225,7 @@ function checkPlaces() {
     near = pl;
     if (!state.visited.has(pl.id)) {
       state.visited.add(pl.id); minimap.found.add(pl.id); bigmap.found.add(pl.id);
+      if (world.layers.landmarks) world.layers.landmarks.setVisited(pl.id);
       progressStore.set('mumbai.visited', [...state.visited]);
       audio.chime();
       toast(pl.kind === 'chapter' ? 'Chapter unlocked' : 'Landmark discovered', pl.name);
@@ -272,6 +283,74 @@ function closePanel() {
   input.setEnabled(true);
   stepper.resync();            // continue exactly where we stopped
   audio.resume();
+}
+
+/* ---------------- spawn ---------------- */
+/** Place the car in the left lane (India drives on the left) of the road nearest (x, z). */
+function placeOnRoad(x, z, heading) {
+  const loc = nav.locate(x, z), r = loc.road, i = loc.i;
+  const h1 = Math.atan2(r.tx[i], r.tz[i]);
+  const fwd = Math.abs(Math.atan2(Math.sin(h1 - heading), Math.cos(h1 - heading))) < Math.PI / 2;
+  const lane = (r.T.median / 2 + (r.T.hw - r.T.median / 2) * 0.5) * (fwd ? 1 : -1);
+  const px = r.x[i] + r.tz[i] * lane, pz = r.z[i] - r.tx[i] * lane;
+  const y = world.groundAt(px, pz, r.h[i] + 3);
+  sim.reset(new THREE.Vector3(px, y, pz), fwd ? h1 : h1 + Math.PI);
+}
+function spawnAtStart() { placeOnRoad(SPAWN.x, SPAWN.z, SPAWN.heading); }
+
+/* ---------------- play hooks, secrets, achievements ---------------- */
+let play;
+const ach = new Set(progressStore.get('mumbai.ach', []));
+function achieve(id, title, sub) {
+  if (ach.has(id)) return;
+  ach.add(id); progressStore.set('mumbai.ach', [...ach]);
+  audio.pickup(4); toast(`Secret · ${title}`, sub);
+}
+function wirePlay() {
+  play = world.layers.play;
+  play.restoreCollected(progressStore.get('mumbai.chai', []));
+  $('cntChai').textContent = `${play.collected.size}/${play.chai.length}`;
+  if (play.collected.size >= play.chai.length) car.setLivery('gold');
+  let lastReply = 0, firstBump = true;
+  play.setHooks({
+    chai(n, total) {
+      audio.pickup(n);
+      progressStore.set('mumbai.chai', [...play.collected]);
+      $('cntChai').textContent = `${n}/${total}`;
+      toast(`Cutting chai ${n}/${total}`, n === total ? 'All of them! Gold livery unlocked.' : n === 1 ? 'Collect all 27 for a surprise' : '');
+      if (n === total) { car.setLivery('gold'); achieve('chai', 'Chai connoisseur', 'Every cutting chai in Mumbai'); }
+    },
+    tock(strength, pitch) { audio.tock(strength, pitch); rig.addShake(0.05 * strength); },
+    knock(p, n) { if (n === 25) achieve('cones', 'Traffic-cone menace', '25 props sent flying'); },
+    pigeons() { audio.flutter(); achieve('pigeons', 'Pigeon whisperer', 'The pigeons of Apollo Bunder are not impressed'); },
+    reply(n) { const now = performance.now(); if (now - lastReply < 1500) return; lastReply = now; setTimeout(() => audio.horn(1.38, 0.22, 0.09), 450); if (n > 1) setTimeout(() => audio.horn(0.82, 0.3, 0.08), 800); if (Math.random() < 0.4) toast('Horn OK Please!'); },
+    bump(tr, vn) { audio.tock(Math.min(1, vn / 12), 0.6); rig.addShake(Math.min(0.4, vn * 0.03)); if (firstBump && vn > 4) { firstBump = false; toast('Bumper cars!', 'No toy taxis were harmed'); } },
+  });
+}
+const sec = { air: 0, airBest: progressStore.get('mumbai.air', 0), donut: 0, lastYaw: null };
+function secrets(dt) {
+  // airtime
+  if (sim.contacts === 0 && sim.pos.y > world.groundAt(sim.pos.x, sim.pos.z, sim.pos.y) + 0.5) sec.air += dt;
+  else if (sec.air > 0) {
+    if (sec.air > 0.55) {
+      const best = sec.air > sec.airBest;
+      if (best) { sec.airBest = sec.air; progressStore.set('mumbai.air', sec.air); }
+      toast(`Air time ${sec.air.toFixed(1)} s`, best ? 'Personal best!' : '');
+      if (sec.air > 1.2) achieve('air', 'Frequent flyer', 'More than 1.2 s in the air');
+    }
+    sec.air = 0;
+  }
+  // through the Gateway arch
+  if (Math.abs(sim.pos.z - 1052) < 3.2 && sim.pos.x > 919 && sim.pos.x < 933 && sim.speed > 3) achieve('gateway', 'Through the Gateway', 'You drove through the arch');
+  // donut on Shivaji Park
+  const yaw = sim.heading;
+  if (sec.lastYaw != null && Math.hypot(sim.pos.x + 60, sim.pos.z + 1120) < 70 && sim.speed > 4 && Math.abs(sim.bodySlip) > 0.35) {
+    let d = yaw - sec.lastYaw; d = Math.atan2(Math.sin(d), Math.cos(d)); sec.donut += Math.abs(d);
+    if (sec.donut > Math.PI * 2) achieve('donut', 'Shivaji Park donut', 'A full 360° slide on the maidan');
+  } else sec.donut = Math.max(0, sec.donut - dt * 2);
+  sec.lastYaw = yaw;
+  // top speed on the Sea Link
+  if (sim.forwardSpeed * 3.6 > 280 && sim.pos.y > 10) achieve('v280', '280 over Mahim Bay', 'Flat out on the Sea Link');
 }
 
 /* ---------------- recovery ---------------- */
@@ -367,6 +446,34 @@ function speedTrap() {
   }
 }
 
+/** One frame of gameplay: physics (fixed-step inside), recovery, play layer, destinations. */
+function driveTick(dt, inp) {
+  stepper.advance(dt, inp);
+  const up = sim.up(new THREE.Vector3());
+  if (up.y < 0.25) state.flipT += dt; else state.flipT = 0;
+  const submerged = sim.wheels.every(w => !w.contact) && world.groundAt(sim.pos.x, sim.pos.z, sim.pos.y) < 0.05 && sim.pos.y < 0.4;
+  if (state.flipT > 1.8 || submerged || sim.pos.y < -3) { state.flipT = 0; toast('Car recovered'); recover(submerged || sim.pos.y < -3); }
+  if (sim.contacts === 4 && sim.wheels.every(w => w.surface.kind === 'road') && up.y > 0.95) {
+    state.safeT = (state.safeT || 0) + dt;
+    if (state.safeT > 1) { state.safeT = 0; state.safe = { x: sim.pos.x, z: sim.pos.z, heading: sim.heading }; }
+  }
+  if (sim.impact > 1500) rig.addShake(Math.min(1, sim.impact / 12000));
+  let rough = 0; for (const w of sim.wheels) if (w.contact) rough = Math.max(rough, w.surface.rough || 0);
+  if (rough > 0.02 && sim.speed > 8) rig.addShake(0.02);
+  audio.update(sim, rough);
+  play.update(clockT, dt, camera, sim);
+  checkPlaces();
+  secrets(dt);
+  updateRoute(dt);
+  speedTrap();
+}
+/** Test hook: advance gameplay by `seconds` of simulated time, independent of render speed. */
+function advanceSim(seconds, inp = {}) {
+  const base = { throttle: 0, brake: 0, steer: 0, handbrake: false, shiftUp: false, shiftDown: false, ...inp };
+  for (let t = 0; t < seconds - 1e-9; t += 1 / 30) { if (state.mode !== 'drive') break; clockT += 1 / 30; driveTick(1 / 30, { ...base }); }
+  carPose(); rig.update(1 / 30, pos, quat, sim);
+}
+
 /* ---------------- loop ---------------- */
 let last = performance.now(), bigmapOpen = false, clockT = 0;
 const pos = new THREE.Vector3(), quat = new THREE.Quaternion();
@@ -387,26 +494,7 @@ function loop(now) {
   }
   if (state.mode === 'ready') state.renderedReady = true;
   if (state.mode === 'drive') {
-    const inp = input.update(dt);
-    stepper.advance(dt, inp);
-    // recovery triggers
-    const up = sim.up(new THREE.Vector3());
-    if (up.y < 0.25) state.flipT += dt; else state.flipT = 0;
-    const submerged = sim.wheels.every(w => !w.contact) && world.groundAt(sim.pos.x, sim.pos.z, sim.pos.y) < 0.05 && sim.pos.y < 0.4;
-    if (state.flipT > 1.8 || submerged || sim.pos.y < -3) { state.flipT = 0; toast('Car recovered'); recover(submerged || sim.pos.y < -3); }
-    // remember a safe spot
-    if (sim.contacts === 4 && sim.wheels.every(w => w.surface.kind === 'road') && up.y > 0.95) {
-      state.safeT = (state.safeT || 0) + dt;
-      if (state.safeT > 1) { state.safeT = 0; state.safe = { x: sim.pos.x, z: sim.pos.z, heading: sim.heading }; }
-    }
-    if (sim.impact > 1500) rig.addShake(Math.min(1, sim.impact / 12000));
-    // rough surfaces
-    let rough = 0; for (const w of sim.wheels) if (w.contact) rough = Math.max(rough, w.surface.rough || 0);
-    if (rough > 0.02 && sim.speed > 8) rig.addShake(0.02);
-    audio.update(sim, rough);
-    checkPlaces();
-    updateRoute(dt);
-    speedTrap();
+    driveTick(dt, input.update(dt));
     hud(dt);
     if (state.frameMs > 45 && Q.key !== 'low') { state.slowFrames += dt; if (state.slowFrames > 8) { state.slowFrames = -1e9; toast('Running slowly', 'Try a lower graphics quality in Pause → Settings'); } }
   } else if (state.mode === 'intro') {
@@ -452,13 +540,13 @@ function showPane(name) {
   document.querySelectorAll('#pause nav button').forEach(b => b.classList.toggle('on', b.dataset.pane === name));
   const pane = $('pausePane'); pane.innerHTML = '';
   if (name === 'resume') { resume(); return; }
-  if (name === 'restart') { resume(); sim.reset(new THREE.Vector3(SPAWN.x, 0, SPAWN.z), SPAWN.heading); stepper.resync(); rig.snapTo(sim.pos, sim.quat); if (state.gp) { state.routeIdx = 1; state.lapStart = performance.now(); state.lapRunning = true; pickTarget(); } return; }
+  if (name === 'restart') { resume(); spawnAtStart(); stepper.resync(); rig.snapTo(sim.pos, sim.quat); if (state.gp) { state.routeIdx = 1; state.lapStart = performance.now(); state.lapRunning = true; pickTarget(); } return; }
   if (name === 'settings') {
     pane.innerHTML = '<h3>Settings</h3>';
     pane.appendChild(opt('Time of day', 'time', Object.entries(TIMES).map(([k, v]) => [k, v.label]), v => { atmo.set(v); updateHeadlight(); }));
     pane.appendChild(opt('Driving assists', 'assists', Object.entries(ASSISTS).map(([k, v]) => [k, v.label]), applyAssists, 'ABS, traction control and stability help'));
     pane.appendChild(opt('Gearbox', 'gearbox', [['auto', 'Automatic'], ['manual', 'Manual (E / Q)']], applyAssists));
-    pane.appendChild(opt('Camera', 'camera', [['chase', 'Chase'], ['far', 'Far'], ['tcam', 'T-cam'], ['cockpit', 'Cockpit']], v => { rig.mode = v; }));
+    pane.appendChild(opt('Camera', 'camera', [['toy', 'Toy'], ['chase', 'Chase'], ['far', 'Far'], ['tcam', 'T-cam'], ['cockpit', 'Cockpit']], v => { rig.mode = v; }));
     pane.appendChild(opt('Route guidance (free roam)', 'guide', [[true, 'On'], [false, 'Off']], () => { state.routeTimer = 0; }));
     pane.appendChild(opt('Units', 'units', [['kmh', 'km/h'], ['mph', 'mph']]));
     pane.appendChild(opt('Graphics quality', 'quality', [['auto', 'Auto'], ...Object.entries(QUALITY).map(([k, v]) => [k, v.label])], () => toast('Graphics quality saved', 'Applies when the page reloads'), `Current: ${Q.label}`));
@@ -506,6 +594,7 @@ function wireUI() {
   input.on('map', toggleMap);
   input.on('guide', () => { settings.guide = !settings.guide; saveSettings(settings); state.routeTimer = 0; toast(`Route guidance ${settings.guide ? 'on' : 'off'}`); });
   input.on('interact', () => { if (state.prompt && state.mode === 'drive') openPanel(state.prompt.id); });
+  input.on('horn', () => { if (state.mode !== 'drive') return; audio.horn(); play.honk(sim); });
   addEventListener('keydown', e => { if (state.mode === 'intro' && (e.code === 'Space' || e.code === 'Enter')) { e.preventDefault(); rig.script && rig.script.skip(); } });
   addEventListener('resize', () => {
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();

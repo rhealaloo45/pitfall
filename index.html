@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rhea Laloo — AI Engineer · Portfolio Grand Prix</title>
+<meta name="description" content="Rhea Laloo, AI Engineer. Drive the original F1 Track Day circuit or a toy-diorama Mumbai GP to explore her portfolio — or read it in one page.">
+<meta name="theme-color" content="#f3dccd">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #23202b; --dim: #6c6577; --red: #d81f26; --card: #ffffffcc; --line: rgba(35,32,43,.1); --font: 'Titillium Web', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; }
+  body { font-family: var(--font); color: var(--ink); background: linear-gradient(180deg, #9cc2f2 0%, #cfe0f5 45%, #f7dccb 100%) fixed; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 44px 24px 60px; }
+  header .k { font-size: 12.5px; letter-spacing: .38em; text-transform: uppercase; color: #4b4560; }
+  header h1 { font-size: clamp(40px, 7vw, 84px); font-weight: 900; line-height: .95; margin-top: 10px; letter-spacing: -.01em; }
+  header h1 span { color: var(--red); }
+  header p { max-width: 680px; margin-top: 14px; font-size: 17px; line-height: 1.55; color: #3d3848; }
+  .quick { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; background: #ffffffb0; border: 1px solid var(--line); text-decoration: none; font-weight: 700; font-size: 13.5px; letter-spacing: .04em; backdrop-filter: blur(6px); transition: transform .15s, background .15s; }
+  .pill:hover { background: #fff; transform: translateY(-1px); }
+  .pill.dark { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .pill.dark:hover { background: #3a3445; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 40px; }
+  .env { background: var(--card); border-radius: 22px; overflow: hidden; border: 1px solid #ffffff; box-shadow: 0 30px 60px -30px rgba(60,40,90,.45), 0 2px 0 rgba(255,255,255,.6) inset; display: flex; flex-direction: column; transition: transform .2s; }
+  .env:hover { transform: translateY(-4px); }
+  .env .shot { position: relative; aspect-ratio: 16/9; background: #ddd center/cover no-repeat; }
+  .env .shot .tag { position: absolute; left: 14px; top: 14px; background: #ffffffe0; padding: 5px 11px; border-radius: 999px; font-size: 11px; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; }
+  .env .shot .tag.new { background: var(--red); color: #fff; }
+  .env .bd { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .env h2 { font-size: 28px; font-weight: 900; line-height: 1.05; }
+  .env p { color: #4a4456; line-height: 1.55; font-size: 15px; }
+  .env ul { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+  .env li { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #f1ecf6; color: #4b4560; }
+  .env .go { margin-top: auto; display: flex; gap: 10px; align-items: center; padding-top: 8px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 24px; border-radius: 12px; background: var(--red); color: #fff; text-decoration: none; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; font-size: 14px; box-shadow: 0 6px 0 #9e141a; transition: transform .1s, box-shadow .1s; }
+  .btn:hover { transform: translateY(2px); box-shadow: 0 4px 0 #9e141a; }
+  .btn:active { transform: translateY(6px); box-shadow: 0 0 0 #9e141a; }
+  .note { font-size: 12.5px; color: var(--dim); }
+  .strip { margin-top: 34px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 26px; }
+  .card { background: var(--card); border-radius: 18px; padding: 20px 22px; border: 1px solid #fff; }
+  .card h3 { font-size: 12px; letter-spacing: .24em; text-transform: uppercase; color: var(--dim); margin-bottom: 10px; }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .fact b { display: block; font-size: 24px; font-weight: 900; }
+  .fact span { font-size: 12.5px; color: var(--dim); }
+  .keys { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 14px; align-items: center; }
+  kbd { display: inline-block; min-width: 24px; padding: 2px 7px; border-radius: 6px; background: #fff; border: 1px solid #d9d2e3; border-bottom-width: 3px; font: 700 12px var(--font); text-align: center; margin-right: 2px; }
+  footer { margin-top: 36px; font-size: 12.5px; color: #4b4560; line-height: 1.7; }
+  footer a { color: #4b4560; }
+  @media (max-width: 860px) { .grid, .strip { grid-template-columns: 1fr; } .facts { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="k">Portfolio Grand Prix · Car 27</div>
+    <h1>Rhea Laloo<br><span>AI Engineer</span></h1>
+    <p>Pick a world and drive to explore my work — or skip straight to the one-page portfolio. Everything here was built in the browser: the cars, the cities, the sounds.</p>
+    <div class="quick">
+      <a class="pill dark" href="portfolio.html">Read the portfolio (no driving) →</a>
+      <a class="pill" href="assets/rhea-laloo-resume.pdf" download="Rhea-Laloo-Resume.pdf">Résumé PDF</a>
+      <a class="pill" href="https://github.com/rhealaloo45" target="_blank" rel="noopener">GitHub</a>
+      <a class="pill" href="https://linkedin.com/in/rhealaloo" target="_blank" rel="noopener">LinkedIn</a>
+      <a class="pill" href="mailto:rhea.laloo@tcs.com">Email</a>
+    </div>
+  </header>
+
+  <section class="grid" aria-label="Choose an environment">
+    <article class="env">
+      <div class="shot" style="background-image:url(assets/previews/mumbai.webp)"><span class="tag new">New</span></div>
+      <div class="bd">
+        <h2>Mumbai GP</h2>
+        <p>A toy-diorama Mumbai. Race an open-wheel car along Marine Drive and over the Sea Link, find my school on Peddar Road and my college in Sion, and finish at the Gateway of India.</p>
+        <ul><li>Free roam or timed route</li><li>27 cutting chai to collect</li><li>Jumps &amp; secrets</li><li>Day / dusk / night</li></ul>
+        <div class="go"><a class="btn" href="mumbai.html">Drive Mumbai GP</a><span class="note">Best on a laptop · ~4 s to build the city</span></div>
+      </div>
+    </article>
+    <article class="env">
+      <div class="shot" style="background-image:url(assets/previews/circuit.webp)"><span class="tag">Original</span></div>
+      <div class="bd">
+        <h2>F1 Track Day Circuit</h2>
+        <p>The original Silverstone-style circuit. Drive a go-kart past marshal posts to open each portfolio sector, and find the pit lane for the full engineering briefing.</p>
+        <ul><li>Lap timer</li><li>Pit-stop easter egg</li><li>Knock-over cones</li></ul>
+        <div class="go"><a class="btn" href="circuit.html">Drive the circuit</a><span class="note">Lightweight · works everywhere</span></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="strip">
+    <div class="card">
+      <h3>At a glance</h3>
+      <div class="facts">
+        <div class="fact"><b>TCS</b><span>AI Engineer · Dec 2025 — now</span></div>
+        <div class="fact"><b>9.95</b><span>CGPA · 1st rank, KJSIT</span></div>
+        <div class="fact"><b>chub-guard</b><span>AI linting tool on PyPI, npm &amp; VS Code</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Controls</h3>
+      <div class="keys">
+        <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div><div>Drive (arrows work too)</div>
+        <div><kbd>Space</kbd></div><div>Handbrake · slide it!</div>
+        <div><kbd>H</kbd> <kbd>C</kbd></div><div>Horn · change camera</div>
+        <div><kbd>Esc</kbd></div><div>Pause, settings &amp; map</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    All 3D models, textures and sounds in both worlds are generated in code for this site; the city is a fictionalised, compressed Mumbai.
+    Built with <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> (MIT). See <a href="ASSETS.md">ASSETS.md</a> for the full asset &amp; licence manifest.
+  </footer>
+</div>
+</body>
+</html>

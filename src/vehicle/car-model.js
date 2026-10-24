@@ -314,6 +314,13 @@ export function buildCar() {
   let screenTimer = 0;
   return {
     root, body, contactShadow, helmet: driver, rainLight: M.rain, materials: M,
+    setLivery(name) {
+      const gold = name === 'gold';
+      M.paint.map = gold ? canvasTexture(512, 1024, (g, W, H) => { g.fillStyle = '#c99a2e'; g.fillRect(0, 0, W, H); g.fillStyle = '#141416'; g.fillRect(0, 0, W * 0.12, H); g.fillRect(W * 0.88, 0, W * 0.12, H); g.fillStyle = '#fff3c4'; g.fillRect(0, 0, W, H * 0.035); }) : liv;
+      M.paint.metalness = gold ? 0.55 : 0.05; M.paint.roughness = gold ? 0.28 : 0.38;
+      M.red.color.set(gold ? 0xc99a2e : 0x8f0a12); M.red.metalness = gold ? 0.55 : 0.05;
+      M.paint.needsUpdate = true;
+    },
     /** Pose the car from the interpolated sim state. */
     update(pos, quat, sim, dt, ground) {
       root.position.copy(pos);

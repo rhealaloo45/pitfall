@@ -15,6 +15,7 @@ export const CONTROLS = [
   ['M', 'Toggle map size'],
   ['G', 'Toggle route guidance'],
   ['F', 'Interact / open nearby destination'],
+  ['H', 'Horn (Horn OK Please!)'],
   ['Esc', 'Pause · close panels'],
 ];
 
@@ -55,7 +56,7 @@ export class Input {
         case 'KeyM': this.fire('map'); break;
         case 'KeyG': this.fire('guide'); break;
         case 'KeyF': case 'Enter': this.fire('interact'); break;
-        case 'KeyH': this.fire('help'); break;
+        case 'KeyH': this.fire('horn'); break;
       }
     } else this.keys.delete(e.code);
   }

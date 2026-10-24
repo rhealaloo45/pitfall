@@ -13,7 +13,7 @@ export const ASSISTS = {
   pro:      { label: 'Pro (off)', abs: false, tc: false, stability: 0 },
 };
 
-const DEFAULTS = { quality: 'auto', time: 'morning', assists: 'standard', gearbox: 'auto', volume: 0.7, muted: false, camera: 'chase', units: 'kmh', guide: true };
+const DEFAULTS = { quality: 'auto', time: 'morning', assists: 'standard', gearbox: 'auto', volume: 0.7, muted: false, camera: 'toy', units: 'kmh', guide: true };
 
 export function detectQuality() {
   const mobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && innerWidth < 1100);
