@@ -128,7 +128,7 @@ export function buildLandmarks(ctx) {
   {
     const cx = 846, cz = 1102, gy = terr.heightAt(cx, cz) - 0.5;
     const cream = new THREE.Color(0xdcc9a4), roof = new THREE.Color(0x6b6156);
-    const fac = [STYLE.heritage, 4.3, 3.4, 11.3];
+    const fac = [STYLE.heritage, 4.3, 3.4, 113];
     const H = 6 * 4.3;
     fb.prism(rectPts(cx, cz, 9, 34, 0), gy, gy + H, cream, fac, roof, [STYLE.roof, 3, 3, 1]);
     fb.prism(rectPts(cx - 18, cz + 26, 18, 8, 0), gy, gy + H - 4.3, cream, fac, roof, [STYLE.roof, 3, 3, 2]);
@@ -153,7 +153,7 @@ export function buildLandmarks(ctx) {
     const p = PLACES.find(q => q.id === 'pitwall');
     const gy = terr.heightAt(p.x, p.z);
     // pavilion
-    fb.prism(rectPts(p.x, p.z - 10, 14, 6, 0), gy - 0.4, gy + 7.6, new THREE.Color(0x2a2e35), [STYLE.glass, 3.8, 1.6, 7.7], new THREE.Color(0x33373d), [STYLE.roof, 3, 3, 5]);
+    fb.prism(rectPts(p.x, p.z - 10, 14, 6, 0), gy - 0.4, gy + 7.6, new THREE.Color(0x2a2e35), [STYLE.glass, 3.8, 1.6, 77], new THREE.Color(0x33373d), [STYLE.roof, 3, 3, 5]);
     add(box(30, 0.5, 14), steel, p.x, gy + 7.9, p.z - 9.5);
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(16, 2.4), new THREE.MeshStandardMaterial({ map: signTexture(['PIT WALL', 'CAREER HQ · FINISH'], { bg: '#121418', accent: '#d81f26' }), emissive: 0xffffff, emissiveIntensity: 0.25, emissiveMap: null }));
     sign.material.emissiveMap = sign.material.map;
@@ -174,9 +174,10 @@ export function buildLandmarks(ctx) {
     const lights = [];
     for (let k = 0; k < 5; k++) {
       const off = (k - 2) * 1.6;
-      const lm = new THREE.MeshStandardMaterial({ color: 0x220000, emissive: 0xff1a1a, emissiveIntensity: 0 });
-      const l = add(new THREE.CircleGeometry(0.42, 16), lm, r.x[gi] + nx * off + r.tx[gi] * 0.52, h + 7.2, r.z[gi] + nz * off + r.tz[gi] * 0.52, 0, false);
-      l.rotation.y = Math.atan2(-r.tx[gi], -r.tz[gi]);
+      const lm = new THREE.MeshStandardMaterial({ color: 0x2a0606, emissive: 0xff2a1a, emissiveIntensity: 0, roughness: 0.3 });
+      const housing = add(new THREE.BoxGeometry(0.62, 1.5, 0.5), steel, r.x[gi] + nx * off + r.tx[gi] * 0.6, h + 6.9, r.z[gi] + nz * off + r.tz[gi] * 0.6, Math.atan2(r.tx[gi], r.tz[gi]), false);
+      for (const dy of [0.32, -0.3]) { const l = add(new THREE.SphereGeometry(0.2, 12, 8), lm, r.x[gi] + nx * off + r.tx[gi] * 0.86, h + 6.9 + dy, r.z[gi] + nz * off + r.tz[gi] * 0.86, 0, false); l.scale.z = 0.5; l.rotation.y = Math.atan2(r.tx[gi], r.tz[gi]); }
+      void housing;
       lights.push(lm);
     }
     const timing = new THREE.Mesh(new THREE.PlaneGeometry(5, 1), new THREE.MeshBasicMaterial({ map: signTexture(['MUMBAI GP · START / FINISH'], { bg: '#0d0f12', fg: '#ffd166', h: 160 }) }));
@@ -215,7 +216,7 @@ export function buildLandmarks(ctx) {
     const sg = add(box(12, 1.6, 0.25), [plaster, plaster, plaster, plaster, signMat, signMat], sx, gy + 4.6, sz, F.rot);
     // main block (L-shape): open corridors facing the courtyard, maroon bands
     const cream = new THREE.Color(0xece2cc), roofC = new THREE.Color(0x5c5550);
-    const bfac = [STYLE.chawl, 3.7, 3.0, 4.2];
+    const bfac = [STYLE.chawl, 3.7, 3.0, 42];
     const blockA = rectPts(...F.T(0, -26), 30, 7, F.rot);
     fb.prism(blockA, gy - 0.5, gy + 15.4, cream, bfac, roofC, [STYLE.roof, 3, 3, 6]);
     fb.prism(rectPts(...F.T(0, -26), 30.4, 7.4, F.rot), gy + 15.4, gy + 16.2, new THREE.Color(0x7a2a28), [STYLE.plain, 3, 3, 0], roofC, [STYLE.roof, 3, 3, 6]);
@@ -243,7 +244,7 @@ export function buildLandmarks(ctx) {
     const F = frame(net, cx, cz);
     const gy = plazaH('kcCourt') + 0.05;
     const pts = rectPts(...F.T(0, -12), 20, 9, F.rot);
-    fb.prism(pts, gy - 0.5, gy + 26, new THREE.Color(0xe3dccb), [STYLE.office, 3.6, 2.2, 21.7], new THREE.Color(0x5d5852), [STYLE.roof, 3, 3, 8]);
+    fb.prism(pts, gy - 0.5, gy + 26, new THREE.Color(0xe3dccb), [STYLE.office, 3.6, 2.2, 217], new THREE.Color(0x5d5852), [STYLE.roof, 3, 3, 8]);
     fb.prism(rectPts(...F.T(0, -12), 20.4, 9.4, F.rot), gy + 26, gy + 27, new THREE.Color(0x24486e), [STYLE.plain, 3, 3, 0], new THREE.Color(0x5d5852), [STYLE.roof, 3, 3, 8]);
     colliders.box(...F.T(0, -12), 20, 9, F.rot, gy - 1, gy + 28);
     const [cx2, cz2] = F.T(0, -1.8);
@@ -260,12 +261,12 @@ export function buildLandmarks(ctx) {
     const grey = new THREE.Color(0xdad6cd), terracotta = new THREE.Color(0x9a4a32), roofC = new THREE.Color(0x56524d);
     // main block: G+8, as described on the institute's site
     const main = rectPts(...F.T(0, -30), 32, 10, F.rot);
-    fb.prism(main, gy - 0.5, gy + 34, grey, [STYLE.office, 3.7, 2.4, 31.1], roofC, [STYLE.roof, 3, 3, 9]);
+    fb.prism(main, gy - 0.5, gy + 34, grey, [STYLE.office, 3.7, 2.4, 311], roofC, [STYLE.roof, 3, 3, 9]);
     for (let k = 1; k <= 3; k++) fb.prism(rectPts(...F.T(0, -30), 32.3, 10.3, F.rot), gy + k * 11 - 0.6, gy + k * 11, terracotta, [STYLE.plain, 3, 3, 0], null, null);
     fb.prism(rectPts(...F.T(0, -30), 32.4, 10.4, F.rot), gy + 34, gy + 35.2, terracotta, [STYLE.plain, 3, 3, 0], roofC, [STYLE.roof, 3, 3, 9]);
     colliders.box(...F.T(0, -30), 32, 10, F.rot, gy - 1, gy + 36);
     // second (newer) block to the side
-    fb.prism(rectPts(...F.T(42, -14), 10, 16, F.rot), gy - 0.5, gy + 19, new THREE.Color(0x3a444b), [STYLE.glass, 3.8, 1.6, 41.3], roofC, [STYLE.roof, 3, 3, 10]);
+    fb.prism(rectPts(...F.T(42, -14), 10, 16, F.rot), gy - 0.5, gy + 19, new THREE.Color(0x3a444b), [STYLE.glass, 3.8, 1.6, 413], roofC, [STYLE.roof, 3, 3, 10]);
     fb.prism(rectPts(...F.T(42, -14), 10.4, 16.4, F.rot), gy + 19, gy + 20, terracotta, [STYLE.plain, 3, 3, 0], roofC, [STYLE.roof, 3, 3, 10]);
     colliders.box(...F.T(42, -14), 10, 16, F.rot, gy - 1, gy + 21);
     // entrance portico + name on the facade
@@ -367,7 +368,7 @@ export function buildLandmarks(ctx) {
     add(new THREE.CylinderGeometry(0.6, 1.4, 4, 16), whiteStone, p.x, p.h + 2.6, p.z);
     colliders.post(p.x, p.z, 9.2, p.h - 1, p.h + 2);
     const tx = p.x + 30, tz = p.z - 46, gy = terr.heightAt(tx, tz) - 0.5;
-    fb.prism(rectPts(tx, tz, 16, 16, 0.3, 6), gy, gy + 150, new THREE.Color(0x2f3a42), [STYLE.glass, 3.9, 1.6, 77.7], new THREE.Color(0x24292e), [STYLE.roof, 3, 3, 3]);
+    fb.prism(rectPts(tx, tz, 16, 16, 0.3, 6), gy, gy + 150, new THREE.Color(0x2f3a42), [STYLE.glass, 3.9, 1.6, 777], new THREE.Color(0x24292e), [STYLE.roof, 3, 3, 3]);
     fb.prism(rectPts(tx, tz, 9, 9, 0.3), gy + 150, gy + 162, new THREE.Color(0x24292e), [STYLE.plain, 3, 3, 0], new THREE.Color(0x24292e), [STYLE.roof, 3, 3, 3]);
     colliders.box(tx, tz, 16, 16, 0.3, gy - 1, gy + 160);
     const s = new THREE.Mesh(new THREE.PlaneGeometry(12, 3), new THREE.MeshStandardMaterial({ map: signTexture(['BKC'], { bg: '#0f1720', fg: '#ffffff', h: 220, accent: '#5ec7ff' }), emissiveIntensity: 0.4, emissive: 0xffffff }));
@@ -382,7 +383,7 @@ export function buildLandmarks(ctx) {
 
   /* =============== destination beacons =============== */
   const beaconMat = c => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false });
-  const beacons = [];
+  const beacons = [], bursts = [];
   for (const pl of PLACES) {
     let y = terr.heightAt(pl.x, pl.z);
     if (pl.elevated) { const out = {}; net.roadSurface(pl.x, pl.z, 100, out); y = out.h || y; }
@@ -400,8 +401,15 @@ export function buildLandmarks(ctx) {
   return {
     group, beacons, startLights: markers.startLights,
     setVisited(id) { const b = beacons.find(q => q.id === id); if (b) { b.beam.material.opacity = 0.06; b.ring.material.opacity = 0.15; } },
-    update(t) {
+    celebrate(id) {
+      const b = beacons.find(q => q.id === id); if (!b) return;
+      const burst = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.6, 48), new THREE.MeshBasicMaterial({ color: 0xffd166, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+      burst.rotation.x = -Math.PI / 2; burst.position.copy(b.ring.position); burst.position.y += 0.2; burst.userData.t = 0;
+      group.add(burst); bursts.push(burst);
+    },
+    update(t, dt = 0.016) {
       for (const b of beacons) { b.ring.scale.setScalar(1 + Math.sin(t * 2.2) * 0.04); }
+      for (let i = bursts.length - 1; i >= 0; i--) { const m = bursts[i]; m.userData.t += dt; const k = m.userData.t / 1.2; m.scale.setScalar(1 + k * 22); m.material.opacity = 0.9 * (1 - k); if (k >= 1) { group.remove(m); m.geometry.dispose(); bursts.splice(i, 1); } }
     },
   };
 }

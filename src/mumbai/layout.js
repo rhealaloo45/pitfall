@@ -146,7 +146,7 @@ export const PLACES = [
 /* Guided Mumbai GP route: an ordered list of waypoints (place ids or raw points). */
 export const GP_ROUTE = ['start', 'marineDrive', 'kccollege', 'chowpatty', 'villaTheresa', 'seaLink', 'bandraFort', 'bkc', 'kjsit', 'pitwall'];
 
-export const SPAWN = { x: 800, z: 1033, heading: -Math.PI / 2 - 0.05 };   // Apollo Bunder, facing west
+export const SPAWN = { x: 846, z: 1035, heading: -Math.PI / 2 - 0.05 };   // Apollo Bunder grid, facing west under the start gantry
 export const WORLD_BOUNDS = { minX: -760, maxX: 1300, minZ: -2100, maxZ: 1420 };
 export const SEA_LEVEL = 0;
 

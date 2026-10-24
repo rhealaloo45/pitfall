@@ -129,6 +129,22 @@ try {
   check('mumbai: runs', true, `${fps} fps (software WebGL), ${info}`);
   check('mumbai: no errors', errs.length === 0, errs.join('; '));
   await p.close();
+  /* ---------- phone: touch controls & low quality ---------- */
+  const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148' });
+  await phone.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());
+  await phone.route(/cdn\.jsdelivr\.net\/npm\/three@0\.160\.0\/(.*)/, r => { const rel = r.request().url().split('three@0.160.0/')[1].split('?')[0]; r.fulfill({ path: new URL('../node_modules/three/' + rel, import.meta.url).pathname, contentType: 'text/javascript' }); });
+  p = await phone.newPage(); errs = pageErrors(p);
+  await p.goto(url + '/mumbai.html');
+  await p.waitForFunction(() => window.__game && !document.getElementById('btnFree').disabled, null, { timeout: 120000 });
+  await p.tap('#btnFree'); await p.waitForTimeout(400);
+  await p.evaluate(() => window.__game.rig.script && window.__game.rig.script.skip());
+  await p.waitForFunction(() => window.__game.state.mode === 'drive', null, { timeout: 20000 });
+  check('phone: touch controls shown', await p.isVisible('#tThr'));
+  const box = await p.locator('#tThr').boundingBox();
+  await p.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+  check('phone: low graphics quality auto-selected', await p.evaluate(() => window.__game.renderer.getPixelRatio() <= 1));
+  check('phone: no errors', errs.length === 0, errs.join('; '));
+  await phone.close();
 } catch (e) {
   check('suite completed', false, e.message);
 }

@@ -174,6 +174,14 @@ export class CarAudio {
     for (let k = 0; k < 14; k++) { g.gain.linearRampToValueAtTime(0.12 * (1 - k / 14), t + k * 0.05 + 0.02); g.gain.linearRampToValueAtTime(0.01, t + k * 0.05 + 0.045); }
     s.connect(f).connect(g).connect(this.master); s.start(t, Math.random()); s.stop(t + 0.8);
   }
+  /** Start-light beep (go = higher, longer). */
+  beep(go = false) {
+    if (!this.started) return;
+    const ctx = this.ctx, t = ctx.currentTime;
+    const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = go ? 1320 : 660;
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.1, t); g.gain.exponentialRampToValueAtTime(0.001, t + (go ? 0.6 : 0.18));
+    o.connect(g).connect(this.master); o.start(t); o.stop(t + (go ? 0.62 : 0.2));
+  }
   /** UI blip for discoveries. */
   chime() {
     if (!this.started) return;
