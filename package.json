@@ -1,0 +1,17 @@
+{
+  "name": "pitfall-portfolio",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Rhea Laloo's interactive F1 portfolio: the original circuit plus Mumbai GP. Static site, no build step.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "scripts": {
+    "serve": "python3 -m http.server 4173",
+    "test": "node --test tests/vehicle.test.mjs tests/world.test.mjs",
+    "test:e2e": "node tests/e2e.mjs",
+    "previews": "node tests/make-previews.mjs"
+  },
+  "devDependencies": {
+    "three": "0.160.0"
+  }
+}
