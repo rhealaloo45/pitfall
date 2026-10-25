@@ -7,6 +7,8 @@ import { CarAudio } from '../core/audio.js';
 import { CameraRig, ShotScript } from '../core/camera.js';
 import { loadSettings, saveSettings, resolveQuality, QUALITY, ASSISTS, progressStore, webglSupport } from '../core/settings.js';
 import { Atmosphere, TIMES } from './atmosphere.js';
+import { createPipeline } from '../core/post.js';
+import { setMaxAnisotropy, TEX } from '../core/texgen.js';
 import { buildWorld } from './world.js';
 import { buildBuildings } from './buildings.js';
 import { buildLandmarks } from './landmarks.js';
@@ -33,7 +35,8 @@ if (!support.ok) {
 }
 
 /* ---------------- renderer / scene ---------------- */
-const renderer = new THREE.WebGLRenderer({ antialias: Q.antialias, powerPreference: 'high-performance' });
+// With post-processing on, MSAA happens in the composer's multisampled target; otherwise on the canvas.
+const renderer = new THREE.WebGLRenderer({ antialias: Q.antialias || !Q.post || !support.webgl2, powerPreference: 'high-performance', stencil: false });
 renderer.setPixelRatio(Math.min(devicePixelRatio, Q.pixelRatio));
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -42,33 +45,18 @@ renderer.shadowMap.enabled = Q.shadows > 0;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.domElement.className = 'view';
 document.body.prepend(renderer.domElement);
+setMaxAnisotropy(renderer);
+TEX.facadeSize = Q.texSize || 512; TEX.groundSize = Q.texSize || 512;
 renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); toast('Graphics context lost', 'Reload the page to continue'); });
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.15, Q.far);
 const atmo = new Atmosphere(renderer, scene);
-atmo.setShadowQuality(Q.shadows);
+atmo.setShadowQuality(Q, camera);
 atmo.set(settings.time);
 
-/* optional bloom (High) */
-let composer = null;
-async function setupBloom() {
-  if (!Q.bloom) return;
-  try {
-    const { EffectComposer } = await import('three/addons/postprocessing/EffectComposer.js');
-    const { RenderPass } = await import('three/addons/postprocessing/RenderPass.js');
-    const { UnrealBloomPass } = await import('three/addons/postprocessing/UnrealBloomPass.js');
-    const { OutputPass } = await import('three/addons/postprocessing/OutputPass.js');
-    composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(scene, camera));
-    const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.35, 0.5, 0.92);
-    composer.bloom = bloom;
-    composer.addPass(bloom);
-    composer.addPass(new OutputPass());
-    const updateBloom = () => { bloom.strength = 0.18 + atmo.night.value * 0.55; bloom.threshold = atmo.night.value > 0.5 ? 0.75 : 0.95; };
-    atmo.onChange = updateBloom; updateBloom();
-  } catch (e) { composer = null; }
-}
+/* render pipeline (src/core/post.js) */
+let pipeline = null;
 
 /* ---------------- loading ---------------- */
 const progress = (label, f) => { $('loadStage').textContent = label; $('loadBar').style.width = Math.round(f * 100) + '%'; };
@@ -89,7 +77,9 @@ async function boot() {
     $('loadErr').innerHTML = `Could not build the city (${e.message}). <a style="color:#fff" href="portfolio.html">Open the portfolio page →</a>`;
     return;
   }
-  await setupBloom();
+  pipeline = await createPipeline(renderer, scene, camera, Q);
+  atmo.listeners.push(T => pipeline.setNight(atmo.night.value));
+  pipeline.setNight(atmo.night.value);
   car = buildCar();
   scene.add(car.root, car.contactShadow);
   nav = new Navigator(world.net);
@@ -112,7 +102,9 @@ async function boot() {
   car.body.add(head, head.target); car.headlight = head;
   atmo.listeners.push(() => updateHeadlight());
   updateHeadlight();
-  // pre-compile shaders so the first frames don't hitch
+  // fog uniforms + cascaded-shadow defines on every material, then pre-compile so the first frames don't hitch
+  atmo.prepareMaterials(scene);
+  atmo.fitCascades(camera, 78);
   carPose();
   rig.snapTo(sim.pos, sim.quat);
   rig.update(0.016, sim.pos, sim.quat, sim);
@@ -124,7 +116,7 @@ async function boot() {
   wireUI();
   wirePlay();
   state.mode = 'ready';
-  window.__game = { sim, world, state, rig, camera, input, nav, atmo, startDrive, recover, renderer, scene, advanceSim, openPanel, closePanel };   // debugging / automated tests
+  window.__game = { sim, world, state, rig, camera, input, nav, atmo, startDrive, recover, renderer, scene, advanceSim, openPanel, closePanel, pipeline, render };   // debugging / automated tests
   requestAnimationFrame(loop);
 }
 
@@ -150,15 +142,15 @@ function playIntro() {
   $('introTitle').classList.remove('hidden'); $('skipIntro').style.display = 'inline-flex';
   const sp = sim.pos, f = sim.forward(new THREE.Vector3());
   const toy = rig.mode === 'toy';
-  const behind = toy ? [sp.x - f.x * 15.5, sp.y + 9.2, sp.z - f.z * 15.5] : [sp.x - f.x * 7, sp.y + 2.4, sp.z - f.z * 7];
+  const behind = toy ? [sp.x - f.x * 15.5, sp.y + 9.2, sp.z - f.z * 15.5] : [sp.x - f.x * 5.8, sp.y + 1.65, sp.z - f.z * 5.8];
   const keys = [
     { t: 0, pos: [2500, 1750, 3000], look: [250, 0, -380], fov: 30 },
     { t: 3.6, pos: [1500, 460, 1750], look: [860, 0, 1000], fov: 36 },
     { t: 6.6, pos: [1012, 38, 1118], look: [905, 14, 1048], fov: 44 },
     { t: 9.0, pos: [sp.x + 16, sp.y + 7, sp.z + 12], look: [sp.x, sp.y + 0.6, sp.z], fov: 48 },
-    { t: 10.6, pos: behind, look: [sp.x + f.x * 4.5, sp.y + 0.3, sp.z + f.z * 4.5], fov: toy ? 38 : 62 },
+    { t: 10.6, pos: behind, look: [sp.x + f.x * 3.6, sp.y + 0.62, sp.z + f.z * 3.6], fov: toy ? 38 : 58 },
   ];
-  const titles = [[0, 'A tabletop Mumbai', 'MUMBAI <span>GP</span>'], [3.6, 'Apollo Bunder · Colaba', 'GRID <span>FORMING</span>'], [6.6, 'Gateway of India', state.gp ? 'FOLLOW THE <span>ROUTE</span>' : 'FREE <span>ROAM</span>'], [9.0, 'Car 27 · Laloo Racing', 'LIGHTS <span>OUT</span>']];
+  const titles = [[0, 'Bombay · the Arabian Sea', 'MUMBAI <span>GP</span>'], [3.6, 'Apollo Bunder · Colaba', 'GRID <span>FORMING</span>'], [6.6, 'Gateway of India', state.gp ? 'FOLLOW THE <span>ROUTE</span>' : 'FREE <span>ROAM</span>'], [9.0, 'Car 27 · Laloo Racing', 'LIGHTS <span>OUT</span>']];
   // open the view for the overview shot, then ease the haze back in
   camera.far = 9000; camera.updateProjectionMatrix();
   const fog0 = atmo.T.fogD;
@@ -524,11 +516,13 @@ function loop(now) {
   }
   carPose();
   rig.update(dt, pos, quat, sim);
-  atmo.follow(pos);
+  camera.updateMatrixWorld();
+  atmo.update(camera, pos, clockT);
   world.update(clockT, dt, camera);
   render();
+  if (state.mode === 'drive' || state.mode === 'intro') pipeline.adapt(dt * 1000, dt);
 }
-function render() { if (composer) composer.render(); else renderer.render(scene, camera); }
+function render() { pipeline ? pipeline.render(clockT) : renderer.render(scene, camera); }
 
 /* ---------------- pause / settings ---------------- */
 function pause() {
@@ -564,7 +558,7 @@ function showPane(name) {
     pane.appendChild(opt('Time of day', 'time', Object.entries(TIMES).map(([k, v]) => [k, v.label]), v => { atmo.set(v); updateHeadlight(); }));
     pane.appendChild(opt('Driving assists', 'assists', Object.entries(ASSISTS).map(([k, v]) => [k, v.label]), applyAssists, 'ABS, traction control and stability help'));
     pane.appendChild(opt('Gearbox', 'gearbox', [['auto', 'Automatic'], ['manual', 'Manual (E / Q)']], applyAssists));
-    pane.appendChild(opt('Camera', 'camera', [['toy', 'Toy'], ['chase', 'Chase'], ['far', 'Far'], ['tcam', 'T-cam'], ['cockpit', 'Cockpit']], v => { rig.mode = v; }));
+    pane.appendChild(opt('Camera', 'camera', [['chase', 'Chase'], ['far', 'Far'], ['tcam', 'T-cam'], ['cockpit', 'Cockpit'], ['toy', 'High']], v => { rig.mode = v; }));
     pane.appendChild(opt('Route guidance (free roam)', 'guide', [[true, 'On'], [false, 'Off']], () => { state.routeTimer = 0; }));
     pane.appendChild(opt('Units', 'units', [['kmh', 'km/h'], ['mph', 'mph']]));
     pane.appendChild(opt('Graphics quality', 'quality', [['auto', 'Auto'], ...Object.entries(QUALITY).map(([k, v]) => [k, v.label])], () => toast('Graphics quality saved', 'Applies when the page reloads'), `Current: ${Q.label}`));
@@ -616,8 +610,8 @@ function wireUI() {
   addEventListener('keydown', e => { if (state.mode === 'intro' && (e.code === 'Space' || e.code === 'Enter')) { e.preventDefault(); rig.script && rig.script.skip(); } });
   addEventListener('resize', () => {
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
-    if (composer) composer.setSize(innerWidth, innerHeight);
+    atmo.fitCascades(camera, 78);
+    pipeline.setSize(innerWidth, innerHeight);
     sizeBigmap();
     if (state.mode !== 'drive') render();
   });

@@ -137,28 +137,58 @@ export function buildTerrain(net, { cell = 4 } = {}) {
 }
 
 /* ---------- render meshes ---------- */
-export function buildTerrainMeshes(THREE, terr, { tile = 128, step = 1 } = {}) {
+/* Splat-blended ground: per-vertex weights for grass / earth / sand / concrete
+   (rock is the remainder), textured from the ground library. Urban land reads as
+   compacted earth with patches of grass; maidans, gardens and the green hills
+   are grass; beaches are sand. */
+export function buildTerrainMeshes(THREE, terr, { tile = 128, step = 1, webgl2 = true, texSize = 512, ground, greenAt = () => 0 } = {}) {
   const { NX, NZ, cell, H, K, SD } = terr;
   const group = new THREE.Group(); group.name = 'terrain';
   const per = Math.round(tile / cell);
+  let mat;
+  if (webgl2 && ground) {
+    mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92, metalness: 0 });
+    const U = ground.uniforms(texSize);
+    mat.onBeforeCompile = sh => {
+      Object.assign(sh.uniforms, U);
+      sh.vertexShader = sh.vertexShader
+        .replace('#include <common>', '#include <common>\nattribute vec4 gw; varying vec4 vGw; varying vec3 vWp;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\n vGw = gw; vWp = (modelMatrix * vec4(position, 1.0)).xyz;');
+      sh.fragmentShader = sh.fragmentShader
+        .replace('#include <common>', '#include <common>\nvarying vec4 vGw; varying vec3 vWp;\n' + ground.GLSL + '\nfloat gRough; vec2 gTn;')
+        .replace('#include <map_fragment>', `
+          vec2 wp = vWp.xz;
+          vec4 mac = gMacro(wp);
+          float blend = smoothstep(0.35, 0.65, mac.b);
+          vec4 w = vGw;
+          // break up the boundaries with the macro noise; grass grows in patches on urban earth
+          w.x *= mix(0.45, 1.6, smoothstep(0.3, 0.7, mac.a));
+          w.y *= mix(1.3, 0.7, smoothstep(0.3, 0.7, mac.a));
+          float rock = max(0.0, 1.0 - (vGw.x + vGw.y + vGw.z + vGw.w));
+          float sum = w.x + w.y + w.z + w.w + rock + 1e-4;
+          w /= sum; rock /= sum;
+          vec3 alb = vec3(0.0); vec2 tn = vec2(0.0); float ro = 0.0;
+          if (w.x > 0.01) { GSample g = gLayer(wp, 0.0, 5.0, blend); alb += g.alb * w.x; tn += g.n * w.x; ro += g.rough * w.x; }
+          if (w.y > 0.01) { GSample g = gLayer(wp, 1.0, 5.0, blend); alb += g.alb * w.y; tn += g.n * w.y; ro += g.rough * w.y; }
+          if (w.z > 0.01) { GSample g = gLayer(wp, 2.0, 6.0, blend); alb += g.alb * w.z; tn += g.n * w.z; ro += g.rough * w.z; }
+          if (w.w > 0.01) { GSample g = gLayer(wp, 3.0, 4.0, blend); alb += g.alb * w.w; tn += g.n * w.w; ro += g.rough * w.w; }
+          if (rock > 0.01) { GSample g = gLayer(wp, 4.0, 6.0, blend); alb += g.alb * rock; tn += g.n * rock; ro += g.rough * rock; }
+          alb *= 0.82 + 0.36 * mac.r;
+          // wet sand and rock at the waterline
+          float wet = 1.0 - smoothstep(0.15, 0.9, vWp.y);
+          alb *= 1.0 - 0.38 * wet; ro = mix(ro, 0.35, wet * 0.8);
+          diffuseColor.rgb *= alb;
+          gRough = ro; gTn = tn;`)
+        .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = gRough;')
+        .replace('#include <normal_fragment_maps>', 'normal = gPerturb(normal, gTn, -vViewPosition, wp / 5.0);');
+    };
+    mat.customProgramCacheKey = () => 'terrain-splat';
+  } else {
+    mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 });
+  }
+  const C = (h) => new THREE.Color(h);
+  const fallback = [C('#68733a'), C('#7b6a55'), C('#b3a285'), C('#a7a39a'), C('#59534d')];
   const col = new THREE.Color();
-  const grassA = new THREE.Color(0x8cc152), grassB = new THREE.Color(0xa8d46a), grassC = new THREE.Color(0x76b04a);
-  const sand = new THREE.Color(0xf3d9a4), wetSand = new THREE.Color(0xe6c48c), dirt = new THREE.Color(0xd9a974), paved = new THREE.Color(0xf0dcb4), rock = new THREE.Color(0xb5aaa0), sea = new THREE.Color(0x56c4c4);
-  const detail = (() => {
-    const c = document.createElement('canvas'); c.width = c.height = 256;
-    const g = c.getContext('2d'); const img = g.createImageData(256, 256);
-    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-    for (let p = 0; p < 256 * 256; p++) { const v = 238 + rnd() * 17; img.data[p * 4] = v; img.data[p * 4 + 1] = v; img.data[p * 4 + 2] = v; img.data[p * 4 + 3] = 255; }
-    g.putImageData(img, 0, 0);
-    for (let n = 0; n < 500; n++) { g.fillStyle = `rgba(${rnd() < 0.6 ? '255,255,235' : '60,90,30'},${0.06 + rnd() * 0.08})`; g.beginPath(); g.arc(rnd() * 256, rnd() * 256, 2 + rnd() * 5, 0, 7); g.fill(); }
-    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.colorSpace = THREE.SRGBColorSpace;
-    return t;
-  })();
-  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, map: detail, roughness: 0.92, metalness: 0 });
-  mat.onBeforeCompile = sh => {
-    // world-space detail tiling so tiles line up seamlessly
-    sh.vertexShader = sh.vertexShader.replace('#include <uv_vertex>', '#include <uv_vertex>\n vMapUv = (modelMatrix * vec4(position,1.0)).xz / 9.0;');
-  };
   for (let tj = 0; tj < NZ - 1; tj += per) for (let ti = 0; ti < NX - 1; ti += per) {
     // skip tiles that are entirely open water
     let anyLand = false;
@@ -166,23 +196,24 @@ export function buildTerrainMeshes(THREE, terr, { tile = 128, step = 1 } = {}) {
     if (!anyLand) continue;
     const ni = Math.min(per, NX - 1 - ti), nj = Math.min(per, NZ - 1 - tj);
     const vi = Math.floor(ni / step) + 1, vj = Math.floor(nj / step) + 1;
-    const pos = new Float32Array(vi * vj * 3), colA = new Float32Array(vi * vj * 3), uv = new Float32Array(vi * vj * 2);
+    const pos = new Float32Array(vi * vj * 3), gw = new Float32Array(vi * vj * 4), colA = new Float32Array(vi * vj * 3);
     let p = 0;
     for (let b = 0; b < vj; b++) for (let a = 0; a < vi; a++) {
       const i = ti + a * step, j = tj + b * step, k = j * NX + i;
       const x = WB.minX + i * cell, z = WB.minZ + j * cell;
       pos[p * 3] = x; pos[p * 3 + 1] = H[k]; pos[p * 3 + 2] = z;
       const kk = K[k];
-      const nz = vnoise(x / 30, z / 30), nz2 = vnoise(x / 7, z / 7);
-      if (kk === KIND.grass) { col.copy(grassA).lerp(grassB, Math.round(nz * 3) / 3 * 0.9).lerp(grassC, Math.max(0, nz2 - 0.6) * 1.2); }
-      else if (kk === KIND.sand) col.copy(sand).lerp(wetSand, Math.max(0, 1 - SD[k] / 10));
-      else if (kk === KIND.dirt) col.copy(dirt).lerp(grassA, nz * 0.3);
-      else if (kk === KIND.paved) col.copy(paved).multiplyScalar(0.9 + nz2 * 0.15);
-      else if (kk === KIND.rock) col.copy(rock).multiplyScalar(0.8 + nz2 * 0.4);
-      else col.copy(sea);
-      if (H[k] < 0) col.lerp(sea, Math.min(1, -H[k] / 3));
-      colA[p * 3] = col.r; colA[p * 3 + 1] = col.g; colA[p * 3 + 2] = col.b;
-      uv[p * 2] = x / 9; uv[p * 2 + 1] = z / 9;
+      let w = [0, 0, 0, 0];   // grass, earth, sand, concrete (rock = remainder)
+      if (kk === KIND.grass) { const g = greenAt(x, z); w = [g, 1 - g, 0, 0]; }
+      else if (kk === KIND.sand || kk === KIND.water) w = [0, 0, 1, 0];
+      else if (kk === KIND.dirt) w = [0.15, 0.85, 0, 0];
+      else if (kk === KIND.paved) w = [0, 0.15, 0, 0.85];
+      // rock stays [0,0,0,0]
+      gw.set(w, p * 4);
+      col.setRGB(0, 0, 0);
+      const wr = Math.max(0, 1 - w[0] - w[1] - w[2] - w[3]);
+      [...w, wr].forEach((v, n) => { col.r += fallback[n].r * v; col.g += fallback[n].g * v; col.b += fallback[n].b * v; });
+      colA.set([col.r, col.g, col.b], p * 3);
       p++;
     }
     const idx = [];
@@ -192,8 +223,8 @@ export function buildTerrainMeshes(THREE, terr, { tile = 128, step = 1 } = {}) {
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('gw', new THREE.BufferAttribute(gw, 4));
     g.setAttribute('color', new THREE.BufferAttribute(colA, 3));
-    g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
     g.setIndex(idx);
     g.computeVertexNormals();
     g.computeBoundingSphere();

@@ -1,96 +1,99 @@
-/* Toy water: turquoise shallows → teal depths, soft ripples, animated foam
-   lines that follow the coastline, sun glints and sparkles. Clipped to the
-   diorama slab. Procedural shader, no textures. */
+/* The Arabian Sea, Back Bay and the harbour — one physically-lit surface out to
+   the horizon. MeshStandardMaterial (so it gets the sky reflection, sun glitter,
+   cascaded shadows and fog for free) with two scrolling layers of a mipmapped
+   wave normal map, distance-dependent roughness (keeps the sun path broad and
+   stable instead of sparkling), shallow-water tint and a shore foam line from a
+   coast-distance field. */
 import * as THREE from 'three';
 import { WORLD_BOUNDS as B } from './layout.js';
 import { landSD } from './geo2d.js';
-import { slabOutline } from './diorama.js';
+import { waveNormalMap } from '../core/texgen.js';
+import { fogUniforms } from './atmosphere.js';
 
-export function buildWater(atmo) {
-  // coast-distance texture (8 m cells) for depth tint and foam
+export function buildWater(atmo, { far = 4000 } = {}) {
+  // coast-distance field (8 m cells) for depth tint and foam
   const cell = 8, W = Math.ceil((B.maxX - B.minX) / cell) + 1, H = Math.ceil((B.maxZ - B.minZ) / cell) + 1;
   const data = new Uint8Array(W * H);
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
     const sd = landSD(B.minX + i * cell, B.minZ + j * cell);
     data[j * W + i] = Math.max(0, Math.min(255, Math.round(128 + sd * 0.85)));
   }
-  const tex = new THREE.DataTexture(data, W, H, THREE.RedFormat, THREE.UnsignedByteType);
-  tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter; tex.needsUpdate = true;
+  const coast = new THREE.DataTexture(data, W, H, THREE.RedFormat, THREE.UnsignedByteType);
+  coast.magFilter = coast.minFilter = THREE.LinearFilter; coast.needsUpdate = true;
 
-  const uniforms = THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
-    uTime: { value: 0 }, uSun: { value: new THREE.Vector3(0, 1, 0) }, uSunCol: { value: new THREE.Color(1, 1, 1) },
-    uSky: { value: new THREE.Color() }, uHorizon: { value: new THREE.Color() },
-    uShallow: { value: new THREE.Color(0x5fd6cb) }, uDeep: { value: new THREE.Color(0x2786a8) },
-    uCoast: { value: tex }, uBounds: { value: new THREE.Vector4(B.minX, B.minZ, (W - 1) * cell, (H - 1) * cell) },
-    uNight: atmo.night,
-  }]);
-  const mat = new THREE.ShaderMaterial({
-    uniforms, fog: true,
-    vertexShader: /* glsl */`
-      varying vec3 vW;
-      #include <fog_pars_vertex>
-      void main(){ vec4 w = modelMatrix * vec4(position,1.0); vW = w.xyz; vec4 mvPosition = viewMatrix * w; gl_Position = projectionMatrix * mvPosition;
-        #include <fog_vertex>
-      }`,
-    fragmentShader: /* glsl */`
-      uniform float uTime, uNight; uniform vec3 uSun, uSunCol, uSky, uHorizon, uShallow, uDeep; uniform sampler2D uCoast; uniform vec4 uBounds;
-      varying vec3 vW;
-      #include <fog_pars_fragment>
-      float h21(vec2 p){ p = fract(p*vec2(123.34, 456.21)); p += dot(p, p+45.32); return fract(p.x*p.y); }
-      float vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f); return mix(mix(h21(i),h21(i+vec2(1,0)),f.x), mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x), f.y); }
-      void main(){
-        vec2 p = vW.xz;
-        float t = uTime;
-        vec2 g = vec2(cos(p.x*0.09 + t*1.1) + cos(p.y*0.13 - t*0.8)*0.7, sin(p.y*0.1 + t*0.9) + sin(p.x*0.07 + p.y*0.05 + t)*0.6) * 0.06;
-        g += (vec2(vn(p*0.35 + t*0.2), vn(p*0.35 - t*0.25 + 9.0)) - 0.5) * 0.12;
-        vec3 N = normalize(vec3(g.x, 1.0, g.y));
-        vec3 V = normalize(cameraPosition - vW);
-        vec2 cuv = (p - uBounds.xy) / uBounds.zw;
-        float sd = (texture2D(uCoast, cuv).r * 255.0 - 128.0) / 0.85;     // metres from the shore (negative in water)
-        float depth = smoothstep(-4.0, -90.0, sd);
-        vec3 body = mix(uShallow, uDeep, depth);
-        // toon-ish lighting: two tones + rim
-        float ndl = dot(N, normalize(uSun));
-        body *= 0.86 + 0.18 * smoothstep(0.85, 1.0, ndl);
-        float fres = pow(1.0 - max(dot(N, V), 0.0), 4.0);
-        vec3 col = mix(body, mix(uHorizon, uSky, 0.4), fres * 0.45);
-        vec3 R = reflect(-V, N);
-        float spec = pow(max(dot(R, normalize(uSun)), 0.0), 140.0);
-        col += uSunCol * spec * 1.6 * (1.0 - uNight);
-        // foam: a solid shore line plus two travelling rings
-        float shore = 1.0 - smoothstep(-2.5, -0.5, sd) * 0.0;
-        float edge = smoothstep(-3.2, -1.2, sd);
-        float ring1 = smoothstep(0.85, 1.0, sin(sd * 0.55 + t * 1.6) * 0.5 + 0.5) * smoothstep(-22.0, -6.0, sd);
-        float wob = vn(p * 0.15 + t * 0.1);
-        float foam = max(edge, ring1 * step(0.35, wob)) ;
-        col = mix(col, vec3(0.97, 0.99, 1.0) * (0.85 + 0.15 * (1.0 - uNight)), clamp(foam, 0.0, 1.0) * 0.9);
-        // sparkles
-        float sp = step(0.985, vn(p * 2.2 + vec2(t * 0.6, -t * 0.4))) * (1.0 - uNight) * (1.0 - depth * 0.5);
-        col += sp * 0.6;
-        // night: deep blue with warm reflections near the city
-        col = mix(col, col * vec3(0.32, 0.38, 0.65), uNight * 0.8);
-        col += vec3(1.0, 0.75, 0.42) * uNight * smoothstep(-120.0, -6.0, sd) * pow(vn(vec2(p.x * 0.6, p.y * 0.08) + t * 0.3), 5.0) * 1.4;
-        gl_FragColor = vec4(col, 1.0);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-        #include <fog_fragment>
-      }`,
-  });
-  // water surface clipped to the inside of the slab rim
-  const outline = slabOutline(8, 12);
-  const shape = new THREE.Shape(outline.map(([x, z]) => new THREE.Vector2(x, -z)));
-  const geo = new THREE.ShapeGeometry(shape, 4);
-  geo.rotateX(-Math.PI / 2);
+  const waves = waveNormalMap(256, 7);
+  const U = {
+    uTime: { value: 0 }, uWaves: { value: waves }, uCoast: { value: coast },
+    uBounds: { value: new THREE.Vector4(B.minX, B.minZ, (W - 1) * cell, (H - 1) * cell) },
+    uShallow: { value: new THREE.Color('#566b5c') }, uDeep: { value: new THREE.Color('#1e4350') },
+    uNight: atmo.night, uFar: { value: far },
+  };
+  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.08, metalness: 0, envMapIntensity: 1 });
+  mat.onBeforeCompile = sh => {
+    fogUniforms(sh);
+    Object.assign(sh.uniforms, U);
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWorldP;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\n vWorldP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', `#include <common>
+        varying vec3 vWorldP;
+        uniform float uTime, uNight, uFar; uniform sampler2D uWaves, uCoast; uniform vec4 uBounds; uniform vec3 uShallow, uDeep;
+        float gSd, gFoam, gDist;`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        vec2 cuv = (vWorldP.xz - uBounds.xy) / uBounds.zw;
+        bool inside = all(greaterThan(cuv, vec2(0.0))) && all(lessThan(cuv, vec2(1.0)));
+        gSd = inside ? (texture2D(uCoast, cuv).r * 255.0 - 128.0) / 0.85 : -150.0;   // metres from shore (negative = water)
+        gDist = length(vWorldP - cameraPosition);
+        float depthF = smoothstep(-3.0, -110.0, gSd);
+        diffuseColor.rgb = mix(uShallow, uDeep, depthF);
+        // shore foam: a broken line that breathes with the swell
+        float swell = sin(gSd * 0.45 + uTime * 1.3) * 0.5 + 0.5;
+        float breakup = texture2D(uWaves, vWorldP.xz / 23.0 + vec2(uTime * 0.01, 0.0)).r;
+        gFoam = smoothstep(-4.5, -1.0, gSd) * (0.55 + 0.45 * swell) * smoothstep(0.35, 0.6, breakup + 0.25);
+        gFoam *= 1.0 - smoothstep(60.0, 400.0, gDist);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.85, 0.86, 0.84), gFoam);`)
+      .replace('#include <roughnessmap_fragment>', `float roughnessFactor = mix(0.045, 0.2, smoothstep(25.0, 1400.0, gDist));
+        roughnessFactor = mix(roughnessFactor, 0.7, gFoam);`)
+      .replace('#include <normal_fragment_maps>', `
+        vec2 wp = vWorldP.xz;
+        vec3 w1 = texture2D(uWaves, wp / 52.0 + uTime * vec2(0.0045, 0.0028)).xyz * 2.0 - 1.0;
+        vec3 w2 = texture2D(uWaves, mat2(0.8, -0.6, 0.6, 0.8) * wp / 14.0 + uTime * vec2(-0.011, 0.009)).xyz * 2.0 - 1.0;
+        vec3 w3 = texture2D(uWaves, mat2(-0.5, 0.87, -0.87, -0.5) * wp / 4.3 + uTime * vec2(0.02, -0.017)).xyz * 2.0 - 1.0;
+        float calm = mix(1.0, 0.55, smoothstep(-2.0, -25.0, -abs(gSd + 30.0)));   // a little calmer in the bay
+        vec2 slope = (w1.xy * 0.55 + w2.xy * 0.45 + w3.xy * 0.25 * (1.0 - smoothstep(20.0, 120.0, gDist))) * calm;
+        vec3 nW = normalize(vec3(slope.x, 1.0, slope.y));
+        normal = normalize((viewMatrix * vec4(nW, 0.0)).xyz);`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        // night: warm city light scattered in the water near the shore
+        totalEmissiveRadiance += vec3(1.0, 0.62, 0.32) * uNight * 0.05 * smoothstep(-160.0, -8.0, gSd) * (0.4 + 0.6 * breakup);`)
+      .replace('#include <fog_fragment>', `#include <fog_fragment>
+        // the mesh ends at the far plane: finish the fade to the horizon colour before it does
+        #ifdef USE_FOG
+          gl_FragColor.rgb = mix(gl_FragColor.rgb, fogCol, smoothstep(uFar * 0.55, uFar * 0.92, gDist));
+        #endif`);
+  };
+  mat.customProgramCacheKey = () => 'mumbai-water';
+  // a large radial grid centred on the camera (snapped, so it never swims): dense near, coarse far
+  const rings = [], R = [0, 40, 90, 160, 260, 420, 700, 1100, 1700, 2600, 4000, 6500];
+  const seg = 64, pos = [], idx = [];
+  R.forEach((r, i) => { for (let k = 0; k < seg; k++) { const a = k / seg * Math.PI * 2; pos.push(Math.cos(a) * r, 0, Math.sin(a) * r); } rings.push(i); });
+  for (let i = 0; i < R.length - 1; i++) for (let k = 0; k < seg; k++) {
+    const a = i * seg + k, b = i * seg + (k + 1) % seg, c = a + seg, d = b + seg;
+    idx.push(a, b, c, b, d, c);   // counter-clockwise seen from above
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new THREE.Float32BufferAttribute(pos.map((_, i) => (i % 3 === 1 ? 1 : 0)), 3));
+  geo.setIndex(idx);
   const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.y = 0;
-  mesh.name = 'water';
+  mesh.frustumCulled = false; mesh.receiveShadow = true; mesh.name = 'water';
   return {
-    mesh,
-    update(t) {
-      uniforms.uTime.value = t;
-      uniforms.uSun.value.copy(atmo.sunDir);
-      uniforms.uSunCol.value.copy(atmo.sun.color);
-      uniforms.uSky.value.copy(atmo.zenith); uniforms.uHorizon.value.copy(atmo.horizon);
+    mesh, material: mat,
+    setFar(f) { U.uFar.value = f; },
+    update(t, camera) {
+      U.uTime.value = t;
+      if (camera) { mesh.position.set(Math.round(camera.position.x / 50) * 50, 0, Math.round(camera.position.z / 50) * 50); }
     },
   };
 }

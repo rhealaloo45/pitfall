@@ -3,33 +3,42 @@
 import * as THREE from 'three';
 import { PLACES, PLAZAS } from './layout.js';
 import { FacadeBuilder, facadeMaterial, rectPts, STYLE } from './buildings.js';
+import { facadeTextures, LAYER } from './facades.js';
+import { TEX } from '../core/texgen.js';
 import { canvasTexture, orientStrut } from '../core/geo.js';
 
-const NOISE = /* glsl */`
-float h21(vec2 p){ p = fract(p*vec2(123.34, 456.21)); p += dot(p, p+45.32); return fract(p.x*p.y); }
-float vnoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
-  return mix(mix(h21(i),h21(i+vec2(1,0)),f.x), mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x), f.y); }`;
-
-/** Ashlar stone, projected in world space (no UVs needed). */
+/** Dressed stone projected in world space (no UVs needed), from the mipmapped facade library:
+    blocks bw × bh metres, tinted `color`, with mortar relief in the normal map. */
 export function stoneMaterial(color, bw = 1.1, bh = 0.55, rough = 0.88) {
   const m = new THREE.MeshStandardMaterial({ color, roughness: rough });
+  if (!TEX.webgl2) return m;
+  const T = facadeTextures(TEX.facadeSize || 512);
+  const U = { uFacA: { value: T.A }, uFacB: { value: T.B }, uStoneScale: { value: new THREE.Vector2(3 * bw, 6 * bh) } };
   m.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, U);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vSWp; varying vec3 vSWn;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\n vSWp = (modelMatrix * vec4(position,1.0)).xyz; vSWn = normalize(mat3(modelMatrix) * normal);');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vSWp; varying vec3 vSWn;\n' + NOISE)
-      .replace('#include <color_fragment>', `#include <color_fragment>
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+        precision highp sampler2DArray; uniform sampler2DArray uFacA, uFacB; uniform vec2 uStoneScale;
+        varying vec3 vSWp; varying vec3 vSWn; vec2 gSN; vec2 gSUv; float gSRough;`)
+      .replace('#include <map_fragment>', `
         vec3 an = abs(vSWn);
         vec2 p = an.y > 0.7 ? vSWp.xz : (an.x > an.z ? vSWp.zy : vSWp.xy);
-        float row = floor(p.y / ${bh.toFixed(3)});
-        vec2 q = vec2(p.x / ${bw.toFixed(3)} + row * 0.5, p.y / ${bh.toFixed(3)});
-        vec2 f = fract(q);
-        float mortar = step(0.035, f.x) * step(0.07, f.y);
-        float aa = smoothstep(0.3, 0.8, fwidth(q.x)); mortar = mix(mortar, 0.9, aa);
-        float tone = h21(floor(q));
-        diffuseColor.rgb *= mix(0.6, 0.9 + tone * 0.18, mortar) * (0.88 + vnoise(p * 1.3) * 0.2);
-        diffuseColor.rgb *= 1.0 - 0.18 * smoothstep(0.6, 0.9, vnoise(vec2(p.x * 0.8, p.y * 0.08)));
-      `);
+        gSUv = p / uStoneScale;
+        vec4 sA = texture(uFacA, vec3(gSUv, ${LAYER.stone}.0));
+        vec4 sB = texture(uFacB, vec3(gSUv, ${LAYER.stone}.0));
+        diffuseColor.rgb *= sA.rgb * 1.25;
+        gSN = sB.rg * 2.0 - 1.0; gSRough = sB.b;`)
+      .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = mix(roughness, gSRough, 0.5);')
+      .replace('#include <normal_fragment_maps>', `{
+        vec3 q0 = dFdx(-vViewPosition), q1 = dFdy(-vViewPosition); vec2 st0 = dFdx(gSUv), st1 = dFdy(gSUv);
+        vec3 q1p = cross(q1, normal), q0p = cross(normal, q0);
+        vec3 Tt = q1p * st0.x + q0p * st1.x, Bt = q1p * st0.y + q0p * st1.y;
+        float det = max(dot(Tt, Tt), dot(Bt, Bt)); float sc = det == 0.0 ? 0.0 : inversesqrt(det);
+        normal = normalize(Tt * gSN.x * sc + Bt * gSN.y * sc + normal * sqrt(max(0.0, 1.0 - dot(gSN, gSN))));
+      }`);
   };
+  m.customProgramCacheKey = () => 'stone-v2';
   return m;
 }
 
@@ -383,16 +392,25 @@ export function buildLandmarks(ctx) {
 
   /* =============== destination beacons =============== */
   const beaconMat = c => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false });
+  // soft light shaft: bright core, feathered edges, fading upward (no hard cylinder walls)
+  const beamMat = c => new THREE.ShaderMaterial({
+    uniforms: { uCol: { value: new THREE.Color(c) }, uOp: { value: 0.5 } },
+    vertexShader: 'varying vec3 vN; varying vec3 vV; varying float vY; void main(){ vec4 w = modelMatrix * vec4(position,1.0); vN = normalize(mat3(modelMatrix) * normal); vV = normalize(cameraPosition - w.xyz); vY = uv.y; gl_Position = projectionMatrix * viewMatrix * w; }',
+    fragmentShader: 'uniform vec3 uCol; uniform float uOp; varying vec3 vN; varying vec3 vV; varying float vY; void main(){ float core = pow(abs(dot(normalize(vN), normalize(vV))), 3.0); float a = core * (1.0 - vY) * (1.0 - vY) * smoothstep(0.0, 0.04, vY) * uOp; gl_FragColor = vec4(uCol * a, 1.0); }',
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+  });
   const beacons = [], bursts = [];
   for (const pl of PLACES) {
     let y = terr.heightAt(pl.x, pl.z);
     if (pl.elevated) { const out = {}; net.roadSurface(pl.x, pl.z, 100, out); y = out.h || y; }
     else { const out = {}; if (net.roadSurface(pl.x, pl.z, y + 2, out)) y = Math.max(y, out.h); }
-    const color = pl.kind === 'chapter' ? 0xffc04a : 0x5ec7ff;
-    const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 2.2, 90, 16, 1, true), beaconMat(color));
-    beam.position.set(pl.x, y + 45, pl.z); beam.renderOrder = 5;
-    const ring = new THREE.Mesh(new THREE.RingGeometry(pl.r * 0.55, pl.r * 0.55 + 0.6, 48), beaconMat(color));
-    ring.rotation.x = -Math.PI / 2; ring.position.set(pl.x, y + 0.15, pl.z); ring.material.opacity = 0.6;
+    // portfolio chapters glow warm amber, landmarks a pale gold — no neon
+    const color = pl.kind === 'chapter' ? 0xffa53a : 0xe8d6a8;
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.6, 70, 20, 1, true), beamMat(color));
+    beam.position.set(pl.x, y + 35, pl.z); beam.renderOrder = 5; beam.userData.noAO = true;
+    beam.material.uniforms.uOp.value = pl.kind === 'chapter' ? 0.55 : 0.35;
+    const ring = new THREE.Mesh(new THREE.RingGeometry(pl.r * 0.55, pl.r * 0.55 + 0.35, 64), beaconMat(color));
+    ring.rotation.x = -Math.PI / 2; ring.position.set(pl.x, y + 0.15, pl.z); ring.material.opacity = 0.45; ring.userData.noAO = true;
     group.add(beam, ring);
     beacons.push({ id: pl.id, beam, ring, base: y });
   }
@@ -400,7 +418,7 @@ export function buildLandmarks(ctx) {
   scene.add(group);
   return {
     group, beacons, startLights: markers.startLights,
-    setVisited(id) { const b = beacons.find(q => q.id === id); if (b) { b.beam.material.opacity = 0.06; b.ring.material.opacity = 0.15; } },
+    setVisited(id) { const b = beacons.find(q => q.id === id); if (b) { b.beam.material.uniforms.uOp.value = 0.1; b.ring.material.opacity = 0.12; } },
     celebrate(id) {
       const b = beacons.find(q => q.id === id); if (!b) return;
       const burst = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.6, 48), new THREE.MeshBasicMaterial({ color: 0xffd166, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide, fog: false }));

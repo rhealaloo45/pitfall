@@ -7,7 +7,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { PLAZAS, PARKS } from './layout.js';
 import { rng, canvasTexture } from '../core/geo.js';
-import { paint, taxiGeometry, autoGeometry, carGeometry, busGeometry } from './props.js';
+import { paint, taxiGeometry, autoGeometry, carGeometry, busGeometry, vehicleMaterial } from './props.js';
 
 const V = THREE.Vector3;
 const part = (g, hex, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) => { g.rotateX(rx); g.rotateY(ry); g.rotateZ(rz); g.translate(x, y, z); return paint(g, hex); };
@@ -159,10 +159,12 @@ export function buildPlay(ctx) {
     birds.push({ x, z, y: plaza.h + 0.05, hx: x, hz: z, ry: R() * 6, vx: 0, vy: 0, vz: 0, t: 0, flying: false, ph: R() * 6 });
   }
   const birdGeo = merge([
-    part(new THREE.SphereGeometry(0.16, 8, 6), 0x8d93a3, 0, 0.2, 0),
-    part(new THREE.SphereGeometry(0.1, 8, 6), 0x6f7586, 0, 0.32, 0.12),
+    part(new THREE.SphereGeometry(0.16, 10, 8).scale(0.72, 0.7, 1.25), 0x5d6470, 0, 0.18, 0),
+    part(new THREE.SphereGeometry(0.075, 8, 6), 0x3f4a4c, 0, 0.29, 0.16),
+    part(new THREE.SphereGeometry(0.06, 8, 6).scale(1, 1, 1.4), 0x4b6458, 0, 0.24, 0.1),
+    part(new THREE.BoxGeometry(0.1, 0.02, 0.18), 0x3b3f47, 0, 0.17, -0.22),
     part(new THREE.ConeGeometry(0.04, 0.08, 4), 0xf2a33c, 0, 0.31, 0.24, Math.PI / 2),
-    part(new THREE.BoxGeometry(0.42, 0.02, 0.14), 0x7a8090, 0, 0.24, -0.02),
+    part(new THREE.BoxGeometry(0.34, 0.02, 0.12), 0x666d78, 0, 0.22, -0.02),
   ]);
   const birdMesh = new THREE.InstancedMesh(birdGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 }), birds.length);
   birdMesh.castShadow = true;
@@ -171,7 +173,7 @@ export function buildPlay(ctx) {
 
   /* ================= ambient toy traffic (left-hand) ================= */
   const kinds = [taxiGeometry(), autoGeometry(), carGeometry(), busGeometry()];
-  const tCols = [0xf26d5b, 0x6fc2e8, 0xf7d154, 0x9ad17f, 0xb99ce0];
+  const tCols = [0xe8e8e5, 0xb8bbbe, 0x6b6f73, 0x1c1e21, 0x7a1d1b, 0x1e2c45, 0xe8e8e5, 0xc8c0b0];
   const nT = Math.round(36 * quality.props);
   const traffic = [];
   const roadsOK = net.roads.filter(r => r.type !== 'street' || R() < 0.5);
@@ -180,12 +182,13 @@ export function buildPlay(ctx) {
     const kind = R() < 0.4 ? 0 : R() < 0.5 ? 1 : R() < 0.85 ? 2 : 3;
     traffic.push({ r, s: r.trim0 + R() * (r.trim1 - r.trim0), dir: R() < 0.5 ? 1 : -1, v: 0, vmax: kind === 3 ? 9 : 10 + R() * 5, kind, spin: 0, spinV: 0, bump: 0, x: 0, y: 0, z: 0, yaw: 0, col: tCols[k % tCols.length] });
   }
+  const tMat = vehicleMaterial();
   const tMeshes = kinds.map((g, ki) => {
     const n = traffic.filter(t => t.kind === ki).length;
-    const m = new THREE.InstancedMesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.45 }), Math.max(1, n));
+    const m = new THREE.InstancedMesh(g, tMat, Math.max(1, n));
     m.count = n; m.castShadow = true; group.add(m); return m;
   });
-  { const counts = [0, 0, 0, 0]; for (const t of traffic) { t.mi = counts[t.kind]++; if (t.kind === 2) tMeshes[2].setColorAt(t.mi, new THREE.Color(t.col)); } }
+  { const counts = [0, 0, 0, 0]; for (const t of traffic) { t.mi = counts[t.kind]++; tMeshes[t.kind].setColorAt(t.mi, new THREE.Color(t.kind === 2 ? t.col : 0xffffff)); } }
   const nodeRoads = id => net.nodes[id].roads;
   function placeTraffic(t) {
     const r = t.r, f = Math.max(0, Math.min(r.L, t.s)) / r.L * (r.n - 1), i = Math.min(r.n - 2, Math.floor(f)), a = f - i;
