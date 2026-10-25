@@ -93,7 +93,7 @@ export function buildWater(atmo, { far = 4000 } = {}) {
     setFar(f) { U.uFar.value = f; },
     update(t, camera) {
       U.uTime.value = t;
-      if (camera) { mesh.position.set(Math.round(camera.position.x / 50) * 50, 0, Math.round(camera.position.z / 50) * 50); }
+      if (camera) { mesh.position.set(Math.round(camera.position.x / 50) * 50, 0, Math.round(camera.position.z / 50) * 50); U.uFar.value = camera.far; }
     },
   };
 }

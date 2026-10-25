@@ -35,17 +35,17 @@ export function buildFarField(terr, colliders, quality) {
   const group = new THREE.Group(); group.name = 'farfield';
   const x0 = -470, x1 = 1170, zEdge = B.minZ;          // land between the Bandra shore and the harbour
   // ground
-  const gGeo = new THREE.PlaneGeometry(x1 - x0 + 400, 5200, 8, 26);
+  const gGeo = new THREE.PlaneGeometry(x1 - x0 + 30, 9000, 8, 40);
   gGeo.rotateX(-Math.PI / 2);
   const p = gGeo.attributes.position;
   for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i) + (x0 + x1) / 2, z = p.getZ(i) + zEdge + 4 - 2600;
+    const x = p.getX(i) + (x0 + x1) / 2, z = p.getZ(i) + zEdge + 4 - 4500;
     const near = Math.max(0, Math.min(1, (z - (zEdge - 300)) / 300));     // blend into the terrain edge
     const edgeH = terr.heightAt(Math.max(B.minX, Math.min(B.maxX, x)), zEdge + 2);
     p.setXYZ(i, x, Math.max(0.25, edgeH * near + 0.25 * (1 - near)) - 0.05, Math.min(z, zEdge + 4));
   }
   gGeo.computeVertexNormals();
-  const ground = new THREE.Mesh(gGeo, new THREE.MeshStandardMaterial({ color: 0x5f5c55, roughness: 0.95 }));
+  const ground = new THREE.Mesh(gGeo, new THREE.MeshStandardMaterial({ color: 0x6d6457, roughness: 0.95 }));
   ground.receiveShadow = true;
   group.add(ground);
 
@@ -76,14 +76,14 @@ export function buildFarField(terr, colliders, quality) {
   box.deleteAttribute('uv');
   const r = rng(97);
   const items = [];
-  const pitch = 44;
+  const pitch = 52;
   for (let z = zEdge - 24; z > zEdge - 4200; z -= pitch) {
     for (let x = x0 + 10; x < x1 - 10; x += pitch) {
       const jx = x + (r() - 0.5) * 14, jz = z + (r() - 0.5) * 14;
       const d = zEdge - z;                                   // distance beyond the edge
-      if (r() < 0.12 && d > 100) continue;                    // the odd open plot
-      const tall = r() < 0.18;
-      const h = tall ? 45 + r() * 75 : 12 + r() * 26;
+      if (r() < 0.24 && d > 60) continue;                     // open plots, maidans, rail yards
+      const tall = r() < 0.1;
+      const h = tall ? 40 + r() * 60 : 10 + r() * 22;
       const w = 16 + r() * 16, dd = 14 + r() * 14;
       items.push([jx, jz, w, h, dd, (r() - 0.5) * 0.25]);
     }
