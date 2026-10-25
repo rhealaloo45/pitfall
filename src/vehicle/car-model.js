@@ -42,7 +42,7 @@ function carbonTextures() {
 export const ROSSO = 0xc0121b;
 function materials() {
   const cf = carbonTextures();
-  const gloss = { clearcoat: 1, clearcoatRoughness: 0.035, envMapIntensity: 1 };
+  const gloss = { clearcoat: 0.9, clearcoatRoughness: 0.035, envMapIntensity: 0.78 };
   return {
     paint: new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.3, metalness: 0.0, ...gloss }),
     red: new THREE.MeshPhysicalMaterial({ color: ROSSO, roughness: 0.3, metalness: 0.0, ...gloss }),

@@ -78,8 +78,10 @@ export class CameraRig {
       stiff = 5.5; fovBase = 38;
     } else if (this.mode === 'chase' || this.mode === 'far') {
       const far = this.mode === 'far';
+      // portrait screens: pull back a little (the FOV is widened below)
+      const tall = Math.max(0, 1 - cam.aspect) * 0.45;
       // low and close: the car sits in the lower third with the street opening up ahead
-      const dist = (far ? 9.0 : 5.6) + Math.min(speed, 80) * (far ? 0.028 : 0.02) + this.accelLag * 0.03;
+      const dist = ((far ? 9.0 : 5.6) + Math.min(speed, 80) * (far ? 0.028 : 0.02) + this.accelLag * 0.03) * (1 + tall);
       const height = (far ? 3.0 : 1.62) + Math.min(speed, 80) * 0.003;
       targetPos = carPos.clone().addScaledVector(d, -dist); targetPos.y = carPos.y + height;
       targetLook = carPos.clone().addScaledVector(d, 3.6 + speed * 0.05); targetLook.y = carPos.y + (far ? 0.7 : 0.62);
@@ -127,6 +129,9 @@ export class CameraRig {
     if (stiff > 20) cam.up.copy(up);
     cam.lookAt(this.look);
     if (stiff <= 20) cam.rotateZ(this.roll);
+    // keep at least ~50° of horizontal view on narrow (portrait) screens
+    const minV = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(25)) / Math.max(0.3, cam.aspect)));
+    fovBase = Math.min(88, Math.max(fovBase, minV));
     const fov = fovBase + (this.mode === 'cockpit' ? 8 : 0) + Math.min(speed, 90) * (this.mode === 'toy' ? 0.1 : 0.15);
     cam.fov = damp(cam.fov, fov, 3, dt);
     cam.updateProjectionMatrix();

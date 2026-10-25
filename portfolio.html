@@ -9,11 +9,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
-  :root { --ink: #23202b; --dim: #6c6577; --red: #d81f26; --line: #e8e2ee; --font: 'Titillium Web', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  :root { --ink: #23202b; --dim: #6c6577; --red: #c8151d; --line: #e6e1d9; --font: 'Titillium Web', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: var(--font); color: var(--ink); background: #faf7f3; -webkit-font-smoothing: antialiased; line-height: 1.6; }
   a { color: #1d5fae; }
-  .top { background: linear-gradient(180deg, #9cc2f2 0%, #cfe0f5 55%, #f7dccb 100%); }
+  .top { background: #f2efe9; border-bottom: 1px solid #e5e0d8; }
   .wrap { max-width: 860px; margin: 0 auto; padding: 0 24px; }
   .top .wrap { padding-top: 34px; padding-bottom: 34px; }
   nav { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
@@ -35,7 +35,7 @@
   .sub { color: #4a4456; font-weight: 600; }
   ul { margin: 6px 0 0 20px; }
   li { margin: 3px 0; }
-  .tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .12em; padding: 1px 8px; border-radius: 4px; background: #efe9f5; color: #4b4560; margin-left: 8px; vertical-align: 2px; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .12em; padding: 1px 8px; border-radius: 4px; background: #ece8e1; color: #4a463f; margin-left: 8px; vertical-align: 2px; }
   .skills { display: grid; grid-template-columns: 200px 1fr; gap: 6px 16px; }
   .skills dt { font-weight: 700; }
   .play { margin: 34px 0 50px; padding: 18px 20px; border-radius: 14px; background: #fff; border: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
@@ -80,7 +80,7 @@
   html += '<section><h2>Achievements &amp; certifications</h2><ul>' + R.achievements.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul></section>';
   html += '<section><h2>Technical skills</h2><dl class="skills">' + Object.keys(R.skills).map(function (k) { return '<dt>' + esc(k) + '</dt><dd>' + esc(R.skills[k]) + '</dd>'; }).join('') + '</dl></section>';
   html += '<section><h2>Contact</h2><div class="skills"><dt>Email</dt><dd><a href="mailto:' + C.email + '">' + C.email + '</a></dd><dt>Phone</dt><dd>' + C.phone + '</dd><dt>GitHub</dt><dd><a href="' + C.github + '" target="_blank" rel="noopener">' + C.githubLabel + '</a></dd><dt>LinkedIn</dt><dd><a href="' + C.linkedin + '" target="_blank" rel="noopener">' + C.linkedinLabel + '</a></dd></div></section>';
-  html += '<div class="play"><div><b>Prefer to explore?</b><br><span style="color:#6c6577">The same portfolio, hidden around a toy-diorama Mumbai.</span></div><a href="mumbai.html">Drive Mumbai GP</a></div>';
+  html += '<div class="play"><div><b>Prefer to explore?</b><br><span style="color:#6c6577">The same portfolio, hidden around a drivable Mumbai.</span></div><a href="mumbai.html">Drive Mumbai GP</a></div>';
   document.getElementById('main').innerHTML = html;
 })();
 </script>

@@ -4,53 +4,53 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rhea Laloo — AI Engineer · Portfolio Grand Prix</title>
-<meta name="description" content="Rhea Laloo, AI Engineer. Drive the original F1 Track Day circuit or a toy-diorama Mumbai GP to explore her portfolio — or read it in one page.">
-<meta name="theme-color" content="#f3dccd">
+<meta name="description" content="Rhea Laloo, AI Engineer. Drive the original F1 Track Day circuit or Mumbai GP to explore her portfolio — or read it in one page.">
+<meta name="theme-color" content="#0b0c0f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
-  :root { --ink: #23202b; --dim: #6c6577; --red: #d81f26; --card: #ffffffcc; --line: rgba(35,32,43,.1); --font: 'Titillium Web', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  /* Quiet, dark, one accent: graphite, warm white, rosso red. */
+  :root { --ink: #f1efea; --dim: #9b978f; --red: #c8151d; --bg: #0b0c0f; --card: #131519; --line: rgba(255,255,255,.08); --font: 'Titillium Web', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { min-height: 100%; }
-  body { font-family: var(--font); color: var(--ink); background: linear-gradient(180deg, #9cc2f2 0%, #cfe0f5 45%, #f7dccb 100%) fixed; -webkit-font-smoothing: antialiased; }
+  body { font-family: var(--font); color: var(--ink); background: radial-gradient(1200px 700px at 85% -10%, rgba(200,120,60,.14), rgba(0,0,0,0) 60%), var(--bg); -webkit-font-smoothing: antialiased; }
   a { color: inherit; }
-  .wrap { max-width: 1180px; margin: 0 auto; padding: 44px 24px 60px; }
-  header .k { font-size: 12.5px; letter-spacing: .38em; text-transform: uppercase; color: #4b4560; }
-  header h1 { font-size: clamp(40px, 7vw, 84px); font-weight: 900; line-height: .95; margin-top: 10px; letter-spacing: -.01em; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 52px 24px 64px; }
+  header .k { font-size: 12px; letter-spacing: .4em; text-transform: uppercase; color: var(--dim); }
+  header h1 { font-size: clamp(40px, 7vw, 86px); font-weight: 900; line-height: .95; margin-top: 12px; letter-spacing: -.01em; }
   header h1 span { color: var(--red); }
-  header p { max-width: 680px; margin-top: 14px; font-size: 17px; line-height: 1.55; color: #3d3848; }
-  .quick { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 10px; }
-  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; background: #ffffffb0; border: 1px solid var(--line); text-decoration: none; font-weight: 700; font-size: 13.5px; letter-spacing: .04em; backdrop-filter: blur(6px); transition: transform .15s, background .15s; }
-  .pill:hover { background: #fff; transform: translateY(-1px); }
-  .pill.dark { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .pill.dark:hover { background: #3a3445; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 40px; }
-  .env { background: var(--card); border-radius: 22px; overflow: hidden; border: 1px solid #ffffff; box-shadow: 0 30px 60px -30px rgba(60,40,90,.45), 0 2px 0 rgba(255,255,255,.6) inset; display: flex; flex-direction: column; transition: transform .2s; }
-  .env:hover { transform: translateY(-4px); }
-  .env .shot { position: relative; aspect-ratio: 16/9; background: #ddd center/cover no-repeat; }
-  .env .shot .tag { position: absolute; left: 14px; top: 14px; background: #ffffffe0; padding: 5px 11px; border-radius: 999px; font-size: 11px; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; }
+  header p { max-width: 640px; margin-top: 16px; font-size: 17px; line-height: 1.6; color: #c9c5bd; }
+  .quick { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; background: rgba(255,255,255,.04); border: 1px solid var(--line); text-decoration: none; font-weight: 700; font-size: 13.5px; letter-spacing: .04em; transition: background .2s, border-color .2s; }
+  .pill:hover { background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.16); }
+  .pill.dark { background: var(--ink); color: #111; border-color: var(--ink); }
+  .pill.dark:hover { background: #fff; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 44px; }
+  .env { background: var(--card); border-radius: 14px; overflow: hidden; border: 1px solid var(--line); display: flex; flex-direction: column; transition: transform .3s ease, border-color .3s; }
+  .env:hover { transform: translateY(-3px); border-color: rgba(255,255,255,.16); }
+  .env .shot { position: relative; aspect-ratio: 16/9; background: #1a1c20 center/cover no-repeat; }
+  .env .shot .tag { position: absolute; left: 14px; top: 14px; background: rgba(10,11,14,.72); color: #eee; padding: 5px 11px; border-radius: 999px; font-size: 11px; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; backdrop-filter: blur(6px); }
   .env .shot .tag.new { background: var(--red); color: #fff; }
   .env .bd { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
   .env h2 { font-size: 28px; font-weight: 900; line-height: 1.05; }
-  .env p { color: #4a4456; line-height: 1.55; font-size: 15px; }
+  .env p { color: #bdb9b1; line-height: 1.6; font-size: 15px; }
   .env ul { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
-  .env li { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #f1ecf6; color: #4b4560; }
-  .env .go { margin-top: auto; display: flex; gap: 10px; align-items: center; padding-top: 8px; }
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 24px; border-radius: 12px; background: var(--red); color: #fff; text-decoration: none; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; font-size: 14px; box-shadow: 0 6px 0 #9e141a; transition: transform .1s, box-shadow .1s; }
-  .btn:hover { transform: translateY(2px); box-shadow: 0 4px 0 #9e141a; }
-  .btn:active { transform: translateY(6px); box-shadow: 0 0 0 #9e141a; }
+  .env li { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.06); color: #c9c5bd; }
+  .env .go { margin-top: auto; display: flex; gap: 12px; align-items: center; padding-top: 10px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 24px; border-radius: 4px; background: var(--red); color: #fff; text-decoration: none; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; font-size: 13px; transition: background .2s, transform .2s; }
+  .btn:hover { background: #df232b; transform: translateY(-1px); }
   .note { font-size: 12.5px; color: var(--dim); }
-  .strip { margin-top: 34px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 26px; }
-  .card { background: var(--card); border-radius: 18px; padding: 20px 22px; border: 1px solid #fff; }
-  .card h3 { font-size: 12px; letter-spacing: .24em; text-transform: uppercase; color: var(--dim); margin-bottom: 10px; }
+  .strip { margin-top: 30px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; }
+  .card { background: var(--card); border-radius: 14px; padding: 20px 22px; border: 1px solid var(--line); }
+  .card h3 { font-size: 12px; letter-spacing: .24em; text-transform: uppercase; color: var(--dim); margin-bottom: 12px; }
   .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .fact b { display: block; font-size: 24px; font-weight: 900; }
   .fact span { font-size: 12.5px; color: var(--dim); }
-  .keys { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 14px; align-items: center; }
-  kbd { display: inline-block; min-width: 24px; padding: 2px 7px; border-radius: 6px; background: #fff; border: 1px solid #d9d2e3; border-bottom-width: 3px; font: 700 12px var(--font); text-align: center; margin-right: 2px; }
-  footer { margin-top: 36px; font-size: 12.5px; color: #4b4560; line-height: 1.7; }
-  footer a { color: #4b4560; }
+  .keys { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 14px; align-items: center; color: #c9c5bd; }
+  kbd { display: inline-block; min-width: 24px; padding: 2px 7px; border-radius: 4px; background: #1c1f24; color: #eee; border: 1px solid #2e323a; border-bottom-width: 2px; font: 700 12px var(--font); text-align: center; margin-right: 2px; }
+  footer { margin-top: 38px; font-size: 12.5px; color: var(--dim); line-height: 1.7; }
+  footer a { color: #c9c5bd; }
   @media (max-width: 860px) { .grid, .strip { grid-template-columns: 1fr; } .facts { grid-template-columns: 1fr 1fr; } }
 </style>
 </head>
@@ -74,7 +74,7 @@
       <div class="shot" style="background-image:url(assets/previews/mumbai.webp)"><span class="tag new">New</span></div>
       <div class="bd">
         <h2>Mumbai GP</h2>
-        <p>A toy-diorama Mumbai. Race an open-wheel car along Marine Drive and over the Sea Link, find my school on Peddar Road and my college in Sion, and finish at the Gateway of India.</p>
+        <p>Golden hour in Mumbai. Race an open-wheel car along Marine Drive and over the Sea Link, find my school on Peddar Road and my college in Sion, and finish at the Gateway of India.</p>
         <ul><li>Free roam or timed route</li><li>27 cutting chai to collect</li><li>Jumps &amp; secrets</li><li>Day / dusk / night</li></ul>
         <div class="go"><a class="btn" href="mumbai.html">Drive Mumbai GP</a><span class="note">Best on a laptop · ~4 s to build the city</span></div>
       </div>

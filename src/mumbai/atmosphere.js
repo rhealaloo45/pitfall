@@ -304,7 +304,8 @@ export class Atmosphere {
   fitCascades(camera, fov) {
     if (!this.csm) return;
     const f = camera.fov, far = camera.far;
-    camera.fov = Math.max(f, fov); camera.updateProjectionMatrix();
+    const portrait = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(25)) / Math.max(0.3, camera.aspect))) + 14;
+    camera.fov = Math.min(110, Math.max(f, fov, portrait)); camera.updateProjectionMatrix();
     this.csm.updateFrustums();
     camera.fov = f; camera.far = far; camera.updateProjectionMatrix();
   }

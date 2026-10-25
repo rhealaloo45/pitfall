@@ -149,7 +149,7 @@ function playIntro() {
   const toy = rig.mode === 'toy';
   const behind = toy ? [sp.x - f.x * 15.5, sp.y + 9.2, sp.z - f.z * 15.5] : [sp.x - f.x * 5.8, sp.y + 1.65, sp.z - f.z * 5.8];
   const keys = [
-    { t: 0, pos: [2500, 1750, 3000], look: [250, 0, -380], fov: 30 },
+    { t: 0, pos: [1950, 820, 2450], look: [300, 0, -200], fov: 34 },
     { t: 3.6, pos: [1500, 460, 1750], look: [860, 0, 1000], fov: 36 },
     { t: 6.6, pos: [1012, 38, 1118], look: [905, 14, 1048], fov: 44 },
     { t: 9.0, pos: [sp.x + 16, sp.y + 7, sp.z + 12], look: [sp.x, sp.y + 0.6, sp.z], fov: 48 },
@@ -339,7 +339,7 @@ function wirePlay() {
     knock(p, n) { if (n === 25) achieve('cones', 'Traffic-cone menace', '25 props sent flying'); },
     pigeons() { audio.flutter(); achieve('pigeons', 'Pigeon whisperer', 'The pigeons of Apollo Bunder are not impressed'); },
     reply(n) { const now = performance.now(); if (now - lastReply < 1500) return; lastReply = now; setTimeout(() => audio.horn(1.38, 0.22, 0.09), 450); if (n > 1) setTimeout(() => audio.horn(0.82, 0.3, 0.08), 800); if (Math.random() < 0.4) toast('Horn OK Please!'); },
-    bump(tr, vn) { audio.tock(Math.min(1, vn / 12), 0.6); rig.addShake(Math.min(0.4, vn * 0.03)); if (firstBump && vn > 4) { firstBump = false; toast('Bumper cars!', 'No toy taxis were harmed'); } },
+    bump(tr, vn) { audio.tock(Math.min(1, vn / 12), 0.6); rig.addShake(Math.min(0.4, vn * 0.03)); if (firstBump && vn > 4) { firstBump = false; toast('Bumper cars!', 'No taxis were harmed'); } },
   });
 }
 const sec = { air: 0, airBest: progressStore.get('mumbai.air', 0), donut: 0, lastYaw: null };

@@ -1,5 +1,5 @@
 /* Playful layer: knock-over props, chai collectibles, jump ramps, Gateway
-   pigeons, ambient toy traffic, and little secrets. Lightweight custom physics:
+   pigeons, ambient traffic, and little secrets. Lightweight custom physics:
    props are independent bodies that bounce, tumble and settle; the car's
    tested vehicle simulation is untouched. */
 import * as THREE from 'three';
@@ -171,7 +171,7 @@ export function buildPlay(ctx) {
   group.add(birdMesh);
   let flockAway = 0;
 
-  /* ================= ambient toy traffic (left-hand) ================= */
+  /* ================= ambient traffic (left-hand) ================= */
   const kinds = [taxiGeometry(), autoGeometry(), carGeometry(), busGeometry()];
   const tCols = [0xe8e8e5, 0xb8bbbe, 0x6b6f73, 0x1c1e21, 0x7a1d1b, 0x1e2c45, 0xe8e8e5, 0xc8c0b0];
   const nT = Math.round(36 * quality.props);
