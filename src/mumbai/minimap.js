@@ -4,7 +4,7 @@ import { COAST, RIVER, PARKS, WORLD_BOUNDS as B, PLACES } from './layout.js';
 const SCALE = 0.5;                        // base map pixels per metre
 const COLORS = {
   sea: '#1c2c36', land: '#2c2f33', park: '#2f4a2c', road: '#7c8188', major: '#a8adb4', deck: '#d0d4da',
-  chapter: '#e8b33c', discovery: '#5ec7ff', done: '#7d8a96', route: '#ff3b3b', player: '#ffffff',
+  chapter: '#e8a83c', discovery: '#e8d6a8', done: '#7d8a96', route: '#ff3b3b', player: '#ffffff',
 };
 
 export function renderBaseMap(net) {

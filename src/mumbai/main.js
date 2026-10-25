@@ -6,7 +6,7 @@ import { Input, CONTROLS } from '../core/input.js';
 import { CarAudio } from '../core/audio.js';
 import { CameraRig, ShotScript } from '../core/camera.js';
 import { loadSettings, saveSettings, resolveQuality, QUALITY, ASSISTS, progressStore, webglSupport } from '../core/settings.js';
-import { Atmosphere, TIMES } from './atmosphere.js';
+import { Atmosphere, TIMES, markDetail } from './atmosphere.js';
 import { createPipeline } from '../core/post.js';
 import { setMaxAnisotropy, TEX } from '../core/texgen.js';
 import { buildWorld } from './world.js';
@@ -50,7 +50,8 @@ TEX.facadeSize = Q.texSize || 512; TEX.groundSize = Q.texSize || 512;
 renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); toast('Graphics context lost', 'Reload the page to continue'); });
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.15, Q.far);
+const camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 0.15, Q.far);
+camera.layers.enable(1);   // street detail layer (see atmosphere.js markDetail)
 const atmo = new Atmosphere(renderer, scene);
 atmo.setShadowQuality(Q, camera);
 atmo.set(settings.time);
@@ -82,6 +83,10 @@ async function boot() {
   pipeline.setNight(atmo.night.value);
   car = buildCar();
   scene.add(car.root, car.contactShadow);
+  // street-level detail renders normally but skips the far shadow cascade
+  for (const k of ['props', 'play']) if (world.layers[k]) markDetail(world.layers[k].group);
+  if (world.layers.buildings) for (const m of world.layers.buildings.detailMeshes || []) markDetail(m);
+  markDetail(car.root); markDetail(car.contactShadow);
   nav = new Navigator(world.net);
   sim = new VehicleSim(CAR_SPEC, world);
   applyAssists();

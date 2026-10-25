@@ -141,7 +141,7 @@ export function buildTerrain(net, { cell = 4 } = {}) {
    (rock is the remainder), textured from the ground library. Urban land reads as
    compacted earth with patches of grass; maidans, gardens and the green hills
    are grass; beaches are sand. */
-export function buildTerrainMeshes(THREE, terr, { tile = 128, step = 1, webgl2 = true, texSize = 512, ground, greenAt = () => 0 } = {}) {
+export function buildTerrainMeshes(THREE, terr, { tile = 256, step = 1, webgl2 = true, texSize = 512, ground, greenAt = () => 0 } = {}) {
   const { NX, NZ, cell, H, K, SD } = terr;
   const group = new THREE.Group(); group.name = 'terrain';
   const per = Math.round(tile / cell);
@@ -189,49 +189,69 @@ export function buildTerrainMeshes(THREE, terr, { tile = 128, step = 1, webgl2 =
   const C = (h) => new THREE.Color(h);
   const fallback = [C('#68733a'), C('#7b6a55'), C('#b3a285'), C('#a7a39a'), C('#59534d')];
   const col = new THREE.Color();
+  const tiles = [];
   for (let tj = 0; tj < NZ - 1; tj += per) for (let ti = 0; ti < NX - 1; ti += per) {
     // skip tiles that are entirely open water
+    // (the sea surface is opaque, so tiles that are entirely under water are never drawn)
     let anyLand = false;
-    for (let j = tj; j <= Math.min(NZ - 1, tj + per) && !anyLand; j += 2) for (let i = ti; i <= Math.min(NX - 1, ti + per); i += 2) if (SD[j * NX + i] > -60) { anyLand = true; break; }
+    for (let j = tj; j <= Math.min(NZ - 1, tj + per) && !anyLand; j++) for (let i = ti; i <= Math.min(NX - 1, ti + per); i++) if (H[j * NX + i] > -1.2) { anyLand = true; break; }
     if (!anyLand) continue;
     const ni = Math.min(per, NX - 1 - ti), nj = Math.min(per, NZ - 1 - tj);
-    const vi = Math.floor(ni / step) + 1, vj = Math.floor(nj / step) + 1;
-    const pos = new Float32Array(vi * vj * 3), gw = new Float32Array(vi * vj * 4), colA = new Float32Array(vi * vj * 3);
-    let p = 0;
-    for (let b = 0; b < vj; b++) for (let a = 0; a < vi; a++) {
-      const i = ti + a * step, j = tj + b * step, k = j * NX + i;
-      const x = WB.minX + i * cell, z = WB.minZ + j * cell;
-      pos[p * 3] = x; pos[p * 3 + 1] = H[k]; pos[p * 3 + 2] = z;
-      const kk = K[k];
-      let w = [0, 0, 0, 0];   // grass, earth, sand, concrete (rock = remainder)
-      if (kk === KIND.grass) { const g = greenAt(x, z); w = [g, 1 - g, 0, 0]; }
-      else if (kk === KIND.sand || kk === KIND.water) w = [0, 0, 1, 0];
-      else if (kk === KIND.dirt) w = [0.15, 0.85, 0, 0];
-      else if (kk === KIND.paved) w = [0, 0.15, 0, 0.85];
-      // rock stays [0,0,0,0]
-      gw.set(w, p * 4);
-      col.setRGB(0, 0, 0);
-      const wr = Math.max(0, 1 - w[0] - w[1] - w[2] - w[3]);
-      [...w, wr].forEach((v, n) => { col.r += fallback[n].r * v; col.g += fallback[n].g * v; col.b += fallback[n].b * v; });
-      colA.set([col.r, col.g, col.b], p * 3);
-      p++;
-    }
-    const idx = [];
-    for (let b = 0; b < vj - 1; b++) for (let a = 0; a < vi - 1; a++) {
-      const q = b * vi + a;
-      idx.push(q, q + vi, q + 1, q + 1, q + vi, q + vi + 1);
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    g.setAttribute('gw', new THREE.BufferAttribute(gw, 4));
-    g.setAttribute('color', new THREE.BufferAttribute(colA, 3));
-    g.setIndex(idx);
-    g.computeVertexNormals();
-    g.computeBoundingSphere();
-    const m = new THREE.Mesh(g, mat);
-    m.receiveShadow = true;
-    group.add(m);
+    // two levels of detail per tile: full grid near the camera, 4× coarser far away
+    const lods = [step, Math.max(step, 4)].map(st => {
+      const vi = Math.floor(ni / st) + 1, vj = Math.floor(nj / st) + 1;
+      const pos = new Float32Array(vi * vj * 3), gw = new Float32Array(vi * vj * 4), colA = new Float32Array(vi * vj * 3);
+      let p = 0;
+      for (let b = 0; b < vj; b++) for (let a = 0; a < vi; a++) {
+        const i = ti + a * st, j = tj + b * st, k = j * NX + i;
+        const x = WB.minX + i * cell, z = WB.minZ + j * cell;
+        // far LOD: sink a touch so it does not poke through distant roads
+        pos[p * 3] = x; pos[p * 3 + 1] = H[k] - (st > step ? 0.1 : 0); pos[p * 3 + 2] = z;
+        const kk = K[k];
+        let w = [0, 0, 0, 0];   // grass, earth, sand, concrete (rock = remainder)
+        if (kk === KIND.grass) { const g = greenAt(x, z); w = [g, 1 - g, 0, 0]; }
+        else if (kk === KIND.sand || kk === KIND.water) w = [0, 0, 1, 0];
+        else if (kk === KIND.dirt) w = [0.15, 0.85, 0, 0];
+        else if (kk === KIND.paved) w = [0, 0.15, 0, 0.85];
+        gw.set(w, p * 4);
+        col.setRGB(0, 0, 0);
+        const wr = Math.max(0, 1 - w[0] - w[1] - w[2] - w[3]);
+        [...w, wr].forEach((v, n) => { col.r += fallback[n].r * v; col.g += fallback[n].g * v; col.b += fallback[n].b * v; });
+        colA.set([col.r, col.g, col.b], p * 3);
+        p++;
+      }
+      const idx = [];
+      for (let b = 0; b < vj - 1; b++) for (let a = 0; a < vi - 1; a++) {
+        const q = b * vi + a;
+        idx.push(q, q + vi, q + 1, q + 1, q + vi, q + vi + 1);
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      g.setAttribute('gw', new THREE.BufferAttribute(gw, 4));
+      g.setAttribute('color', new THREE.BufferAttribute(colA, 3));
+      g.setIndex(idx);
+      g.computeVertexNormals();
+      g.computeBoundingSphere();
+      const m = new THREE.Mesh(g, mat);
+      m.receiveShadow = true;
+      return m;
+    });
+    lods[1].visible = false;
+    group.add(lods[0], lods[1]);
+    tiles.push(lods);
   }
+  // swap tile detail by distance (cheap: ~90 tiles, checked a few times a second)
+  let lodT = 0;
+  group.userData.update = camera => {
+    if ((lodT = (lodT + 1) % 8) !== 0) return;
+    const far2 = 380 * 380;
+    for (const [hi, lo] of tiles) {
+      const c = hi.geometry.boundingSphere.center, r = hi.geometry.boundingSphere.radius;
+      const dx = c.x - camera.position.x, dz = c.z - camera.position.z, d = Math.max(0, Math.hypot(dx, dz) - r);
+      const near = d * d < far2 && camera.position.y < 400;
+      hi.visible = near; lo.visible = !near;
+    }
+  };
   return group;
 }
 import { WORLD_BOUNDS as WB } from './layout.js';

@@ -76,6 +76,7 @@ export async function buildWorld({ scene, atmo, quality, progress = () => {}, ex
     setNight(v) { farField.setNight(v); for (const l of Object.values(layers)) if (l && l.setNight) l.setNight(v); },
     update(t, dt, camera) {
       water.update(t, camera);
+      if (camera && terrainMesh.userData.update) terrainMesh.userData.update(camera);
       for (const l of Object.values(layers)) if (l && l.update) l.update(t, dt, camera);
     },
   };

@@ -358,11 +358,12 @@ export function buildBuildings(ctx) {
   }
   const atlas = detailAtlas();
   const dmat = new THREE.MeshStandardMaterial({ vertexColors: true, map: atlas, roughness: 0.6, emissive: 0xffffff, emissiveMap: atlas, emissiveIntensity: 0 });
+  const detailMeshes = [];
   for (const D of dchunks.values()) {
     if (!D.n) continue;
     const m = new THREE.Mesh(D.geometry(), dmat);
     m.castShadow = true; m.receiveShadow = true;
-    group.add(m);
+    group.add(m); detailMeshes.push(m);
   }
   /* soft contact shadow skirt around every footprint (ambient occlusion on Low/Medium) */
   {
@@ -397,10 +398,10 @@ export function buildBuildings(ctx) {
   tanks.forEach(([x, y, z, r], i) => { d.position.set(x, y, z); d.scale.set(r, r, r); d.rotation.set(0, 0, 0); d.updateMatrix(); tankMesh.setMatrixAt(i, d.matrix); tankMesh.setColorAt(i, tc.set(i % 7 === 0 ? 0xdedbd2 : i % 5 === 0 ? 0x2f4e7a : 0x1c1d1f)); });
   tankMesh.count = tanks.length;
   tankMesh.castShadow = true; tankMesh.receiveShadow = true;
-  group.add(tankMesh);
+  group.add(tankMesh); detailMeshes.push(tankMesh);
   scene.add(group);
   return {
-    group, material: mat, count: lots.length, towers, details, occAt, lots,
+    group, material: mat, count: lots.length, towers, details, occAt, lots, detailMeshes,
     setNight(v) { dmat.emissiveIntensity = v * 0.45; },
   };
 }

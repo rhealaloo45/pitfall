@@ -3,8 +3,8 @@ const KEY = 'pitfall.settings.v1';
 
 export const QUALITY = {
   low:    { label: 'Low',    pixelRatio: 1.0, shadows: 1024, cascades: 0, shadowFar: 70,  terrainStep: 2, props: 0.5, post: false, ao: false, antialias: true,  far: 2200, texSize: 256 },
-  medium: { label: 'Medium', pixelRatio: 1.5, shadows: 2048, cascades: 2, shadowFar: 380, terrainStep: 1, props: 0.8, post: true,  ao: false, antialias: false, far: 3200, texSize: 512 },
-  high:   { label: 'High',   pixelRatio: 2.0, shadows: 2048, cascades: 3, shadowFar: 650, terrainStep: 1, props: 1.0, post: true,  ao: true,  antialias: false, far: 4200, texSize: 512 },
+  medium: { label: 'Medium', pixelRatio: 1.5, shadows: 2048, cascades: 2, shadowFar: 300, terrainStep: 1, props: 0.8, post: true,  ao: false, antialias: false, far: 3200, texSize: 512 },
+  high:   { label: 'High',   pixelRatio: 2.0, shadows: 2048, cascades: 3, shadowFar: 500, terrainStep: 1, props: 1.0, post: true,  ao: true,  antialias: false, far: 4200, texSize: 512 },
 };
 
 export const ASSISTS = {

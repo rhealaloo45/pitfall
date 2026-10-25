@@ -1,6 +1,6 @@
 /* Mumbai GP — premium motorsport HUD. Restrained palette: graphite, white, one racing red. */
 :root {
-  --red: #d81f26; --red2: #ff3b3b; --amber: #e8b33c; --cyan: #5ec7ff; --green: #26d07c;
+  --red: #c8151d; --red2: #e8353b; --amber: #e8a83c; --cyan: #e8d6a8; --green: #3fbf7f;
   --ink: #0b0d11; --panel: rgba(12, 14, 19, 0.82); --panel2: rgba(22, 25, 32, 0.92); --line: rgba(255,255,255,0.09);
   --text: #eef1f4; --dim: #9aa3ad; --font: 'Titillium Web', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 }
@@ -11,27 +11,28 @@ button { font-family: inherit; cursor: pointer; }
 .hidden { display: none !important; }
 kbd { display: inline-block; min-width: 22px; padding: 1px 7px; border: 1px solid #3a3f49; border-bottom-width: 2px; border-radius: 4px; background: #1b1e25; color: #fff; font: 700 11px var(--font); text-align: center; }
 
-/* ---------- loading / title ---------- */
-#loader { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; justify-content: flex-end; padding: 6vh 6vw; color: #23202b;
-  background: url(../../assets/previews/mumbai.webp) right -6vw center / auto 92% no-repeat, linear-gradient(180deg, #9cc2f2 0%, #cfe0f5 45%, #f7dccb 100%); }
-#loader .brand { font-size: 13px; letter-spacing: .4em; color: #4b4560; text-transform: uppercase; }
-#loader h1 { font-size: clamp(44px, 8vw, 104px); font-weight: 900; line-height: .9; letter-spacing: -.01em; margin: 10px 0 8px; }
+/* ---------- loading / title: full-bleed still of the city, quiet type ---------- */
+#loader { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; justify-content: flex-end; padding: 7vh 6vw; color: #f2f0eb;
+  background: linear-gradient(90deg, rgba(8,9,12,.88) 0%, rgba(8,9,12,.62) 38%, rgba(8,9,12,.08) 72%), linear-gradient(0deg, rgba(8,9,12,.75) 0%, rgba(8,9,12,0) 45%),
+    url(../../assets/previews/mumbai.webp) center / cover no-repeat, #0b0d11; }
+#loader .brand { font-size: 12px; letter-spacing: .42em; color: rgba(242,240,235,.7); text-transform: uppercase; }
+#loader h1 { font-size: clamp(44px, 8vw, 108px); font-weight: 900; line-height: .9; letter-spacing: -.01em; margin: 12px 0 14px; }
 #loader h1 span { color: var(--red); }
-#loader .sub { max-width: 620px; color: #3d3848; font-size: 16px; line-height: 1.55; background: rgba(255,255,255,.55); padding: 10px 14px; border-radius: 10px; }
-#loader .bar { margin-top: 30px; width: min(560px, 88vw); height: 6px; background: rgba(35,32,43,0.12); border-radius: 3px; overflow: hidden; }
+#loader .sub { max-width: 600px; color: rgba(242,240,235,.82); font-size: 16px; line-height: 1.6; }
+#loader .bar { margin-top: 30px; width: min(520px, 88vw); height: 2px; background: rgba(255,255,255,.14); overflow: hidden; }
 #loader .bar i { display: block; height: 100%; width: 0; background: var(--red); transition: width .25s ease; }
-#loader .stage { margin-top: 10px; font-size: 12px; letter-spacing: .2em; color: #4b4560; text-transform: uppercase; min-height: 18px; }
-#loader .btn:not(.primary) { background: #fff; color: #23202b; border-color: #fff; }
-#loader .btn.ghost { background: rgba(255,255,255,.5); }
+#loader .stage { margin-top: 10px; font-size: 11px; letter-spacing: .24em; color: rgba(242,240,235,.6); text-transform: uppercase; min-height: 18px; }
+#loader .btn:not(.primary) { background: rgba(255,255,255,.08); color: #f2f0eb; border-color: rgba(255,255,255,.22); backdrop-filter: blur(6px); }
+#loader .btn.ghost { background: transparent; border-color: rgba(255,255,255,.12); }
 #loader .actions { margin-top: 26px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-.btn { border: 1px solid var(--line); background: #1b1e25; color: #fff; padding: 13px 26px; border-radius: 6px; font-weight: 700; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; text-decoration: none; display: inline-flex; align-items: center; gap: 10px; transition: background .15s, transform .15s; }
+.btn { border: 1px solid var(--line); background: #1b1e25; color: #fff; padding: 13px 26px; border-radius: 4px; font-weight: 700; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; text-decoration: none; display: inline-flex; align-items: center; gap: 10px; transition: background .2s, border-color .2s, transform .2s; }
 .btn:hover { background: #252932; transform: translateY(-1px); }
 .btn.primary { background: var(--red); border-color: var(--red); }
-.btn.primary:hover { background: #ec2a31; }
+.btn.primary:hover { background: #e0262d; }
 .btn.ghost { background: transparent; }
 .btn:disabled { opacity: .4; cursor: default; transform: none; }
-#loader .note { margin-top: 18px; font-size: 12px; color: #4b4560; max-width: 640px; line-height: 1.5; }
-@media (max-width: 760px) { #loader { background: linear-gradient(180deg, #9cc2f2 0%, #cfe0f5 45%, #f7dccb 100%); } }
+#loader .note { margin-top: 20px; font-size: 12px; color: rgba(242,240,235,.5); max-width: 620px; line-height: 1.55; }
+@media (max-width: 760px) { #loader { background: linear-gradient(0deg, rgba(8,9,12,.92) 0%, rgba(8,9,12,.55) 60%, rgba(8,9,12,.2) 100%), url(../../assets/previews/mumbai.webp) center / cover no-repeat, #0b0d11; } }
 #loader .err { margin-top: 18px; color: #ff9a9a; font-size: 14px; }
 
 /* ---------- HUD ---------- */
@@ -89,7 +90,7 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 7px; border: 1px soli
 
 /* ---------- portfolio panel ---------- */
 #panelWrap { position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; background: rgba(4,5,8,.5); backdrop-filter: blur(3px); padding: 20px; }
-#panel { animation: panelIn .38s cubic-bezier(.2,.9,.25,1.25); width: min(760px, 96vw); max-height: 88vh; display: flex; flex-direction: column; background: #12151b; border-radius: 12px; overflow: hidden; box-shadow: 0 30px 90px rgba(0,0,0,.6); border: 1px solid var(--line); }
+#panel { animation: panelIn .42s cubic-bezier(.2,.8,.2,1); width: min(760px, 96vw); max-height: 88vh; display: flex; flex-direction: column; background: #12151b; border-radius: 12px; overflow: hidden; box-shadow: 0 30px 90px rgba(0,0,0,.6); border: 1px solid var(--line); }
 #panel header { padding: 18px 24px 16px; position: relative; }
 #panel header .k { font-size: 11px; letter-spacing: .3em; text-transform: uppercase; opacity: .85; }
 #panel header h2 { font-size: 28px; font-weight: 900; line-height: 1.1; margin-top: 4px; }
@@ -113,7 +114,7 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 7px; border: 1px soli
 #panel footer { padding: 12px 24px; border-top: 1px solid #222731; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
 #panel .note { font-size: 12px; color: #7d8792; margin-top: 12px; }
 
-@keyframes panelIn { from { opacity: 0; transform: translateY(26px) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes panelIn { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: none; } }
 #panel .stat { animation: statIn .5s ease both; } #panel .stat:nth-child(2) { animation-delay: .08s; } #panel .stat:nth-child(3) { animation-delay: .16s; }
 @keyframes statIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
