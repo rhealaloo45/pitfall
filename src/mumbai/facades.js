@@ -30,7 +30,7 @@ export const DIMS = {
 };
 /* style → [upper layer, ground-floor layer (−1: none), ground floor has shop variants] */
 const STYLE_LAYERS = {
-  [STYLE.roof]: [L.roof, -1], [STYLE.residential]: [L.resA, L.shopA], [STYLE.glass]: [L.glass, L.lobby], [STYLE.deco]: [L.deco, L.shopA],
+  [STYLE.roof]: [L.roof, -1], [STYLE.residential]: [L.resA, L.shopA], [STYLE.glass]: [L.glass, L.lobby], [STYLE.deco]: [L.deco, L.shopB],
   [STYLE.heritage]: [L.heritage, L.arcade], [STYLE.office]: [L.office, L.lobby], [STYLE.chawl]: [L.chawl, L.shopA], [STYLE.industrial]: [L.industrial, -1],
   [STYLE.bungalow]: [L.bungalow, -1], [STYLE.tiles]: [L.tiles, -1], [STYLE.plain]: [L.plain, -1], [STYLE.balcony]: [L.resB, L.shopA],
   [STYLE.stone]: [L.heritage, -1], [STYLE.lobby]: [L.lobby, -1], [STYLE.plainStone]: [L.stone, -1], [STYLE.shop]: [L.shopA, L.shopA], [STYLE.arcade]: [L.arcade, L.arcade],
@@ -207,7 +207,7 @@ const LAYER_PAINT = {
     const r = rng(7);
     for (let i = 0; i < 26; i++) {                                                      // shelves of goods
       const gx = x0 + 0.1 + r() * (x1 - x0 - 0.4), gy = 0.5 + Math.floor(r() * 4) * 0.42, w = 0.12 + r() * 0.3;
-      p.rect(gx, gy, w, 0.2 + r() * 0.12, { c: ['#8a3b2f', '#c49a3c', '#3c6a8a', '#d7d0c0', '#5b7a3a', '#a85a32'][i % 6], g: 0.6 });
+      p.rect(gx, gy, w, 0.2 + r() * 0.12, { c: ['#6e4a40', '#9c8a62', '#55636c', '#b9b2a4', '#5f6650', '#8a6a52'][i % 6], g: 0.6 });
     }
     for (let k = 0; k < 4; k++) p.rect(x0, 0.45 + k * 0.42, x1 - x0, 0.03, { c: '#4a4038', g: 0.6 });
     p.gradRect(x0, 0, x1 - x0, top, 0, top, [[0, 'rgba(0,0,0,0.0)'], [1, 'rgba(0,0,0,0.45)']]);
@@ -226,7 +226,7 @@ const LAYER_PAINT = {
     p.rect(x0 + 0.06, 0.06, x1 - x0 - 0.12, 0.38, { c: '#3a3836', t: 0, h: 0.3, r: 0.6 });
     p.rect((bw - 0.06) / 2, 0, 0.06, top, { c: '#262a2c', h: 0.4 });
     const r = rng(9);
-    for (let i = 0; i < 10; i++) p.rect(x0 + 0.2 + r() * (x1 - x0 - 0.6), 0.5 + r() * 1.2, 0.2 + r() * 0.25, 0.25 + r() * 0.4, { c: ['#c8b89a', '#7f2f2a', '#e6e0d4', '#3d5a74'][i % 4], g: 1, r: 0.5 });
+    for (let i = 0; i < 10; i++) p.rect(x0 + 0.2 + r() * (x1 - x0 - 0.6), 0.5 + r() * 1.2, 0.2 + r() * 0.25, 0.25 + r() * 0.4, { c: ['#b8ab92', '#6d4a40', '#d6d0c4', '#4a5866'][i % 4], g: 1, r: 0.5 });
     p.rect(0, 0, bw, 0.1, { c: '#77736c', t: 0, h: 0.6, r: 0.9 });
   },
   [L.arcade](p, bw, fh) {         // Fort colonnade: round arches in stone, shaded walkway

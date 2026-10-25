@@ -89,11 +89,14 @@ export async function createPipeline(renderer, scene, camera, Q) {
   };
   /** Adaptive resolution: call once per frame with the frame time (ms). */
   P.adapt = (ms, dt) => {
-    P.frameAvg = P.frameAvg * 0.92 + ms * 0.08;
-    P.adaptT += dt;
-    if (P.adaptT < 1.5) return;
-    if (P.frameAvg > 24 && P.scale > P.minScale) { P.scale = Math.max(P.minScale, P.scale - 0.1); P.adaptT = 0; P.applyScale(); }
-    else if (P.frameAvg < 14 && P.scale < 1) { P.scale = Math.min(1, P.scale + 0.1); P.adaptT = 0; P.applyScale(); }
+    // clamp single hitches (shader compiles, tab switches) so they don't trigger a downgrade
+    P.frameAvg = P.frameAvg * 0.92 + Math.min(ms, 45) * 0.08;
+    P.adaptT += dt; P.clock = (P.clock || 0) + dt;
+    if (P.adaptT < 2) return;
+    // down when clearly under ~40 fps; back up when holding vsync (60 Hz ≈ 16.7 ms) again
+    // (after a step down, wait 15 s before trying the higher resolution again, to avoid see-sawing)
+    if (P.frameAvg > 25 && P.scale > P.minScale) { P.scale = Math.max(P.minScale, P.scale - 0.1); P.adaptT = 0; P.holdUntil = P.clock + 15; P.applyScale(); }
+    else if (P.frameAvg < 18.5 && P.scale < 1 && P.clock > (P.holdUntil || 0)) { P.scale = Math.min(1, P.scale + 0.1); P.adaptT = 0; P.applyScale(); }
   };
   P.render = t => {
     if (P.aoCam) {

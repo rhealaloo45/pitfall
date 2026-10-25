@@ -141,9 +141,9 @@ void main() {
   float disc = smoothstep( 0.99965, 0.99985, cosT ) * uSunVis * step( -0.01, y );
   col += uSunCol * disc * ( uEnv > 0.5 ? 2.0 : 14.0 );
   // stars
-  if ( uNight > 0.5 && y > 0.05 && uEnv < 0.5 ) {
+  if ( uNight > 0.8 && y > 0.05 && uEnv < 0.5 ) {
     vec2 sp = d.xz / ( y + 1.0 ) * 380.0;
-    float s = step( 0.9965, h21( floor( sp ) ) ) * smoothstep( 0.05, 0.35, y );
+    float s = step( 0.9965, h21( floor( sp ) ) ) * smoothstep( 0.05, 0.35, y ) * smoothstep( 0.8, 1.0, uNight );
     col += vec3( 0.55, 0.6, 0.75 ) * s * 0.6;
   }
   gl_FragColor = vec4( col, 1.0 );
@@ -218,6 +218,7 @@ export class Atmosphere {
     }
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(size, size);
+    this.sun.shadow.normalBias = 140 / size * 1.5;
     this.sun.shadow.camera.layers.mask = 3;
   }
 
@@ -308,5 +309,11 @@ export class Atmosphere {
     camera.fov = Math.min(110, Math.max(f, fov, portrait)); camera.updateProjectionMatrix();
     this.csm.updateFrustums();
     camera.fov = f; camera.far = far; camera.updateProjectionMatrix();
+    // offset receivers along their normal by ~1.5 shadow texels of their cascade: removes acne on
+    // surfaces at grazing sun angles (car bodywork, roofs at golden hour) without detaching shadows
+    for (const l of this.csm.lights) {
+      const c = l.shadow.camera, texel = (c.right - c.left) / l.shadow.mapSize.x;
+      l.shadow.normalBias = texel * 1.5; l.shadow.bias = -0.00005;
+    }
   }
 }
