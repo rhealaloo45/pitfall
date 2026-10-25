@@ -356,15 +356,19 @@ export function buildLandmarks(ctx) {
 
   /* =============== Girgaum Chowpatty stalls =============== */
   {
-    const cols = [0xd8432f, 0x2f7fd8, 0xe8b33c, 0x2fa86b, 0xd83f8a, 0xf07c2a];
+    // food stalls: whitewashed counters under faded tarpaulin awnings on poles
+    const tarps = [0x8e3a2e, 0x3e5f7a, 0xa8843e, 0x3f6b55, 0x7e4658, 0x9a5e36].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, side: THREE.DoubleSide }));
+    const counter = new THREE.MeshStandardMaterial({ color: 0xe2dccf, roughness: 0.85 });
     for (let k = 0; k < 7; k++) {
       const x = -300 + k * 13, z = 352 + Math.sin(k) * 4;
       const gy = terr.heightAt(x, z);
       if (gy < 0.4) continue;
-      add(box(3.4, 2.2, 2.4), new THREE.MeshStandardMaterial({ color: 0xece6da, roughness: 0.8 }), x, gy + 1.1, z);
-      const c = add(new THREE.ConeGeometry(3, 1.2, 4), new THREE.MeshStandardMaterial({ color: cols[k % cols.length], roughness: 0.7 }), x, gy + 2.8, z, Math.PI / 4);
-      c.scale.set(1, 1, 0.8);
-      colliders.box(x, z, 1.7, 1.2, 0, gy - 1, gy + 3);
+      add(box(3.4, 1.1, 1.6), counter, x, gy + 0.55, z);
+      add(box(3.2, 0.9, 0.12), counter, x, gy + 1.5, z - 0.7);                  // back board
+      for (const sx of [-1.6, 1.6]) for (const sz of [-0.9, 0.9]) add(new THREE.CylinderGeometry(0.04, 0.04, 2.6, 6), steel, x + sx, gy + 1.3, z + sz, 0, false);
+      const t = add(box(3.9, 0.05, 2.6), tarps[k % tarps.length], x, gy + 2.62, z);
+      t.rotation.x = -0.12;
+      colliders.box(x, z, 1.7, 0.9, 0, gy - 1, gy + 3);
     }
   }
 

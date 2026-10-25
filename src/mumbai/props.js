@@ -655,6 +655,19 @@ export function buildProps(ctx) {
   for (const sk of SKIN.slice(0, 2)) for (const k of ['man', 'woman']) people.push(new Chunked(personGeometry(k, sk), vmat, { cast: true }));
   people.push(new Chunked(personGeometry('kid', SKIN[2]), vmat, { cast: true }));
   let nPeople = 0;
+  /** true if nothing solid (walls, posts, landmark footprints, stalls, other people) is within r metres. */
+  const freeSpot = (x, z, y, r) => {
+    let ok = true;
+    colliders.query(x, z, r + 1, o => {
+      if (!ok || y < o.y0 - 1 || y > o.y1 + 1) return;
+      if (o.t === 0) {
+        const dx = o.bx - o.ax, dz = o.bz - o.az, l2 = dx * dx + dz * dz || 1;
+        let t = ((x - o.ax) * dx + (z - o.az) * dz) / l2; t = t < 0 ? 0 : t > 1 ? 1 : t;
+        if (Math.hypot(x - o.ax - dx * t, z - o.az - dz * t) < r) ok = false;
+      } else if (Math.hypot(x - o.x, z - o.z) < o.r + r) ok = false;
+    });
+    return ok;
+  };
   const addPerson = (x, z, y, ry) => {
     const i = Math.floor(R() * people.length);
     people[i].add(mtx(x, y, z, ry, 0.92 + R() * 0.14), C.set(CLOTH[Math.floor(R() * CLOTH.length)]));
@@ -674,8 +687,11 @@ export function buildProps(ctx) {
         // along Marine Drive people face the sea; elsewhere they stroll along the footpath
         const along = Math.atan2(r.tx[i], r.tz[i]) + (R() < 0.5 ? 0 : Math.PI);
         const ry = sea && R() < 0.6 ? Math.atan2(r.tz[i] * side, -r.tx[i] * side) + (R() - 0.5) * 0.8 : along + (R() - 0.5) * 0.6;
+        if (!freeSpot(x, z, r.h[i], 0.7)) continue;
         addPerson(x, z, r.h[i] + 0.16, ry);
-        if (R() < 0.35) addPerson(x + Math.cos(ry) * 0.6, z - Math.sin(ry) * 0.6, r.h[i] + 0.16, ry + Math.PI + (R() - 0.5));   // chatting in pairs
+        // some chat in pairs, facing each other
+        const bx = x + Math.sin(ry) * 0.85, bz = z + Math.cos(ry) * 0.85;
+        if (R() < 0.35 && freeSpot(bx, bz, r.h[i], 0.5)) addPerson(bx, bz, r.h[i] + 0.16, ry + Math.PI + (R() - 0.5) * 0.4);
       }
     }
   }
@@ -684,7 +700,9 @@ export function buildProps(ctx) {
       const a = R() * Math.PI * 2, rr = inner + Math.sqrt(R()) * (rad - inner), x = px + Math.cos(a) * rr, z = pz + Math.sin(a) * rr;
       if (occAt(x, z) || landSD(x, z) < 2) continue;
       const nr = net.nearestRoad(x, z, 25); if (nr && nr.d < nr.road.T.hw + 0.6) continue;
-      addPerson(x, z, terr.heightAt(x, z), R() * Math.PI * 2);
+      const y = terr.heightAt(x, z);
+      if (!freeSpot(x, z, y, 2.2)) continue;            // clear of monuments, stalls, fountains and each other
+      addPerson(x, z, y, R() * Math.PI * 2);
     }
   }
   for (const ch of people) ch.build(group);

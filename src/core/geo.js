@@ -47,8 +47,9 @@ export function loft(sections, { radial = 28, sub = 4, capStart = true, capEnd =
     for (let j = 0; j < radial; j++) {
       const a = i * R + j, b = a + 1, c = a + R, d = c + 1;
       // sections run from front (high z) to back; keep faces pointing outward
-      if (rings[i].z > rings[i + 1].z) idx.push(a, b, c, b, d, c);
-      else idx.push(a, c, b, b, c, d);
+      // (the angle runs bottom → +x → top, i.e. counter-clockwise seen from +z)
+      if (rings[i].z > rings[i + 1].z) idx.push(a, c, b, b, c, d);
+      else idx.push(a, b, c, b, d, c);
     }
   }
   const addCap = (ri, flip) => {
@@ -57,7 +58,7 @@ export function loft(sections, { radial = 28, sub = 4, capStart = true, capEnd =
     pos.push(r.xc, r.yc, r.z); uv.push(0.5, ri ? 1 : 0);
     for (let j = 0; j < radial; j++) {
       const a = ri * R + j, b = a + 1;
-      if (flip) idx.push(ci, a, b); else idx.push(ci, b, a);
+      if (flip) idx.push(ci, b, a); else idx.push(ci, a, b);
     }
   };
   const forward = rings[0].z > rings[rings.length - 1].z;
