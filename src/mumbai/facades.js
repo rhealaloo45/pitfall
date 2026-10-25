@@ -383,7 +383,7 @@ export function facadeMaterial(nightU, { size = TEX.facadeSize || 512, webgl2 = 
         precision highp sampler2DArray;
         uniform sampler2DArray uFacA, uFacB; uniform sampler2D uGrime; uniform vec2 uLayers[24]; uniform float uNight;
         varying vec2 vFuv; varying vec4 vFac; varying vec3 vTan; varying vec3 vTint;
-        float gGlass, gRough, gLit, gVis; vec2 gN; vec3 gLitCol;`)
+        float gGlass, gRough, gLit, gVis; vec2 gN; vec3 gLitCol, gBounce;`)
       .replace('#include <map_fragment>', `
         float style = floor(vFac.x + 0.5), fh = vFac.y, bw = vFac.z, seed = floor(vFac.w + 0.5);   // rounded: varyings jitter
         vec2 lay = uLayers[int(style)];
@@ -416,7 +416,11 @@ export function facadeMaterial(nightU, { size = TEX.facadeSize || 512, webgl2 = 
         gN = tB.rg * 2.0 - 1.0;
         float lit = mix(0.34, step(0.66, fract(rnd * 3.17 + seed * 0.01)), gVis);
         gLit = gGlass * lit * uNight;
-        gLitCol = mix(vec3(1.0, 0.72, 0.42), vec3(0.9, 0.92, 1.0), step(0.85, fract(rnd * 5.3)) * gVis);`)
+        gLitCol = mix(vec3(1.0, 0.72, 0.42), vec3(0.9, 0.92, 1.0), step(0.85, fract(rnd * 5.3)) * gVis);
+        // ground-floor shops and arcades: warm, dimmer, mostly open in the evening
+        if (fl < 0.5 && lay.y >= 0.0) { gLitCol = vec3(1.0, 0.64, 0.34) * 0.3; gLit = gGlass * uNight * mix(0.7, step(0.3, rnd), gVis); }
+        // street-light bounce on the lower storeys at night
+        gBounce = alb * vec3(1.0, 0.62, 0.32) * uNight * 0.05 * (1.0 - smoothstep(3.0, 16.0, vFuv.y));`)
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = gRough;')
       .replace('#include <normal_fragment_maps>', `
         {
@@ -426,7 +430,7 @@ export function facadeMaterial(nightU, { size = TEX.facadeSize || 512, webgl2 = 
           normal = normalize(Tv * tN.x + Bv * tN.y + normal * tN.z);
         }`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-        totalEmissiveRadiance += gLitCol * gLit * 1.05;`);
+        totalEmissiveRadiance += gLitCol * gLit * 0.8 + gBounce;`);
   };
   m.customProgramCacheKey = () => 'facade-v2';
   return m;

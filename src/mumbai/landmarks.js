@@ -5,7 +5,7 @@ import { PLACES, PLAZAS } from './layout.js';
 import { FacadeBuilder, facadeMaterial, rectPts, STYLE } from './buildings.js';
 import { facadeTextures, LAYER } from './facades.js';
 import { TEX } from '../core/texgen.js';
-import { canvasTexture, orientStrut } from '../core/geo.js';
+import { canvasTexture, orientStrut, mergeStaticByMaterial } from '../core/geo.js';
 
 /** Dressed stone projected in world space (no UVs needed), from the mipmapped facade library:
     blocks bw × bh metres, tinted `color`, with mortar relief in the normal map. */
@@ -380,7 +380,7 @@ export function buildLandmarks(ctx) {
     fb.prism(rectPts(tx, tz, 16, 16, 0.3, 6), gy, gy + 150, new THREE.Color(0x2f3a42), [STYLE.glass, 3.9, 1.6, 777], new THREE.Color(0x24292e), [STYLE.roof, 3, 3, 3]);
     fb.prism(rectPts(tx, tz, 9, 9, 0.3), gy + 150, gy + 162, new THREE.Color(0x24292e), [STYLE.plain, 3, 3, 0], new THREE.Color(0x24292e), [STYLE.roof, 3, 3, 3]);
     colliders.box(tx, tz, 16, 16, 0.3, gy - 1, gy + 160);
-    const s = new THREE.Mesh(new THREE.PlaneGeometry(12, 3), new THREE.MeshStandardMaterial({ map: signTexture(['BKC'], { bg: '#0f1720', fg: '#ffffff', h: 220, accent: '#5ec7ff' }), emissiveIntensity: 0.4, emissive: 0xffffff }));
+    const s = new THREE.Mesh(new THREE.PlaneGeometry(12, 3), new THREE.MeshStandardMaterial({ map: signTexture(['BKC'], { bg: '#0f1720', fg: '#ffffff', h: 220, accent: '#c8151d' }), emissiveIntensity: 0.4, emissive: 0xffffff }));
     s.material.emissiveMap = s.material.map;
     s.position.set(p.x, p.h + 3, p.z + 30); group.add(s);
     add(box(12.4, 3.4, 0.4), steel, p.x, p.h + 3, p.z + 29.75);
@@ -411,23 +411,25 @@ export function buildLandmarks(ctx) {
     beam.material.uniforms.uOp.value = pl.kind === 'chapter' ? 0.55 : 0.35;
     const ring = new THREE.Mesh(new THREE.RingGeometry(pl.r * 0.55, pl.r * 0.55 + 0.35, 64), beaconMat(color));
     ring.rotation.x = -Math.PI / 2; ring.position.set(pl.x, y + 0.15, pl.z); ring.material.opacity = 0.45; ring.userData.noAO = true;
+    beam.userData.dynamic = ring.userData.dynamic = true;
     group.add(beam, ring);
     beacons.push({ id: pl.id, beam, ring, base: y });
   }
 
+  const merged = mergeStaticByMaterial(group);
   scene.add(group);
   return {
-    group, beacons, startLights: markers.startLights,
+    group, beacons, startLights: markers.startLights, merged,
     setVisited(id) { const b = beacons.find(q => q.id === id); if (b) { b.beam.material.uniforms.uOp.value = 0.1; b.ring.material.opacity = 0.12; } },
     celebrate(id) {
       const b = beacons.find(q => q.id === id); if (!b) return;
-      const burst = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.6, 48), new THREE.MeshBasicMaterial({ color: 0xffd166, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+      const burst = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.25, 64), new THREE.MeshBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false }));
       burst.rotation.x = -Math.PI / 2; burst.position.copy(b.ring.position); burst.position.y += 0.2; burst.userData.t = 0;
       group.add(burst); bursts.push(burst);
     },
     update(t, dt = 0.016) {
       for (const b of beacons) { b.ring.scale.setScalar(1 + Math.sin(t * 2.2) * 0.04); }
-      for (let i = bursts.length - 1; i >= 0; i--) { const m = bursts[i]; m.userData.t += dt; const k = m.userData.t / 1.2; m.scale.setScalar(1 + k * 22); m.material.opacity = 0.9 * (1 - k); if (k >= 1) { group.remove(m); m.geometry.dispose(); bursts.splice(i, 1); } }
+      for (let i = bursts.length - 1; i >= 0; i--) { const m = bursts[i]; m.userData.t += dt; const k = m.userData.t / 1.2; m.scale.setScalar(1 + k * 22); m.material.opacity = 0.6 * (1 - k) * (1 - k); if (k >= 1) { group.remove(m); m.geometry.dispose(); bursts.splice(i, 1); } }
     },
   };
 }

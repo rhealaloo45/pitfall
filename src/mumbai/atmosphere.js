@@ -160,6 +160,10 @@ function skyMaterial(shared, env) {
 }
 const lin = (hex, k = 1) => new THREE.Color(hex).multiplyScalar(k);
 
+/** Layer 1 = small street detail. Cameras that should see it must enable layer 1. */
+export const DETAIL_LAYER = 1;
+export function markDetail(obj) { obj.traverse(o => o.layers.set(DETAIL_LAYER)); return obj; }
+
 export class Atmosphere {
   constructor(renderer, scene) {
     this.renderer = renderer; this.scene = scene;
@@ -207,11 +211,14 @@ export class Atmosphere {
         shadowMapSize: size, lightDirection: new THREE.Vector3(0, -1, 0), lightIntensity: 3, lightNear: 1, lightFar: 3000, lightMargin: 300,
       });
       this.csm.fade = true;
-      for (const l of this.csm.lights) { l.shadow.bias = -0.0002; }
+      // small street detail (layer 1: trees, cars, props) only casts into the near cascades
+      const detailCascades = Q.cascades >= 3 ? 2 : 1;
+      this.csm.lights.forEach((l, i) => { l.shadow.bias = -0.0002; l.shadow.camera.layers.mask = i < detailCascades ? 3 : 1; });
       return;
     }
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(size, size);
+    this.sun.shadow.camera.layers.mask = 3;
   }
 
   /** Give every material the fog uniforms and (with cascades) the CSM defines. Safe to call repeatedly. */

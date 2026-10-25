@@ -5,7 +5,7 @@
    so frustum and distance culling still work. All geometry and textures are
    generated here (no external assets). */
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PARKS, HILLS, PLAZAS, RESERVED, WORLD_BOUNDS as WB } from './layout.js';
 import { landSD } from './geo2d.js';
 import { rng, canvasTexture } from '../core/geo.js';
@@ -13,28 +13,31 @@ import { insideSlab } from './diorama.js';
 import { districtAt } from './buildings.js';
 
 /* ---------- vertex-painted geometry: colour + (roughness, metalness, paint mask) ---------- */
-export function paint(geo, hex, rough = 0.6, metal = 0, tint = 0) {
+export function paint(geo, hex, rough = 0.6, metal = 0, tint = 0, emit = 0) {
   if (geo.index) geo = geo.toNonIndexed();
   for (const k of Object.keys(geo.attributes)) if (!['position', 'normal', 'uv'].includes(k)) geo.deleteAttribute(k);
   if (!geo.attributes.uv) geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 2), 2));
-  const c = new THREE.Color(hex), n = geo.attributes.position.count, a = new Float32Array(n * 3), m = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; m[i * 3] = rough; m[i * 3 + 1] = metal; m[i * 3 + 2] = tint; }
+  const c = new THREE.Color(hex), n = geo.attributes.position.count, a = new Float32Array(n * 3), m = new Float32Array(n * 4);
+  for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; m[i * 4] = rough; m[i * 4 + 1] = metal; m[i * 4 + 2] = tint; m[i * 4 + 3] = emit; }
   geo.setAttribute('color', new THREE.BufferAttribute(a, 3));
-  geo.setAttribute('rm', new THREE.BufferAttribute(m, 3));
+  geo.setAttribute('rm', new THREE.BufferAttribute(m, 4));
   return geo;
 }
-const part = (geo, hex, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1, rough = 0.6, metal = 0, tint = 0) => {
+const part = (geo, hex, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1, rough = 0.6, metal = 0, tint = 0, emit = 0) => {
   geo.scale(sx, sy, sz); geo.rotateX(rx); geo.rotateY(ry); geo.rotateZ(rz); geo.translate(x, y, z);
-  return paint(geo, hex, rough, metal, tint);
+  return paint(geo, hex, rough, metal, tint, emit);
 };
 const merge = parts => mergeGeometries(parts);
 
-/** Vehicle / prop material: per-vertex roughness & metalness; instance colour only tints painted panels. */
+/** Shared night glow for lamp heads and vehicle lights (0 by day). */
+export const GLOW = { value: 0 };
+/** Vehicle / prop material: per-vertex roughness, metalness, paint mask and night glow; instance colour only tints painted panels. */
 export function vehicleMaterial() {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5, metalness: 0 });
   m.onBeforeCompile = sh => {
+    sh.uniforms.uGlow = GLOW;
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute vec3 rm; varying vec3 vRm;')
+      .replace('#include <common>', '#include <common>\nattribute vec4 rm; varying vec4 vRm;')
       .replace('#include <color_vertex>', `
         vColor = vec3(1.0) * color;
         #ifdef USE_INSTANCING_COLOR
@@ -42,16 +45,17 @@ export function vehicleMaterial() {
         #endif
         vRm = rm;`);
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vRm;')
+      .replace('#include <common>', '#include <common>\nvarying vec4 vRm; uniform float uGlow;')
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = vRm.x;')
-      .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = vRm.y;');
+      .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = vRm.y;')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += vColor * vRm.w * uGlow;');
   };
-  m.customProgramCacheKey = () => 'vehicle-rm';
+  m.customProgramCacheKey = () => 'vehicle-rm4';
   return m;
 }
 
 export class Chunked {
-  constructor(geo, mat, { chunk = 300, cast = true, receive = true, noAO = false } = {}) { this.geo = geo; this.mat = mat; this.chunk = chunk; this.b = new Map(); this.cast = cast; this.receive = receive; this.noAO = noAO; }
+  constructor(geo, mat, { chunk = 700, cast = true, receive = true, noAO = false } = {}) { this.geo = geo; this.mat = mat; this.chunk = chunk; this.b = new Map(); this.cast = cast; this.receive = receive; this.noAO = noAO; }
   add(m, color) {
     const e = m.elements, k = Math.floor(e[12] / this.chunk) + ',' + Math.floor(e[14] / this.chunk);
     let a = this.b.get(k); if (!a) this.b.set(k, a = []); a.push([m.clone(), color ? color.clone() : null]);
@@ -145,6 +149,8 @@ function foliageMaterial(atlas) {
   m.onBeforeCompile = sh => {
     sh.fragmentShader = sh.fragmentShader
       .replace('normal *= faceDirection;', '')
+      // leaves dissolve near the camera so a chase cam passing under a canopy never sees a wall of leaves
+      .replace('#include <alphatest_fragment>', 'diffuseColor.a *= smoothstep(2.2, 5.0, length(vViewPosition));\n#include <alphatest_fragment>')
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
         // light glowing through thin leaves when looking towards the sun
         #if NUM_DIR_LIGHTS > 0
@@ -203,7 +209,7 @@ function canopyCards(geoParts, { n, cx = 0, cy, rx, ry, rz, size, bloom = 0, dro
   geoParts.push(g);
 }
 /** Bark-mapped tapered limb from a to b. */
-function limb(geoParts, a, b, r0, r1, radial = 7) {
+function limb(geoParts, a, b, r0, r1, radial = 5) {
   const dir = new THREE.Vector3().subVectors(b, a), L = dir.length();
   const g = new THREE.CylinderGeometry(r1, r0, L, radial, 1, true);
   g.translate(0, L / 2, 0);
@@ -221,41 +227,41 @@ const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 export const TREE_SPECIES = {
   rain: seed => {      // rain tree (Samanea saman): short trunk, wide umbrella
     const p = [];
-    limb(p, V3(0, -0.3, 0), V3(0.2, 3.6, 0), 0.42, 0.3, 9);
+    limb(p, V3(0, -0.3, 0), V3(0.2, 3.6, 0), 0.42, 0.3, 7);
     for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2 + 0.4; limb(p, V3(0.2, 3.4, 0), V3(Math.cos(a) * 3.2, 5.6 + (k % 2) * 0.6, Math.sin(a) * 3.2), 0.22, 0.09); }
-    canopyCards(p, { n: 64, cy: 6.4, rx: 5.6, ry: 2.2, rz: 5.6, size: 2.7, seed });
+    canopyCards(p, { n: 42, cy: 6.4, rx: 5.6, ry: 2.2, rz: 5.6, size: 3.1, seed });
     return p;
   },
   gulmohar: seed => {  // flame tree: spreading, red-orange blossom
     const p = [];
-    limb(p, V3(0, -0.3, 0), V3(-0.2, 3.2, 0.1), 0.3, 0.22, 8);
+    limb(p, V3(0, -0.3, 0), V3(-0.2, 3.2, 0.1), 0.3, 0.22, 6);
     for (let k = 0; k < 4; k++) { const a = k / 4 * Math.PI * 2 + 0.8; limb(p, V3(-0.2, 3.0, 0.1), V3(Math.cos(a) * 2.6, 5.0, Math.sin(a) * 2.6), 0.16, 0.07); }
-    canopyCards(p, { n: 54, cy: 5.6, rx: 4.6, ry: 1.9, rz: 4.6, size: 2.3, bloom: 0.5, seed });
+    canopyCards(p, { n: 36, cy: 5.6, rx: 4.6, ry: 1.9, rz: 4.6, size: 2.65, bloom: 0.5, seed });
     return p;
   },
   peepal: seed => {    // broad rounded crown
     const p = [];
-    limb(p, V3(0, -0.3, 0), V3(0, 3.0, 0), 0.38, 0.28, 9);
+    limb(p, V3(0, -0.3, 0), V3(0, 3.0, 0), 0.38, 0.28, 7);
     for (let k = 0; k < 4; k++) { const a = k / 4 * Math.PI * 2; limb(p, V3(0, 2.8, 0), V3(Math.cos(a) * 1.8, 5.2, Math.sin(a) * 1.8), 0.18, 0.08); }
-    canopyCards(p, { n: 60, cy: 6.0, rx: 3.9, ry: 3.2, rz: 3.9, size: 2.4, seed });
+    canopyCards(p, { n: 38, cy: 6.0, rx: 3.9, ry: 3.2, rz: 3.9, size: 2.8, seed });
     return p;
   },
   ashoka: seed => {    // Polyalthia longifolia: the tall, narrow, drooping avenue tree
     const p = [];
     limb(p, V3(0, -0.3, 0), V3(0, 9.5, 0), 0.2, 0.06, 6);
-    canopyCards(p, { n: 46, cone: { y0: 1.4, y1: 10.5, r0: 1.5, r1: 0.25 }, size: 1.7, droop: 1, seed, ao: 0.35 });
+    canopyCards(p, { n: 30, cone: { y0: 1.4, y1: 10.5, r0: 1.5, r1: 0.25 }, size: 2.0, droop: 1, seed, ao: 0.35 });
     return p;
   },
   shrub: seed => {
     const p = [];
-    canopyCards(p, { n: 12, cy: 0.7, rx: 1.0, ry: 0.65, rz: 1.0, size: 1.1, seed, ao: 0.3 });
+    canopyCards(p, { n: 8, cy: 0.7, rx: 1.0, ry: 0.65, rz: 1.0, size: 1.25, seed, ao: 0.3 });
     return p;
   },
   palm: seed => {      // coconut palm: curved ringed trunk, fronds, coconuts
     const p = [], r = rng(seed);
     const lean = 0.8 + r() * 0.8;
     const curve = new THREE.CatmullRomCurve3([V3(0, -0.3, 0), V3(lean * 0.15, 3, 0), V3(lean * 0.5, 6, 0), V3(lean, 8.6, 0)]);
-    const tube = new THREE.TubeGeometry(curve, 12, 0.19, 7).toNonIndexed();
+    const tube = new THREE.TubeGeometry(curve, 10, 0.19, 6).toNonIndexed();
     const tuv = tube.attributes.uv;
     for (let i = 0; i < tuv.count; i++) tuv.setXY(i, UVR.bark[0] + tuv.getY(i) * 0.25, UVR.bark[1] + tuv.getX(i) * (UVR.bark[3] - UVR.bark[1]));
     tube.setAttribute('color', new THREE.BufferAttribute(new Float32Array(tube.attributes.position.count * 3).fill(0.9), 3));
@@ -304,11 +310,13 @@ export function treeGeometry(species = 'rain', seed = 1) {
 /* ======================= vehicles ======================= */
 /** Side-profile extrusion: pts are [along, up] in metres (rear at 0); width across X, centred. */
 function extrudeSide(shape, width, bevel = 0.05) {
-  const g = new THREE.ExtrudeGeometry(shape, { depth: Math.max(0.01, width - bevel * 2), bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 2, curveSegments: 10 });
+  const g = new THREE.ExtrudeGeometry(shape, { depth: Math.max(0.01, width - bevel * 2), bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 1, curveSegments: 5 });
   g.rotateY(-Math.PI / 2);
   g.translate((width - bevel * 2) / 2, 0, 0);
-  g.computeVertexNormals();
-  return g;
+  // smooth across the bevels, keep the panel edges crisp
+  const c = toCreasedNormals(g, Math.PI / 3.2);
+  if (!c.attributes.uv) c.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(c.attributes.position.count * 2), 2));
+  return c;
 }
 function poly(pts) { const s = new THREE.Shape(); s.moveTo(pts[0][0], pts[0][1]); for (const p of pts.slice(1)) s.lineTo(p[0], p[1]); s.closePath(); return s; }
 /** Lower body with wheel arches. */
@@ -323,8 +331,8 @@ function lowerShape(L, belt, nose, tail, wr, wf, wb, ground = 0.3) {
 function wheelSet(L, W, wr, wf, wb, tw = 0.2) {
   const out = [];
   for (const sx of [1, -1]) for (const z of [wf, wb]) {
-    out.push(part(new THREE.CylinderGeometry(wr, wr, tw, 14), 0x1b1b1c, sx * (W / 2 - tw / 2 + 0.02), wr, z - L / 2, 0, 0, Math.PI / 2, 1, 1, 1, 0.9));
-    out.push(part(new THREE.CylinderGeometry(wr * 0.58, wr * 0.58, 0.02, 12), 0x9a9c9e, sx * (W / 2 + 0.03), wr, z - L / 2, 0, 0, Math.PI / 2, 1, 1, 1, 0.35, 0.8));
+    out.push(part(new THREE.CylinderGeometry(wr, wr, tw, 10), 0x1b1b1c, sx * (W / 2 - tw / 2 + 0.02), wr, z - L / 2, 0, 0, Math.PI / 2, 1, 1, 1, 0.9));
+    out.push(part(new THREE.CylinderGeometry(wr * 0.58, wr * 0.58, 0.02, 8), 0x9a9c9e, sx * (W / 2 + 0.03), wr, z - L / 2, 0, 0, Math.PI / 2, 1, 1, 1, 0.35, 0.8));
   }
   return out;
 }
@@ -338,8 +346,8 @@ function modernCar({ L, W, H, belt, nose, tail, cab0, cab1, roof, glassSlopeF = 
   const pillar = paint(new THREE.BoxGeometry(W - 0.12, roof - belt, 0.14).translate(0, (roof + belt) / 2, (cab0 + cab1) / 2 - 0.1), 0xffffff, 0.32, 0.25, 1);
   const parts = [lower, glass, roofSlab, pillar].map(g => { g.translate(0, 0, -L / 2); return g; });
   for (const sx of [1, -1]) {
-    parts.push(part(new THREE.BoxGeometry(0.34, 0.12, 0.06), 0xf3f1ea, sx * (W / 2 - 0.3), nose - 0.08, L / 2 + 0.0, 0, 0, 0, 1, 1, 1, 0.15));
-    parts.push(part(new THREE.BoxGeometry(0.3, 0.12, 0.06), 0x8e1410, sx * (W / 2 - 0.25), tail - 0.08, -L / 2, 0, 0, 0, 1, 1, 1, 0.25));
+    parts.push(part(new THREE.BoxGeometry(0.34, 0.12, 0.06), 0xf3f1ea, sx * (W / 2 - 0.3), nose - 0.08, L / 2 + 0.0, 0, 0, 0, 1, 1, 1, 0.15, 0, 0, 0.8));
+    parts.push(part(new THREE.BoxGeometry(0.3, 0.12, 0.06), 0x8e1410, sx * (W / 2 - 0.25), tail - 0.08, -L / 2, 0, 0, 0, 1, 1, 1, 0.25, 0, 0, 0.6));
   }
   parts.push(part(new THREE.BoxGeometry(W - 0.1, 0.12, 0.08), 0x232426, 0, 0.42, L / 2 - 0.02, 0, 0, 0, 1, 1, 1, 0.6));
   parts.push(part(new THREE.BoxGeometry(W - 0.1, 0.12, 0.08), 0x232426, 0, 0.42, -L / 2 + 0.02, 0, 0, 0, 1, 1, 1, 0.6));
@@ -431,9 +439,35 @@ function lampGeometry() {
   ]);
   const head = merge([
     part(new THREE.BoxGeometry(0.34, 0.1, 0.75), 0x3a3f42, 0, 7.25, 1.2, 0, 0, 0, 1, 1, 1, 0.45, 0.5),
-    part(new THREE.BoxGeometry(0.26, 0.02, 0.6), 0xfff4dc, 0, 7.19, 1.2, 0, 0, 0, 1, 1, 1, 0.3),
+    part(new THREE.BoxGeometry(0.26, 0.02, 0.6), 0xffe2b0, 0, 7.19, 1.2, 0, 0, 0, 1, 1, 1, 0.3, 0, 0, 1),
   ]);
-  return { pole, head };
+  return { pole, head, lamp: merge([pole, head]), twin: merge([pole, head, pole.clone().rotateY(Math.PI), head.clone().rotateY(Math.PI)]) };
+}
+
+/** Pedestrians: simple original figures (~150 triangles). Clothes take the instance colour. */
+export function personGeometry(kind = 'man', skin = 0x7a5238) {
+  const P = [];
+  const box = (w, h, d, hex, x, y, z, tint = 0, rx = 0, rz = 0, rough = 0.85) => P.push(part(new THREE.BoxGeometry(w, h, d), hex, x, y, z, rx, 0, rz, 1, 1, 1, rough, 0, tint));
+  if (kind === 'woman') {
+    // saree / salwar: long tapered skirt, fitted top, a dupatta over one shoulder
+    P.push(part(new THREE.CylinderGeometry(0.16, 0.27, 0.95, 8), 0xffffff, 0, 0.48, 0, 0, 0, 0, 1, 1, 0.8, 0.85, 0, 1));
+    box(0.32, 0.46, 0.2, 0xffffff, 0, 1.17, 0, 1);
+    box(0.08, 0.6, 0.06, 0xffffff, 0.12, 1.15, 0.09, 1, 0.2, 0.25);
+    for (const sx of [-1, 1]) box(0.07, 0.5, 0.08, skin, sx * 0.2, 1.12, 0, 0, 0, sx * 0.08);
+    P.push(part(new THREE.SphereGeometry(0.105, 8, 6), skin, 0, 1.53, 0, 0, 0, 0, 1, 1.12, 1, 0.7));
+    P.push(part(new THREE.SphereGeometry(0.112, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.55), 0x1a1412, 0, 1.55, -0.01, 0, 0, 0, 1, 1, 1, 0.6));
+    P.push(part(new THREE.SphereGeometry(0.06, 6, 5), 0x1a1412, 0, 1.5, -0.11, 0, 0, 0, 1, 1, 1, 0.6));      // bun
+  } else {
+    for (const sx of [-1, 1]) box(0.12, 0.82, 0.14, kind === 'kid' ? 0x2b3440 : 0x3a3f47, sx * 0.08, 0.41, 0, 0, 0, 0, 0.9);   // trousers
+    for (const sx of [-1, 1]) box(0.11, 0.05, 0.22, 0x1d1b19, sx * 0.08, 0.025, 0.03);                                      // shoes / chappals
+    box(0.36, 0.56, 0.21, 0xffffff, 0, 1.1, 0, 1);                                                                               // shirt / kurta
+    for (const sx of [-1, 1]) { box(0.08, 0.3, 0.09, 0xffffff, sx * 0.22, 1.22, 0, 1, 0, sx * 0.1); box(0.065, 0.26, 0.07, skin, sx * 0.25, 0.96, 0, 0, 0, sx * 0.1); }
+    P.push(part(new THREE.SphereGeometry(0.105, 8, 6), skin, 0, 1.5, 0, 0, 0, 0, 1, 1.12, 1, 0.7));
+    P.push(part(new THREE.SphereGeometry(0.11, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.42), 0x161210, 0, 1.53, -0.005, 0, 0, 0, 1, 1, 1, 0.6));
+  }
+  const g = merge(P);
+  if (kind === 'kid') g.scale(0.72, 0.72, 0.72);
+  return g;
 }
 
 /* ======================= build ======================= */
@@ -453,11 +487,11 @@ export function buildProps(ctx) {
   const atlas = foliageAtlas();
   const fmat = foliageMaterial(atlas);
   const species = {};
-  for (const sp of ['rain', 'gulmohar', 'peepal', 'ashoka', 'palm', 'shrub']) species[sp] = [0, 1].map(v => new Chunked(treeGeometry(sp, 11 + v * 7 + sp.length), fmat, { noAO: true, cast: sp !== 'shrub' }));
+  for (const sp of ['rain', 'gulmohar', 'peepal', 'ashoka', 'palm', 'shrub']) species[sp] = [new Chunked(treeGeometry(sp, 11 + sp.length), fmat, { noAO: true, cast: sp !== 'shrub' })];
   const tint = [new THREE.Color(1, 1, 1), new THREE.Color(0.92, 0.98, 0.88), new THREE.Color(1.05, 1.02, 0.9), new THREE.Color(0.88, 0.92, 0.86)];
   let nTrees = 0;
   const addTree = (sp, x, z, s = 0.85 + R() * 0.35, y = terr.heightAt(x, z)) => {
-    species[sp][R() < 0.5 ? 0 : 1].add(mtx(x, y - 0.05, z, R() * Math.PI * 2, s), C.copy(tint[Math.floor(R() * tint.length)]));
+    species[sp][0].add(mtx(x, y - 0.05, z, R() * Math.PI * 2, s), C.copy(tint[Math.floor(R() * tint.length)]));
     if (sp !== 'shrub') colliders.post(x, z, (sp === 'palm' ? 0.3 : sp === 'ashoka' ? 0.25 : 0.4) * s, y - 1, y + 6);
     nTrees++;
   };
@@ -529,9 +563,7 @@ export function buildProps(ctx) {
 
   /* lamps (+ warm pools of light at night) */
   const lg = lampGeometry();
-  const poles = new Chunked(lg.pole, vmat);
-  const headMat = vehicleMaterial(); headMat.emissive = new THREE.Color(0xffd9a0); headMat.emissiveIntensity = 0;
-  const heads = new Chunked(lg.head, headMat, { cast: false });
+  const poles = new Chunked(lg.lamp, vmat), twins = new Chunked(lg.twin, vmat);
   const poolTex = canvasTexture(64, 64, (g) => { const grd = g.createRadialGradient(32, 32, 2, 32, 32, 32); grd.addColorStop(0, 'rgba(255,214,150,0.8)'); grd.addColorStop(0.35, 'rgba(255,205,140,0.35)'); grd.addColorStop(0.7, 'rgba(255,200,130,0.08)'); grd.addColorStop(1, 'rgba(255,200,120,0)'); g.fillStyle = grd; g.fillRect(0, 0, 64, 64); });
   const poolMat = new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -8 });
   const poolGeo = new THREE.PlaneGeometry(1, 1); poolGeo.rotateX(-Math.PI / 2);
@@ -539,19 +571,17 @@ export function buildProps(ctx) {
   let nl = 0;
   for (const l of roads.lampSites) {
     if (l.kind === 'deck') {
-      poles.add(mtx(l.x, l.h, l.z, l.dir, 1.1)); heads.add(mtx(l.x, l.h, l.z, l.dir, 1.1));
-      heads.add(mtx(l.x, l.h, l.z, l.dir + Math.PI, 1.1));
+      twins.add(mtx(l.x, l.h, l.z, l.dir, 1.1));
       pools.add(mtx(l.x, l.h + 0.05, l.z, 0, 16));
       nl++; continue;
     }
     if (R() > Math.max(0.55, density)) continue;
-    poles.add(mtx(l.x, l.h, l.z, l.dir)); heads.add(mtx(l.x, l.h, l.z, l.dir));
-    if (l.kind === 'twin') { poles.add(mtx(l.x, l.h, l.z, l.dir + Math.PI)); heads.add(mtx(l.x, l.h, l.z, l.dir + Math.PI)); }
+    (l.kind === 'twin' ? twins : poles).add(mtx(l.x, l.h, l.z, l.dir));
     pools.add(mtx(l.x + Math.sin(l.dir) * 1.2, l.h + 0.03, l.z + Math.cos(l.dir) * 1.2, 0, 12));
     colliders.post(l.x, l.z, 0.18, l.h - 1, l.h + 7);
     nl++;
   }
-  poles.build(group); heads.build(group); pools.build(group);
+  poles.build(group); twins.build(group); pools.build(group);
 
   /* parked vehicles (left-hand traffic: cars face +s on the +lat side) */
   const CAR_COLS = ['#e8e8e5', '#e8e8e5', '#b8bbbe', '#b8bbbe', '#6b6f73', '#1c1e21', '#7a1d1b', '#1e2c45', '#c8c0b0', '#8e2a20', '#3a4a3c'];
@@ -590,7 +620,7 @@ export function buildProps(ctx) {
   vehBuckets.forEach(b => b.build(group));
 
   /* tetrapods along sea walls */
-  const tetra = new Chunked(tetrapodGeometry(), vmat);
+  const tetra = new Chunked(tetrapodGeometry(), vmat, { cast: false });
   for (const r of net.roads) for (const q of r.seaSides || []) {
     for (let i = q.i0; i <= q.i1; i++) {
       for (let k = 0; k < 2; k++) {
@@ -618,19 +648,60 @@ export function buildProps(ctx) {
   boats.count = boatList.length; boats.castShadow = true;
   group.add(boats);
 
+  /* pedestrians: footpaths, the Gateway plaza, Marine Drive promenade, Chowpatty, campuses */
+  const CLOTH = ['#e9e6df', '#d9d4c7', '#3b5578', '#7a2f2a', '#c9a24a', '#2f5d4f', '#e0c9a6', '#5b4f7a', '#b5462f', '#8a8f96', '#d08a3a', '#2a2d33', '#a1325b', '#e7dcc2'];
+  const SKIN = [0x6e4a33, 0x7f5639, 0x5d3d2a, 0x8c6243];
+  const people = [];
+  for (const sk of SKIN.slice(0, 2)) for (const k of ['man', 'woman']) people.push(new Chunked(personGeometry(k, sk), vmat, { cast: true }));
+  people.push(new Chunked(personGeometry('kid', SKIN[2]), vmat, { cast: true }));
+  let nPeople = 0;
+  const addPerson = (x, z, y, ry) => {
+    const i = Math.floor(R() * people.length);
+    people[i].add(mtx(x, y, z, ry, 0.92 + R() * 0.14), C.set(CLOTH[Math.floor(R() * CLOTH.length)]));
+    colliders.post(x, z, 0.32, y - 0.5, y + 1.8, 'person');
+    nPeople++;
+  };
+  for (const r of net.roads) {
+    if (r.deck || !r.T.sidewalk) continue;
+    const busy = r.type === 'boulevard' ? 0.5 : r.type === 'arterial' ? 0.32 : 0.18;
+    for (let i = 4; i < r.n - 4; i += 3) {
+      if (r.s[i] < r.trim0 + 8 || r.s[i] > r.trim1 - 8) continue;
+      for (const side of [1, -1]) {
+        if (R() > busy * density * 0.55) continue;
+        const sea = (r.seaSides || []).some(q => q.side === side && i >= q.i0 && i <= q.i1);
+        const lat = side * (r.T.hw + 0.9 + R() * (r.T.sidewalk - 1.6));
+        const x = r.x[i] + r.tz[i] * lat + r.tx[i] * (R() - 0.5) * 2, z = r.z[i] - r.tx[i] * lat + r.tz[i] * (R() - 0.5) * 2;
+        // along Marine Drive people face the sea; elsewhere they stroll along the footpath
+        const along = Math.atan2(r.tx[i], r.tz[i]) + (R() < 0.5 ? 0 : Math.PI);
+        const ry = sea && R() < 0.6 ? Math.atan2(r.tz[i] * side, -r.tx[i] * side) + (R() - 0.5) * 0.8 : along + (R() - 0.5) * 0.6;
+        addPerson(x, z, r.h[i] + 0.16, ry);
+        if (R() < 0.35) addPerson(x + Math.cos(ry) * 0.6, z - Math.sin(ry) * 0.6, r.h[i] + 0.16, ry + Math.PI + (R() - 0.5));   // chatting in pairs
+      }
+    }
+  }
+  for (const [px, pz, n, rad, inner] of [[900, 1046, 70, 40, 14], [-240, 352, 40, 28, 0], [262, -1700, 24, 30, 10], [948, -1206, 22, 30, 6], [-200, -48, 14, 18, 4], [300, 752, 10, 14, 0]]) {
+    for (let k = 0; k < n * density; k++) {
+      const a = R() * Math.PI * 2, rr = inner + Math.sqrt(R()) * (rad - inner), x = px + Math.cos(a) * rr, z = pz + Math.sin(a) * rr;
+      if (occAt(x, z) || landSD(x, z) < 2) continue;
+      const nr = net.nearestRoad(x, z, 25); if (nr && nr.d < nr.road.T.hw + 0.6) continue;
+      addPerson(x, z, terr.heightAt(x, z), R() * Math.PI * 2);
+    }
+  }
+  for (const ch of people) ch.build(group);
+
   /* distance culling: small props vanish into the haze anyway */
   const cullables = group.children.filter(m => m.isInstancedMesh && m !== boats);
-  const farSq = (quality.key === 'low' ? 420 : quality.key === 'medium' ? 650 : 900) ** 2;
+  const farSq = (quality.key === 'low' ? 420 : quality.key === 'medium' ? 600 : 750) ** 2;
   let cullT = 0;
   function cull(cam) {
     if ((cullT = (cullT + 1) % 10) !== 0) return;
     for (const m of cullables) { const c = m.boundingSphere.center, r = m.boundingSphere.radius; const dx = c.x - cam.position.x, dz = c.z - cam.position.z; m.visible = dx * dx + dz * dz < farSq + r * r + 2 * r * Math.sqrt(farSq) || cam.position.y > 300; }
   }
   scene.add(group);
-  const setNight = v => { headMat.emissiveIntensity = v * 2.6; poolMat.opacity = v * 0.34; };
+  const setNight = v => { GLOW.value = v * 2.6; poolMat.opacity = v * 0.34; };
   setNight(atmo.night.value);
   return {
-    group, counts: { trees: nTrees, lamps: nl, vehicles: nv, boats: boatList.length }, setNight, foliage: fmat, vehicleMaterial: vmat,
+    group, counts: { trees: nTrees, lamps: nl, vehicles: nv, boats: boatList.length, people: nPeople }, setNight, foliage: fmat, vehicleMaterial: vmat,
     update(t, dt, camera) {
       if (camera) cull(camera);
       boatList.forEach((b, i) => {

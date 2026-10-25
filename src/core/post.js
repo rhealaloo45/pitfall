@@ -46,7 +46,9 @@ export async function createPipeline(renderer, scene, camera, Q) {
       if (Q.ao) {
         try {
           const { GTAOPass } = await import('three/addons/postprocessing/GTAOPass.js');
-          const ao = new GTAOPass(scene, camera, size.x * maxDpr * 0.5, size.y * maxDpr * 0.5);
+          // AO pre-pass camera: same view, shorter far plane (distant geometry contributes no visible AO)
+          const aoCam = camera.clone(); P.aoCam = aoCam;
+          const ao = new GTAOPass(scene, aoCam, size.x * maxDpr * 0.5, size.y * maxDpr * 0.5);
           ao.updateGtaoMaterial({ radius: 1.6, distanceExponent: 1.4, thickness: 2.5, scale: 1.0, samples: 12 });
           ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 12 });
           ao.blendIntensity = 0.85;
@@ -94,6 +96,12 @@ export async function createPipeline(renderer, scene, camera, Q) {
     else if (P.frameAvg < 14 && P.scale < 1) { P.scale = Math.min(1, P.scale + 0.1); P.adaptT = 0; P.applyScale(); }
   };
   P.render = t => {
+    if (P.aoCam) {
+      const a = P.aoCam;
+      a.position.copy(camera.position); a.quaternion.copy(camera.quaternion);
+      a.fov = camera.fov; a.aspect = camera.aspect; a.near = camera.near; a.far = Math.min(camera.far, 450);
+      a.layers.mask = camera.layers.mask; a.updateProjectionMatrix(); a.updateMatrixWorld();
+    }
     if (P.composer) { if (P.grade) P.grade.uniforms.uTime.value = (t || 0) % 100; P.composer.render(); }
     else renderer.render(scene, camera);
   };

@@ -1,5 +1,6 @@
 /* Geometry helpers shared by the car and the city. */
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 function catmull(p0, p1, p2, p3, t) {
   const t2 = t * t, t3 = t2 * t;
@@ -143,4 +144,45 @@ export function canvasTexture(w, h, draw, { srgb = true, repeat = false, aniso =
   if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; }
   t.anisotropy = aniso;
   return t;
+}
+
+/**
+ * Merge static meshes that share a material into one mesh per material (fewer draw calls).
+ * Only direct-or-nested Mesh children of `group` with a single material and no userData.dynamic are merged;
+ * world transforms relative to `group` are baked in. Returns the number of meshes removed.
+ */
+export function mergeStaticByMaterial(group, { keep = () => false } = {}) {
+  group.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(group.matrixWorld).invert();
+  const buckets = new Map();
+  group.traverse(o => {
+    if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || Array.isArray(o.material) || o.userData.dynamic || keep(o)) return;
+    const k = o.material.uuid + (o.castShadow ? 'c' : '') + (o.receiveShadow ? 'r' : '') + o.renderOrder;
+    let b = buckets.get(k); if (!b) buckets.set(k, b = []); b.push(o);
+  });
+  let removed = 0;
+  const m = new THREE.Matrix4();
+  for (const list of buckets.values()) {
+    if (list.length < 2) continue;
+    const geos = [];
+    for (const o of list) {
+      let g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+      for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(k)) g.deleteAttribute(k);
+      if (!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+      if (!g.attributes.normal) g.computeVertexNormals();
+      g.applyMatrix4(m.multiplyMatrices(inv, o.matrixWorld));
+      g.clearGroups();
+      geos.push(g);
+    }
+    const merged = mergeGeometries(geos);
+    if (!merged) continue;
+    merged.computeBoundingSphere();
+    const mesh = new THREE.Mesh(merged, list[0].material);
+    mesh.castShadow = list[0].castShadow; mesh.receiveShadow = list[0].receiveShadow; mesh.renderOrder = list[0].renderOrder;
+    mesh.userData = { ...list[0].userData };
+    for (const o of list) { o.parent.remove(o); removed++; }
+    group.add(mesh);
+    removed--;
+  }
+  return removed;
 }

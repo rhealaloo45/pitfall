@@ -3,7 +3,7 @@
    shapes, logos or branding are reproduced.
    Origin = vehicle centre of mass (matches VehicleSim), +Z forward, +X left. */
 import * as THREE from 'three';
-import { loft, wingElement, plate, orientStrut, canvasTexture } from '../core/geo.js';
+import { loft, wingElement, plate, orientStrut, canvasTexture, mergeStaticByMaterial } from '../core/geo.js';
 import { CAR_SPEC } from './sim.js';
 
 const G = -0.345;   // ground height at static ride (relative to CoM)
@@ -340,6 +340,9 @@ export function buildCar() {
   contactShadow.rotation.x = -Math.PI / 2; contactShadow.renderOrder = 1;
 
   body.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  // bake the static bodywork into one mesh per material (the driver and steering wheel still move)
+  const inside = (o, g) => { for (let q = o; q; q = q.parent) if (q === g) return true; return false; };
+  mergeStaticByMaterial(body, { keep: o => inside(o, driver) || inside(o, wheelG) });
   root.traverse(o => { if (o.isMesh && o.parent !== body && o !== contactShadow) o.castShadow = true; });
 
   const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _q = new THREE.Quaternion(), _qi = new THREE.Quaternion();
