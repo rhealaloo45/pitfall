@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Mumbai GP — Rhea Laloo</title>
+<meta name="description" content="Mumbai GP: drive an original open-wheel race car through a fictionalised Mumbai — Marine Drive, the Sea Link, Bandra, BKC — and discover Rhea Laloo's school, college and AI engineering career.">
+<meta name="theme-color" content="#0b0d11">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/ui/game.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+
+<div id="loader">
+  <div class="brand">Rhea Laloo · Portfolio Grand Prix</div>
+  <h1>MUMBAI <span>GP</span></h1>
+  <p class="sub">Drive Marine Drive, cross the Sea Link and find the places that shaped an AI engineer — Villa Theresa on Peddar Road, K.&nbsp;C. College at Churchgate, KJSIT in Sion — before the finish at the Gateway of India.</p>
+  <div class="bar"><i id="loadBar"></i></div>
+  <div class="stage" id="loadStage">Starting engine…</div>
+  <div class="actions">
+    <button class="btn primary" id="btnGP" disabled>Race the Mumbai GP route</button>
+    <button class="btn" id="btnFree" disabled>Free roam</button>
+    <a class="btn ghost" href="index.html">← Menu</a>
+    <a class="btn ghost" href="portfolio.html">Portfolio without driving</a>
+  </div>
+  <p class="note">A fictionalised, compressed Mumbai: real places and road order, squeezed distances. Every model, texture and sound is generated in code for this project.</p>
+  <p class="err hidden" id="loadErr"></p>
+</div>
+
+<div id="hud" class="hidden">
+  <div id="shift"></div>
+  <div id="objective">
+    <div class="k" id="objK">Next destination</div>
+    <div class="t" id="objT">—</div>
+    <div class="d"><svg class="arrow" id="objArrow" viewBox="0 0 24 24"><path d="M12 2 L20 20 L12 15 L4 20 Z" fill="#e8b33c"/></svg><span id="objD">—</span></div>
+  </div>
+  <div id="counters"><div>Chapters <b id="cntCh">0/4</b></div><div>Landmarks <b id="cntDi">0/6</b></div><div>Chai <b id="cntChai">0/27</b></div></div>
+  <div id="lap"><div class="row"><span>MUMBAI GP</span><span id="lapSector">S1</span></div><div class="row"><span>Time</span><span class="v" id="lapTime">0:00.0</span></div><div class="row"><span>Best</span><span class="v" id="lapBest">—</span></div></div>
+  <div id="topRight"><button class="chip" id="btnMap" title="Map (M)">Map</button><button class="chip" id="btnCam" title="Camera (C)">Cam</button><button class="chip" id="btnPause" title="Pause (Esc)">II</button></div>
+  <div id="toasts"></div>
+  <div id="prompt"><div><div class="pk" id="promptK">Destination</div><div class="pt" id="promptT"></div></div><button class="btn primary" id="promptBtn">Open <kbd>F</kbd></button></div>
+  <div id="minimapWrap"><canvas id="minimap" width="392" height="392"></canvas></div>
+  <div id="camLabel"></div>
+  <div id="speedtrap"></div>
+  <div id="speedo">
+    <div id="pedals"><i class="thr"><b id="thrBar"></b></i><i class="brk"><b id="brkBar"></b></i></div>
+    <div><div class="num" id="speedNum">0</div><div class="unit" id="speedUnit">KM/H</div></div>
+    <div id="gear"><svg viewBox="0 0 76 76"><circle cx="38" cy="38" r="34" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="4" stroke-dasharray="160 400"/><circle id="rpmArc" cx="38" cy="38" r="34" fill="none" stroke="#d81f26" stroke-width="4" stroke-dasharray="0 400" stroke-linecap="round"/></svg><span id="gearNum">1</span></div>
+  </div>
+  <div id="help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> drive · <kbd>Space</kbd> handbrake · <kbd>H</kbd> horn · <kbd>C</kbd> camera · <kbd>R</kbd> recover · <kbd>M</kbd> map · <kbd>Esc</kbd> pause</div>
+</div>
+<div id="bigmap"><canvas id="bigmapCanvas"></canvas><div class="legend"><div><b style="background:#e8b33c"></b>Portfolio chapter</div><div><b style="background:#e8d6a8;transform:rotate(45deg)"></b>Landmark discovery</div><div><b style="background:#ff3b3b"></b>Route to next destination</div><div style="margin-top:4px">Press <kbd>M</kbd> to close</div></div></div>
+
+<div id="introTitle" class="hidden"><div class="k" id="introK">Apollo Bunder · Colaba</div><div class="t" id="introT">MUMBAI <span>GP</span></div></div>
+<button class="btn" id="skipIntro" style="display:none">Skip <kbd>Space</kbd></button>
+<div id="fade"></div>
+
+<div id="panelWrap" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
+  <div id="panel">
+    <header id="panelHead"><div class="k" id="panelK"></div><h2 id="panelTitle"></h2><div class="meta" id="panelMeta"></div></header>
+    <div class="body" id="panelBody"></div>
+    <footer id="panelFoot"><button class="btn primary" id="panelClose">Back to the road <kbd>Esc</kbd></button></footer>
+  </div>
+</div>
+
+<div id="pause">
+  <div class="box">
+    <nav>
+      <div class="title">PAUSED</div>
+      <button data-pane="resume">Resume</button>
+      <button data-pane="settings" class="on">Settings</button>
+      <button data-pane="controls">Controls</button>
+      <button data-pane="progress">Progress</button>
+      <button data-pane="restart">Restart at Gateway</button>
+      <a href="portfolio.html">Portfolio page</a>
+      <a href="index.html">Exit to menu</a>
+    </nav>
+    <div class="pane" id="pausePane"></div>
+  </div>
+</div>
+
+<div id="touch">
+  <div class="pad steer" id="tSteer"><i></i></div>
+  <div class="pad thr" id="tThr">GAS</div>
+  <div class="pad brk" id="tBrk">BRAKE</div>
+  <div class="pad hb" id="tHb">HAND</div>
+  <div class="pad act" id="tAct">OPEN</div>
+</div>
+
+<script src="src/shared/portfolio-data.js"></script>
+<script type="module" src="src/mumbai/main.js"></script>
+<script>
+  // If the module never boots (no ES modules / CDN blocked), offer the portfolio page.
+  setTimeout(function () {
+    if (!window.__mumbaiBoot) {
+      var e = document.getElementById('loadErr'); e.classList.remove('hidden');
+      e.innerHTML = 'The 3D engine could not load in this browser. <a style="color:#fff" href="portfolio.html">Open the portfolio page instead →</a>';
+    }
+  }, 12000);
+</script>
+</body>
+</html>

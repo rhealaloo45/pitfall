@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rhea Laloo — AI Engineer · Portfolio</title>
+<meta name="description" content="Rhea Laloo, AI Engineer at Tata Consultancy Services: experience, projects, education, achievements, skills and contact.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #23202b; --dim: #6c6577; --red: #c8151d; --line: #e6e1d9; --font: 'Titillium Web', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); color: var(--ink); background: #faf7f3; -webkit-font-smoothing: antialiased; line-height: 1.6; }
+  a { color: #1d5fae; }
+  .top { background: #f2efe9; border-bottom: 1px solid #e5e0d8; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+  .top .wrap { padding-top: 34px; padding-bottom: 34px; }
+  nav { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  nav a { color: #3d3848; text-decoration: none; }
+  nav a:hover { color: var(--red); }
+  h1 { font-size: clamp(38px, 7vw, 64px); font-weight: 900; line-height: 1; margin-top: 26px; }
+  h1 span { color: var(--red); }
+  .lead { font-size: 17px; color: #3d3848; margin-top: 10px; max-width: 640px; }
+  .links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+  .links a { background: #fff; border-radius: 999px; padding: 8px 14px; text-decoration: none; color: var(--ink); font-weight: 700; font-size: 13.5px; border: 1px solid #fff; }
+  .links a.primary { background: var(--ink); color: #fff; }
+  section { padding: 30px 0 6px; }
+  h2 { font-size: 13px; letter-spacing: .26em; text-transform: uppercase; color: var(--dim); margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+  .item { padding: 12px 0 14px; border-bottom: 1px solid var(--line); }
+  .item:last-child { border-bottom: 0; }
+  .hd { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .hd b { font-size: 17px; }
+  .hd span { color: var(--dim); font-size: 14px; white-space: nowrap; }
+  .sub { color: #4a4456; font-weight: 600; }
+  ul { margin: 6px 0 0 20px; }
+  li { margin: 3px 0; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .12em; padding: 1px 8px; border-radius: 4px; background: #ece8e1; color: #4a463f; margin-left: 8px; vertical-align: 2px; }
+  .skills { display: grid; grid-template-columns: 200px 1fr; gap: 6px 16px; }
+  .skills dt { font-weight: 700; }
+  .play { margin: 34px 0 50px; padding: 18px 20px; border-radius: 14px; background: #fff; border: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .play a { background: var(--red); color: #fff; text-decoration: none; padding: 10px 18px; border-radius: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; font-size: 13px; }
+  @media (max-width: 600px) { .skills { grid-template-columns: 1fr; } }
+  @media print { .top { background: none; } nav, .links, .play { display: none; } body { background: #fff; } section { padding-top: 14px; } }
+</style>
+</head>
+<body>
+<div class="top"><div class="wrap">
+  <nav><a href="index.html">← All worlds</a><a href="mumbai.html">Mumbai GP</a><a href="circuit.html">Original circuit</a></nav>
+  <h1 id="name">Rhea Laloo<br><span>AI Engineer</span></h1>
+  <p class="lead" id="lead">AI engineer building LLM tooling, anomaly-detection pipelines and full-stack apps.</p>
+  <div class="links" id="links"><a class="primary" href="assets/rhea-laloo-resume.pdf" download="Rhea-Laloo-Resume.pdf">Download résumé (PDF)</a></div>
+</div></div>
+<main class="wrap" id="main">
+  <noscript><p style="padding:30px 0">This page needs JavaScript to show the full portfolio. The <a href="assets/rhea-laloo-resume.pdf">résumé PDF</a> has everything.</p></noscript>
+</main>
+<script src="src/shared/portfolio-data.js"></script>
+<script>
+(function () {
+  var R = window.PORTFOLIO.RESUME, C = R.contact;
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  document.getElementById('lead').textContent = 'AI Engineer at Tata Consultancy Services, based in ' + R.location + '. Building LLM tooling, anomaly-detection pipelines and full-stack apps.';
+  document.getElementById('links').innerHTML =
+    '<a class="primary" href="' + C.resume + '" download="Rhea-Laloo-Resume.pdf">Download résumé (PDF)</a>' +
+    '<a href="mailto:' + C.email + '">' + C.email + '</a>' +
+    '<a href="' + C.github + '" target="_blank" rel="noopener">' + C.githubLabel + '</a>' +
+    '<a href="' + C.linkedin + '" target="_blank" rel="noopener">LinkedIn ' + C.linkedinLabel + '</a>';
+  var html = '';
+  html += '<section><h2>Experience</h2>' + R.experience.map(function (x) {
+    return '<div class="item"><div class="hd"><b>' + esc(x.org) + '</b><span>' + esc(x.when) + '</span></div><div class="sub">' + esc(x.role) + '</div><ul>' +
+      x.points.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul></div>';
+  }).join('') + '</section>';
+  html += '<section><h2>Projects</h2>' + R.projects.map(function (p) {
+    return '<div class="item"><div class="hd"><b>' + esc(p.name) + '<span class="tag">' + esc(p.tag) + '</span></b></div><div>' + esc(p.text) + '</div></div>';
+  }).join('') + '</section>';
+  var E = R.education;
+  html += '<section><h2>Education</h2>' + [E.college, E.junior, E.school].map(function (e) {
+    return '<div class="item"><div class="hd"><b>' + esc(e.name) + '</b><span>' + esc(e.when) + '</span></div><div class="sub">' + esc(e.course) + ' · ' + esc(e.place) + '</div><div>' + esc(e.score) + '</div></div>';
+  }).join('') + '</section>';
+  html += '<section><h2>Achievements &amp; certifications</h2><ul>' + R.achievements.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul></section>';
+  html += '<section><h2>Technical skills</h2><dl class="skills">' + Object.keys(R.skills).map(function (k) { return '<dt>' + esc(k) + '</dt><dd>' + esc(R.skills[k]) + '</dd>'; }).join('') + '</dl></section>';
+  html += '<section><h2>Contact</h2><div class="skills"><dt>Email</dt><dd><a href="mailto:' + C.email + '">' + C.email + '</a></dd><dt>Phone</dt><dd>' + C.phone + '</dd><dt>GitHub</dt><dd><a href="' + C.github + '" target="_blank" rel="noopener">' + C.githubLabel + '</a></dd><dt>LinkedIn</dt><dd><a href="' + C.linkedin + '" target="_blank" rel="noopener">' + C.linkedinLabel + '</a></dd></div></section>';
+  html += '<div class="play"><div><b>Prefer to explore?</b><br><span style="color:#6c6577">The same portfolio, hidden around a drivable Mumbai.</span></div><a href="mumbai.html">Drive Mumbai GP</a></div>';
+  document.getElementById('main').innerHTML = html;
+})();
+</script>
+</body>
+</html>
