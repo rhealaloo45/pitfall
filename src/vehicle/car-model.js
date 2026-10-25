@@ -8,26 +8,52 @@ import { CAR_SPEC } from './sim.js';
 
 const G = -0.345;   // ground height at static ride (relative to CoM)
 
-function materials() {
-  const carbonTex = canvasTexture(64, 64, (g, w, h) => {
-    g.fillStyle = '#101113'; g.fillRect(0, 0, w, h);
-    for (let y = 0; y < h; y += 8) for (let x = 0; x < w; x += 8) {
-      g.fillStyle = ((x + y) / 8) % 2 ? '#17181b' : '#0c0d0f';
-      g.fillRect(x, y, 8, 4); g.fillStyle = ((x + y) / 8) % 2 ? '#0c0d0f' : '#17181b'; g.fillRect(x, y + 4, 8, 4);
+/* 2×2 twill carbon weave: albedo + matching normal map (mipmapped, so it never shimmers). */
+function carbonTextures() {
+  const S = 256, n = 8, cell = S / n;
+  const alb = document.createElement('canvas'); alb.width = alb.height = S;
+  const g = alb.getContext('2d');
+  const H = new Float32Array(S * S);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const warp = ((i + j) >> 1) % 2 === 0;           // twill: the over/under pattern steps diagonally
+    for (let y = 0; y < cell; y++) for (let x = 0; x < cell; x++) {
+      const u = (x + 0.5) / cell, v = (y + 0.5) / cell;
+      const t = warp ? Math.sin(Math.PI * v) : Math.sin(Math.PI * u);   // tow crown across its width
+      const along = warp ? Math.sin(Math.PI * u) : Math.sin(Math.PI * v);
+      H[(j * cell + y) * S + i * cell + x] = 0.55 * t + 0.45 * along * t;
     }
-  }, { repeat: true });
-  carbonTex.repeat.set(6, 6);
+  }
+  const img = g.createImageData(S, S);
+  for (let k = 0; k < S * S; k++) { const v = 14 + H[k] * 26; img.data[k * 4] = v; img.data[k * 4 + 1] = v; img.data[k * 4 + 2] = v * 1.08; img.data[k * 4 + 3] = 255; }
+  g.putImageData(img, 0, 0);
+  const nd = new Uint8Array(S * S * 4);
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const dx = (H[y * S + (x + 1) % S] - H[y * S + (x - 1 + S) % S]) * 1.5, dy = (H[((y + 1) % S) * S + x] - H[((y - 1 + S) % S) * S + x]) * 1.5;
+    const l = Math.hypot(dx, dy, 1), k = (y * S + x) * 4;
+    nd[k] = (-dx / l * 0.5 + 0.5) * 255; nd[k + 1] = (-dy / l * 0.5 + 0.5) * 255; nd[k + 2] = (1 / l * 0.5 + 0.5) * 255; nd[k + 3] = 255;
+  }
+  const map = new THREE.CanvasTexture(alb); map.colorSpace = THREE.SRGBColorSpace;
+  const nrm = new THREE.DataTexture(nd, S, S, THREE.RGBAFormat);
+  for (const t of [map, nrm]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(10, 10); t.anisotropy = 8; t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.needsUpdate = true; }
+  return { map, nrm };
+}
+
+/* Ferrari-inspired palette, original livery: rosso race red, gloss nero, carbon, a white pinstripe. */
+export const ROSSO = 0xc0121b;
+function materials() {
+  const cf = carbonTextures();
+  const gloss = { clearcoat: 1, clearcoatRoughness: 0.035, envMapIntensity: 1 };
   return {
-    paint: new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.38, metalness: 0.05, clearcoat: 0.55, clearcoatRoughness: 0.08, envMapIntensity: 0.7 }),
-    red: new THREE.MeshPhysicalMaterial({ color: 0xb3121b, roughness: 0.38, metalness: 0.05, clearcoat: 0.55, clearcoatRoughness: 0.08, envMapIntensity: 0.7 }),
-    paintDark: new THREE.MeshPhysicalMaterial({ color: 0x6e0a10, roughness: 0.35, metalness: 0.15, clearcoat: 1, clearcoatRoughness: 0.1 }),
-    white: new THREE.MeshPhysicalMaterial({ color: 0xf1f1ee, roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.1 }),
-    carbon: new THREE.MeshStandardMaterial({ color: 0xffffff, map: carbonTex, roughness: 0.5, metalness: 0.05 }),
-    black: new THREE.MeshStandardMaterial({ color: 0x0d0d0f, roughness: 0.6, metalness: 0.2 }),
-    rubber: new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.92, metalness: 0 }),
-    rim: new THREE.MeshStandardMaterial({ color: 0x26272b, roughness: 0.35, metalness: 0.85 }),
-    titanium: new THREE.MeshStandardMaterial({ color: 0x3a3c40, roughness: 0.3, metalness: 0.9 }),
-    chrome: new THREE.MeshStandardMaterial({ color: 0xd8dade, roughness: 0.12, metalness: 1 }),
+    paint: new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.3, metalness: 0.0, ...gloss }),
+    red: new THREE.MeshPhysicalMaterial({ color: ROSSO, roughness: 0.3, metalness: 0.0, ...gloss }),
+    paintDark: new THREE.MeshPhysicalMaterial({ color: 0x141416, roughness: 0.32, metalness: 0.1, ...gloss }),
+    white: new THREE.MeshPhysicalMaterial({ color: 0xeeeeea, roughness: 0.3, ...gloss }),
+    carbon: new THREE.MeshPhysicalMaterial({ color: 0xffffff, map: cf.map, normalMap: cf.nrm, normalScale: new THREE.Vector2(0.35, 0.35), roughness: 0.42, metalness: 0.15, clearcoat: 0.7, clearcoatRoughness: 0.06 }),
+    black: new THREE.MeshStandardMaterial({ color: 0x0b0b0c, roughness: 0.55, metalness: 0.2 }),
+    rubber: new THREE.MeshStandardMaterial({ color: 0x161617, roughness: 0.88, metalness: 0 }),
+    rim: new THREE.MeshStandardMaterial({ color: 0x1d1e21, roughness: 0.3, metalness: 0.9 }),
+    titanium: new THREE.MeshStandardMaterial({ color: 0x55585c, roughness: 0.28, metalness: 0.92 }),
+    chrome: new THREE.MeshStandardMaterial({ color: 0xd8dade, roughness: 0.08, metalness: 1 }),
     visor: new THREE.MeshPhysicalMaterial({ color: 0x0b1420, roughness: 0.05, metalness: 0.6, clearcoat: 1 }),
     rain: new THREE.MeshStandardMaterial({ color: 0x330000, emissive: 0xff1010, emissiveIntensity: 0.2 }),
     hair: new THREE.MeshStandardMaterial({ color: 0x1c1517, roughness: 0.75 }),
@@ -113,14 +139,20 @@ export function buildCar() {
   ], { radial: 32, sub: 5 });
   // livery: red with a carbon lower half and a white pinstripe
   const liv = canvasTexture(512, 1024, (g, W, H) => {
-    g.fillStyle = '#b3121b'; g.fillRect(0, 0, W, H);
-    g.fillStyle = '#141416'; g.fillRect(0, 0, W * 0.12, H); g.fillRect(W * 0.88, 0, W * 0.12, H);
-    g.fillStyle = '#f1f1ee'; g.fillRect(W * 0.12, H * 0.08, W * 0.01, H * 0.5); g.fillRect(W * 0.87, H * 0.08, W * 0.01, H * 0.5);
-    // white nose tip band
-    g.fillStyle = '#f1f1ee'; g.fillRect(0, 0, W, H * 0.035);
-    // dark red top spine stripe on the engine cover
-    g.fillStyle = '#6e0a10'; g.fillRect(W * 0.47, H * 0.55, W * 0.06, H * 0.45);
+    g.fillStyle = '#c0121b'; g.fillRect(0, 0, W, H);
+    // gloss nero lower flanks (u wraps from the bottom centre), with a soft fade so it reads as paint, not a seam
+    const side = g.createLinearGradient(0, 0, W * 0.2, 0);
+    side.addColorStop(0, '#111113'); side.addColorStop(0.75, '#111113'); side.addColorStop(1, 'rgba(17,17,19,0)');
+    g.fillStyle = side; g.fillRect(0, 0, W * 0.2, H);
+    const side2 = g.createLinearGradient(W, 0, W * 0.8, 0);
+    side2.addColorStop(0, '#111113'); side2.addColorStop(0.75, '#111113'); side2.addColorStop(1, 'rgba(17,17,19,0)');
+    g.fillStyle = side2; g.fillRect(W * 0.8, 0, W * 0.2, H);
+    g.fillStyle = '#ecebe6'; g.fillRect(W * 0.185, H * 0.06, W * 0.006, H * 0.55); g.fillRect(W * 0.809, H * 0.06, W * 0.006, H * 0.55);
+    g.fillStyle = '#ecebe6'; g.fillRect(0, 0, W, H * 0.03);
+    // a slightly darker red spine on the engine cover
+    g.fillStyle = '#8e0d14'; g.fillRect(W * 0.485, H * 0.55, W * 0.03, H * 0.45);
   });
+  liv.anisotropy = 8;
   M.paint.map = liv;
   const monoMesh = new THREE.Mesh(mono, M.paint); body.add(monoMesh);
 
@@ -228,7 +260,7 @@ export function buildCar() {
   const diff = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.5), M.carbon);
   diff.position.set(0, G + 0.14, -2.12); diff.rotation.x = Math.PI / 2 - 0.42; diff.material = M.carbon; body.add(diff);
   for (let i = -2; i <= 2; i++) {
-    const strake = new THREE.Mesh(plate([[-1.85, G + 0.07], [-2.35, G + 0.27], [-2.35, G + 0.1]], 0.01), M.carbon);
+    const strake = new THREE.Mesh(plate([[-1.9, G + 0.07], [-2.3, G + 0.2], [-2.3, G + 0.1]], 0.01), M.carbon);
     strake.position.x = i * 0.2; body.add(strake);
   }
 
@@ -317,8 +349,8 @@ export function buildCar() {
     setLivery(name) {
       const gold = name === 'gold';
       M.paint.map = gold ? canvasTexture(512, 1024, (g, W, H) => { g.fillStyle = '#c99a2e'; g.fillRect(0, 0, W, H); g.fillStyle = '#141416'; g.fillRect(0, 0, W * 0.12, H); g.fillRect(W * 0.88, 0, W * 0.12, H); g.fillStyle = '#fff3c4'; g.fillRect(0, 0, W, H * 0.035); }) : liv;
-      M.paint.metalness = gold ? 0.55 : 0.05; M.paint.roughness = gold ? 0.28 : 0.38;
-      M.red.color.set(gold ? 0xc99a2e : 0xb3121b); M.red.metalness = gold ? 0.55 : 0.05;
+      M.paint.metalness = gold ? 0.55 : 0.0; M.paint.roughness = gold ? 0.26 : 0.3;
+      M.red.color.set(gold ? 0xc99a2e : ROSSO); M.red.metalness = gold ? 0.55 : 0.05;
       M.paint.needsUpdate = true;
     },
     /** Pose the car from the interpolated sim state. */

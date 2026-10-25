@@ -3,12 +3,8 @@
    sea walls — plus the matching colliders. */
 import * as THREE from 'three';
 import { landSD } from './geo2d.js';
-
-const NOISE_GLSL = /* glsl */`
-float h21(vec2 p){ p = fract(p*vec2(123.34, 456.21)); p += dot(p, p+45.32); return fract(p.x*p.y); }
-float vnoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
-  return mix(mix(h21(i),h21(i+vec2(1,0)),f.x), mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x), f.y); }
-`;
+import { GROUND_GLSL, groundUniforms } from './ground.js';
+import { TEX } from '../core/texgen.js';
 
 class Builder {
   constructor(extra = []) { this.pos = []; this.uv = []; this.idx = []; this.extra = {}; for (const [n, size] of extra) this.extra[n] = { size, data: [] }; this.n = 0; }
@@ -52,88 +48,121 @@ function trimRange(r, pad = 0) {
   return [Math.max(0, i0 - (pad ? 0 : 1)), Math.min(r.n - 1, i1 + (pad ? 0 : 1))];
 }
 
+/* filtered (anti-aliased) 1D box: 1 inside |x - c| < w, smooth over one pixel */
+const AA_GLSL = /* glsl */`
+float aaBox(float x, float c, float w) { float fw = max(fwidth(x), 1e-4); return clamp((w - abs(x - c)) / fw + 0.5, 0.0, 1.0); }
+float aaDash(float s, float period, float duty) {
+  float fw = max(fwidth(s), 1e-4) / period;
+  float f = fract(s / period);
+  float on = clamp((duty - f) / fw + 0.5, 0.0, 1.0) * clamp(f / fw + 0.5, 0.0, 1.0);
+  return mix(on, duty, smoothstep(0.25, 0.6, fw));     // far away: average coverage
+}`;
+
 function asphaltMaterial() {
-  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, metalness: 0, side: THREE.DoubleSide });
+  const webgl2 = TEX.webgl2;
+  const m = new THREE.MeshStandardMaterial({ color: webgl2 ? 0xffffff : 0x4a4946, roughness: 0.88, metalness: 0, side: THREE.DoubleSide });
+  if (!webgl2) return m;
+  const U = groundUniforms(TEX.groundSize || 512);
   m.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, U);
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nattribute vec2 ruv; attribute vec4 rinfo; attribute vec4 rext; varying vec2 vRuv; varying vec4 vRinfo; varying vec4 vRext; varying vec3 vWPos;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\n vRuv = ruv; vRinfo = rinfo; vRext = rext; vWPos = (modelMatrix * vec4(position,1.0)).xyz;');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec2 vRuv; varying vec4 vRinfo; varying vec4 vRext; varying vec3 vWPos;\n' + NOISE_GLSL + '\nfloat gMark;')
-      .replace('#include <color_fragment>', `#include <color_fragment>
+      .replace('#include <common>', '#include <common>\nvarying vec2 vRuv; varying vec4 vRinfo; varying vec4 vRext; varying vec3 vWPos;\n' + GROUND_GLSL + AA_GLSL + '\nfloat gMark, gRough; vec2 gTn;')
+      .replace('#include <map_fragment>', `
         float lat = vRuv.x, s = vRuv.y; float hw = vRinfo.x, lanes = max(vRinfo.y, 1.0), med = vRinfo.z, kind = vRinfo.w;
         vec2 wp = vWPos.xz;
-        float n1 = vnoise(wp*0.35), n2 = vnoise(wp*1.1), n3 = vnoise(wp*0.045);
-        vec3 base = mix(vec3(0.075,0.066,0.092), vec3(0.092,0.082,0.11), n1*0.5 + n3*0.5);
-        base *= 0.97 + n2*0.04;
-        float patchM = smoothstep(0.6, 0.64, vnoise(wp*0.06 + 17.0));
-        base = mix(base, base*0.9, patchM*0.5);
-        float crack = smoothstep(0.035, 0.0, abs(vnoise(wp*0.9 + 3.1) - 0.5)) * smoothstep(0.55, 0.75, vnoise(wp*0.11 + 9.0));
-        base *= 1.0 - crack*0.0;
+        vec4 mac = gMacro(wp);
+        GSample g = gLayer(wp, 5.0, 5.0, smoothstep(0.35, 0.65, mac.b));
+        vec3 base = g.alb * (0.86 + 0.28 * mac.r);
+        float ro = g.rough;
+        // repair patches: slightly darker, smoother asphalt
+        float patchM = smoothstep(0.62, 0.66, mac.a) * step(kind, 1.5);
+        base = mix(base, base * 0.78, patchM); ro = mix(ro, 0.8, patchM);
         float al = abs(lat);
         gMark = 0.0;
         if (kind < 1.5) {
-          float lw = (hw - med*0.5) / lanes;
-          float o = al - med*0.5;
+          float lw = (hw - med * 0.5) / lanes;
+          float o = al - med * 0.5;
           float f = fract(o / lw);
-          float wheel = exp(-pow((f-0.27)*lw/0.5, 2.0)) + exp(-pow((f-0.73)*lw/0.5, 2.0));
-          base *= 1.0 - 0.03*wheel;
-          gMark += step(hw-0.5, al) * step(al, hw-0.3);
+          // wheel paths: polished and darker; oil drip line down the lane centre
+          float wheel = exp(-pow((f - 0.27) * lw / 0.45, 2.0)) + exp(-pow((f - 0.73) * lw / 0.45, 2.0));
+          float drip = exp(-pow((f - 0.5) * lw / 0.35, 2.0)) * smoothstep(0.4, 0.75, mac.g);
+          base *= 1.0 - 0.06 * wheel - 0.12 * drip; ro -= 0.12 * wheel;
+          gMark += aaBox(al, hw - 0.4, 0.1);                                           // edge lines
           if (med > 0.01) {
-            gMark += step(med*0.5+0.15, al) * step(al, med*0.5+0.3);
+            gMark += aaBox(al, med * 0.5 + 0.22, 0.075);
             for (int k = 1; k < 4; k++) { if (float(k) >= lanes) break;
-              float c = med*0.5 + float(k)*lw;
-              gMark += step(fract(s/8.0), 0.5) * step(abs(al-c), 0.11); }
+              gMark += aaDash(s, 9.0, 0.45) * aaBox(al, med * 0.5 + float(k) * lw, 0.075); }
           } else {
-            gMark += step(fract(s/7.0), 0.55) * step(al, 0.11);
+            gMark += aaDash(s, 7.0, 0.5) * aaBox(lat, 0.0, 0.08);
           }
           float dz = min(s - vRext.x, vRext.y - s);
-          if (vRext.z > 0.5 && dz > 1.5 && dz < 5.5) gMark = max(gMark, step(fract((lat+hw)/1.1), 0.55) * step(al, hw-0.7));
+          if (vRext.z > 0.5) gMark = max(gMark, aaBox(dz, 3.5, 2.0) * aaDash(lat + hw, 1.1, 0.5) * step(al, hw - 0.7));
           gMark = clamp(gMark, 0.0, 1.0);
-          float fw = fwidth(lat); gMark *= 1.0 - smoothstep(0.08, 0.3, fw);
+          gMark *= 0.55 + 0.45 * smoothstep(0.2, 0.55, g.h + mac.g * 0.5);   // worn paint
         }
-        diffuseColor.rgb = mix(base, vec3(0.92, 0.92, 0.9), gMark);
-      `)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = mix(0.86, 0.55, gMark);');
+        diffuseColor.rgb = mix(base, vec3(0.78, 0.77, 0.73), gMark);
+        gRough = mix(ro, 0.62, gMark); gTn = g.n * (1.0 - gMark);`)
+      .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = gRough;')
+      .replace('#include <normal_fragment_maps>', 'normal = gPerturb(normal, gTn, -vViewPosition, wp / 5.0);');
   };
+  m.customProgramCacheKey = () => 'asphalt-v2';
   return m;
 }
 
 function pavementMaterial() {
-  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, side: THREE.DoubleSide, shadowSide: THREE.FrontSide });
+  const webgl2 = TEX.webgl2;
+  const m = new THREE.MeshStandardMaterial({ color: webgl2 ? 0xffffff : 0x9a968e, roughness: 0.85, side: THREE.DoubleSide, shadowSide: THREE.FrontSide });
+  if (!webgl2) return m;
+  const U = groundUniforms(TEX.groundSize || 512);
   m.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, U);
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nattribute vec2 ruv; attribute vec4 pinfo; varying vec2 vRuv; varying vec4 vPinfo; varying vec3 vWPos;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\n vRuv = ruv; vPinfo = pinfo; vWPos = (modelMatrix * vec4(position,1.0)).xyz;');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec2 vRuv; varying vec4 vPinfo; varying vec3 vWPos;\n' + NOISE_GLSL)
-      .replace('#include <color_fragment>', `#include <color_fragment>
-        float k = vPinfo.x; vec2 wp = vWPos.xz;
-        vec3 col;
-        if (k < 0.5) {            // paver tiles
-          vec2 t = vec2(vRuv.x, vRuv.y) / vec2(1.2, 1.2);
-          vec2 cell = floor(t); vec2 f = fract(t);
-          float grout = step(0.04, f.x) * step(0.04, f.y);
-          float tone = h21(cell) * 0.05;
-          vec3 pv = mix(vec3(0.94, 0.6, 0.22), vec3(0.95, 0.7, 0.34), vPinfo.y);
-          col = mix(pv * 0.84, pv * (0.97 + tone), grout);
-        } else if (k < 1.5) {     // painted kerb: black & yellow
-          float band = step(0.5, fract(vRuv.y / 1.2));
-          col = mix(vec3(0.05, 0.05, 0.07), vec3(0.96, 0.7, 0.08), band);
-        } else if (k < 2.5) {     // plain kerb stone
-          col = vec3(0.9, 0.88, 0.84);
-        } else if (k < 3.5) {     // concrete
-          col = vec3(0.86, 0.82, 0.78) * (0.95 + vnoise(wp*0.7)*0.05);
-        } else if (k < 4.5) {     // planter soil / median garden
-          col = mix(vec3(0.3,0.6,0.16), vec3(0.42,0.7,0.2), smoothstep(0.35, 0.7, vnoise(wp*0.6)));
-        } else {                  // basalt sea wall
-          vec2 t = vec2(vRuv.y / 1.4, vWPos.y / 0.7); vec2 cell = floor(vec2(t.x + floor(t.y)*0.5, t.y)); vec2 f = fract(vec2(t.x + floor(t.y)*0.5, t.y));
-          float joint = step(0.05, f.x) * step(0.08, f.y);
-          col = mix(vec3(0.55,0.5,0.45), vec3(0.85,0.76,0.62) * (0.9 + h21(cell)*0.15), joint);
+      .replace('#include <common>', '#include <common>\nvarying vec2 vRuv; varying vec4 vPinfo; varying vec3 vWPos;\n' + GROUND_GLSL + AA_GLSL + '\nfloat gRough; vec2 gTn; vec2 gUv;')
+      .replace('#include <map_fragment>', `
+        float k = floor(vPinfo.x + 0.5); vec2 wp = vWPos.xz;
+        vec4 mac = gMacro(wp);
+        float blend = smoothstep(0.35, 0.65, mac.b);
+        vec3 col; float ro; vec2 tn;
+        // u across, v along the road (metres); faces use height as v
+        vec2 uvRoad = vec2(vRuv.x, vRuv.y);
+        vec2 uvFace = vec2(vRuv.y, vWPos.y);
+        gUv = uvRoad;
+        if (k < 0.5) {                     // paver blocks, laid along the road
+          GSample g = gLayer(uvRoad, 6.0, 2.4, 0.0); col = g.alb; ro = g.rough; tn = g.n;
+          col *= 0.85 + 0.3 * mac.r;
+        } else if (k < 1.5) {              // kerb face painted in black & yellow bands
+          gUv = uvFace;
+          GSample g = gLayer(uvFace, 3.0, 4.0, blend);
+          float band = aaDash(vRuv.y, 1.2, 0.5);
+          col = mix(vec3(0.05, 0.05, 0.05), vec3(0.62, 0.46, 0.12), band) * (0.75 + 0.45 * g.alb.r / max(0.2, g.alb.g));
+          col = mix(col, g.alb * 0.8, 0.25 * smoothstep(0.45, 0.75, mac.g));       // scuffed paint
+          ro = 0.75; tn = g.n * 0.5;
+        } else if (k < 3.5) {              // kerb stone / concrete
+          gUv = k < 2.5 ? uvFace : uvRoad;
+          GSample g = gLayer(gUv, 3.0, 4.0, blend); col = g.alb * (0.85 + 0.3 * mac.r); ro = g.rough; tn = g.n;
+        } else if (k < 4.5) {              // planted median
+          GSample g = gLayer(wp, 7.0, 3.0, blend); col = g.alb; ro = g.rough; tn = g.n; gUv = wp;
+        } else {                           // basalt sea wall, coursed blocks
+          gUv = uvFace;
+          GSample g = gLayer(uvFace, 4.0, 6.0, blend);
+          float cy = vWPos.y / 0.7, row = floor(cy);
+          float jx = aaBox(fract(vRuv.y / 1.4 + row * 0.5), 0.0, 0.03) + aaBox(fract(vRuv.y / 1.4 + row * 0.5), 1.0, 0.03);
+          float jy = aaBox(fract(cy), 0.0, 0.05) + aaBox(fract(cy), 1.0, 0.05);
+          col = g.alb * 1.2 * (1.0 - 0.45 * clamp(jx + jy, 0.0, 1.0));
+          ro = g.rough; tn = g.n;
+          col *= 1.0 - 0.35 * (1.0 - smoothstep(-0.5, 1.2, vWPos.y));             // wet, algae-dark near the water
         }
-        diffuseColor.rgb = col;
-      `);
+        diffuseColor.rgb = col; gRough = ro; gTn = tn;`)
+      .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = gRough;')
+      .replace('#include <normal_fragment_maps>', 'normal = gPerturb(normal, gTn, -vViewPosition, gUv);');
   };
+  m.customProgramCacheKey = () => 'pavement-v2';
   return m;
 }
 
@@ -337,7 +366,7 @@ export function buildRoadMeshes(net, terrain, colliders) {
   group.add(asphaltMesh, paveMesh);
 
   /* ---- piers ---- */
-  const concrete = new THREE.MeshStandardMaterial({ color: 0x9c9a94, roughness: 0.85 });
+  const concrete = new THREE.MeshStandardMaterial({ color: 0x9a978f, roughness: 0.88 });
   const pierGeo = new THREE.BoxGeometry(1, 1, 1);
   const pierMesh = new THREE.InstancedMesh(pierGeo, concrete, piers.length * 2);
   const capMesh = new THREE.InstancedMesh(pierGeo, concrete, piers.length);
