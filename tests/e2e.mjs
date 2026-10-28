@@ -14,35 +14,39 @@ try {
   await p.goto(url + '/index.html');
   const links = await p.$$eval('a', as => as.map(a => a.getAttribute('href')));
   check('menu links to both worlds and the portfolio', ['mumbai.html', 'circuit.html', 'portfolio.html'].every(h => links.includes(h)));
-  check('landing: résumé and contact in the hero', await p.$('.hero a[href="assets/rhea-laloo-resume.pdf"]') && await p.$('.hero a[href^="mailto:"]'));
-  const land = await p.evaluate(() => ({ roles: document.querySelectorAll('#roles .role').length, cards: document.querySelectorAll('#cards .card').length, stops: document.querySelectorAll('#route .stop').length, skills: document.querySelectorAll('#skillList dd span').length }));
-  check('landing: experience, work, education and skills render from the shared data', land.roles === 3 && land.cards === 6 && land.stops === 4 && land.skills > 10, JSON.stringify(land));
-  // Mumbai GP card: its picture scrubs from line art to the render as it scrolls into view
-  const scrubAt = (page, top) => page.evaluate(async top => {
-    const el = document.querySelector('.scrub');
-    scrollTo({ top: el.getBoundingClientRect().top + scrollY - top, behavior: 'instant' });
-    await new Promise(r => setTimeout(r, 120)); el.scrub.update();
-    return { frame: el.scrub.frame(), total: el.scrub.total, wide: document.documentElement.scrollWidth > innerWidth };
-  }, top);
-  await p.waitForFunction(() => document.querySelector('.scrub').scrub, null, { timeout: 10000 });
-  await scrubAt(p, 540);
-  await p.waitForFunction(() => performance.getEntriesByType('resource').filter(e => e.name.includes('/assets/reel/')).length >= 61, null, { timeout: 30000 });
-  const s0 = await scrubAt(p, 538), s5 = await scrubAt(p, 380);
-  await scrubAt(p, -60);
-  await p.waitForFunction(() => { const el = document.querySelector('.scrub'); el.scrub.update(); return el.scrub.frame() === el.scrub.total - 1; }, null, { timeout: 10000 }).catch(() => {});
-  const s1 = await scrubAt(p, -60);
-  check('Mumbai GP card: picture scrubs with scroll', s0.frame <= 1 && s5.frame > 10 && s5.frame < 50 && s1.frame === s1.total - 1, `${s0.frame} → ${s5.frame} → ${s1.frame} of ${s1.total}`);
-  check('Mumbai GP card: links to the game', await p.$('#mumbai a[href="mumbai.html"]'));
-  check('landing: no sideways scroll', !s0.wide && !s1.wide);
+  check('landing: résumé and contact on the first screen', await p.$('#hello a[href="assets/rhea-laloo-resume.pdf"]') && await p.$('#hello a[href^="mailto:"]'));
+  const land = await p.evaluate(() => ({ roles: document.querySelectorAll('#roles .role').length, cards: document.querySelectorAll('#cards .card').length, stops: document.querySelectorAll('#route .stop').length, tools: document.querySelectorAll('#tools dd span').length }));
+  check('landing: experience, work, route and toolkit render from the shared data', land.roles === 3 && land.cards === 6 && land.stops === 4 && land.tools > 10, JSON.stringify(land));
+  // the backdrop: Mumbai GP's flight down Marine Drive, advanced by scroll; the chapter rail follows
+  const at = (page, sel, dy = 0) => page.evaluate(async ([sel, dy]) => {
+    const el = document.querySelector(sel);
+    scrollTo({ top: el.getBoundingClientRect().top + scrollY + dy, behavior: 'instant' });
+    await new Promise(r => setTimeout(r, 150)); window.__backdrop.update();
+    return { want: window.__backdrop.want(), veil: +document.getElementById('veil').style.opacity, ch: (document.querySelector('.rail a.on') || {}).textContent, wide: document.documentElement.scrollWidth > innerWidth };
+  }, [sel, dy]);
+  await p.waitForFunction(() => window.__backdrop, null, { timeout: 10000 });
+  await p.waitForFunction(() => performance.getEntriesByType('resource').filter(e => e.name.includes('/assets/reel/')).length >= 120, null, { timeout: 30000 });
+  const b0 = await at(p, '#hello'), b1 = await at(p, '#work'), bA = await at(p, '.say'), bB = await at(p, '.say.two'), bG = await at(p, '#mumbai');
+  check('backdrop: line art at the top, the city renders between the two lines, the car at Mumbai GP', b0.want === 0 && b1.want > 10 && b1.want < 36 && bA.want <= 40 && bB.want >= 80 && bG.want >= 115, [b0, b1, bA, bB, bG].map(x => x.want).join(' → '));
+  check('backdrop: veil darkens behind dense chapters, clears for the reveal', b0.veil < 0.3 && b1.veil > 0.8 && bB.veil < 0.3 && bG.veil < 0.2, [b0, b1, bB, bG].map(x => x.veil).join(' · '));
+  check('rail: follows the chapter', /Hello/.test(b0.ch) && /Work/.test(b1.ch) && /Mumbai GP/.test(bG.ch), [b0.ch, b1.ch, bG.ch].join(' · '));
+  await p.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, 0); });
+  await p.click('.rail a[href="#contact"]');
+  await p.waitForTimeout(400);
+  const jumped = await p.evaluate(() => { window.__backdrop.update(); return { top: Math.round(document.getElementById('contact').getBoundingClientRect().top), ch: document.querySelector('.rail a.on').textContent }; });
+  check('rail: jumps straight to a chapter', jumped.top < 140 && /Contact/.test(jumped.ch), JSON.stringify(jumped));
+  check('landing: Mumbai GP links to the game', await p.$('#mumbai a[href="mumbai.html"]'));
+  check('landing: no sideways scroll', !b0.wide && !bG.wide);
   check('menu has no errors', errs.length === 0, errs.join('; '));
   await p.close();
 
-  // reduced motion: the finished still, no scrubbing
+  // reduced motion: one still per chapter, no scrubbing
   p = await ctx.newPage(); errs = pageErrors(p);
   await p.emulateMedia({ reducedMotion: 'reduce' });
   await p.goto(url + '/index.html');
-  const rm = await p.evaluate(() => { const s = document.querySelector('.scrub'); return { cls: s.className, img: +getComputedStyle(s.querySelector('img')).opacity }; });
-  check('Mumbai GP card: reduced motion shows the still', /scrub-static/.test(rm.cls) && rm.img === 1, rm.cls);
+  await p.waitForFunction(() => window.__backdrop, null, { timeout: 10000 });
+  const rm = [await at(p, '#hello', 100), await at(p, '#experience', 200), await at(p, '#mumbai', 100)].map(x => x.want);
+  check('backdrop: reduced motion holds one still per chapter', rm[0] === 0 && rm[1] === 16 && rm[2] === 119, rm.join(' · '));
   await p.close();
 
   /* ---------- portfolio ---------- */

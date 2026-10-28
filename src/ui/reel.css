@@ -1,6 +1,0 @@
-/* Scroll-scrubbed picture (src/ui/reel.js). */
-.scrub { position: relative; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; }
-.scrub img, .scrub canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
-.scrub-js img { opacity: 0; }                         /* the canvas takes over… */
-.scrub-js.scrub-static img { opacity: 1; }            /* …except with reduced motion: the still */
-.scrub-static canvas { display: none; }
