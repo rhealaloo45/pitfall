@@ -33,6 +33,7 @@ The MIT licence requires keeping the copyright notice. It ships inside the files
 
 * **Textures:** every texture is generated at runtime — painted on an HTML canvas or computed from tileable noise in JavaScript (facade and ground texture arrays, foliage atlas, carbon weave, wave normals, livery, signs, tyre sidewalls) — and uploaded with mipmaps. The sky is computed in a shader. None are image files.
 * **Menu previews (`assets/previews/*.webp`):** screenshots of this project's own renderer, captured by `tests/make-previews.mjs`.
+* **Scroll-reel frames (`assets/reel/{d,m}/*.webp`):** frames of this project's own renderer plus a line-art pass computed from its geometry, rendered by `tools/reel/capture.mjs`.
 
 ## Audio
 
