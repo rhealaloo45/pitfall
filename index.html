@@ -4,19 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rhea Laloo — AI Engineer</title>
-<meta name="description" content="Rhea Laloo, AI Engineer at Tata Consultancy Services in Mumbai. I build AI that notices what's wrong — in logs, in code, on roads — before it turns into a problem.">
+<meta name="description" content="Rhea Laloo, AI Engineer at Tata Consultancy Services in Mumbai. I build AI that notices what's wrong — in logs, in code, on roads — so everything else just works.">
 <meta name="theme-color" content="#0b0c0f">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Rhea Laloo — AI Engineer">
-<meta property="og:description" content="I build AI that notices what's wrong — in logs, in code, on roads — before it turns into a problem.">
+<meta property="og:description" content="I build AI that notices what's wrong — in logs, in code, on roads — so everything else just works.">
 <meta property="og:image" content="https://rhealaloo45.github.io/pitfall/assets/reel/d/030.webp">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/reel/d/000.webp">
 <style>
-  :root { --ink: #f1efea; --body: #d2cec6; --dim: #a6a29a; --mute: #7a766f; --red: #d81f26; --cyan: #39d4ff; --pink: #ff5fa8; --bg: #0b0c0f; --line: rgba(255,255,255,.1); --font: 'Titillium Web', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  :root { --ink: #f1efea; --body: #d2cec6; --dim: #a6a29a; --mute: #7a766f; --red: #d81f26; --cyan: #39d4ff; --pink: #ff5fa8; --bg: #0b0c0f; --line: rgba(255,255,255,.1); --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; scroll-padding-top: 64px; }
   body { font-family: var(--font); color: var(--ink); background: var(--bg) url(assets/reel/d/000.webp) 62% 50% / cover fixed; -webkit-font-smoothing: antialiased; line-height: 1.5; }
@@ -34,7 +34,7 @@
   /* top bar */
   .bar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: linear-gradient(rgba(11,12,15,.92), rgba(11,12,15,.6) 60%, rgba(11,12,15,0)); }
   .bar .wrap { height: 64px; display: flex; align-items: center; gap: 16px; }
-  .brand { font-weight: 900; font-size: 17px; text-decoration: none; letter-spacing: .01em; }
+  .brand { font-weight: 700; font-size: 17px; text-decoration: none; letter-spacing: .01em; }
   .brand span { color: var(--red); }
   .open { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: rgba(11,12,15,.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: var(--body); }
   .open i { width: 7px; height: 7px; border-radius: 50%; background: #4fdc8a; box-shadow: 0 0 8px #4fdc8a; }
@@ -51,16 +51,17 @@
   .rail .fill { display: block; height: 100%; background: linear-gradient(90deg, var(--cyan), var(--pink), var(--red)); transform-origin: 0 50%; transform: scaleX(0); }
 
   /* buttons */
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 8px; background: var(--red); color: #fff; text-decoration: none; font-weight: 700; letter-spacing: .04em; font-size: 14.5px; border: 1px solid var(--red); transition: background .2s, transform .2s, border-color .2s; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 22px; border-radius: 999px; background: var(--red); color: #fff; text-decoration: none; font-weight: 600; letter-spacing: -.01em; font-size: 15px; border: 1px solid var(--red); transition: background .2s, transform .2s, border-color .2s; }
   .btn:hover { background: #e8333a; border-color: #e8333a; transform: translateY(-1px); }
   .btn.ghost { background: rgba(18,20,24,.6); border-color: var(--line); color: var(--ink); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
   .btn.ghost:hover { background: rgba(40,42,48,.7); border-color: rgba(255,255,255,.22); }
   .btn.sm { padding: 8px 14px; font-size: 13.5px; }
 
   .hello, .story, .say, .ch { position: relative; }
-  .k { font-size: 12.5px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; color: var(--red); }
-  .k em { font-style: normal; color: var(--dim); margin-right: 10px; }
-  h2 { font-size: clamp(32px, 4vw, 48px); font-weight: 900; line-height: 1.04; letter-spacing: -.01em; margin-top: 10px; }
+  .k { font-size: 17px; font-weight: 600; letter-spacing: -.01em; color: var(--red); }
+  .k em { font-style: normal; color: var(--mute); margin-right: 10px; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .grad { background: linear-gradient(90deg, var(--cyan), var(--pink) 55%, #ff8a5c); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  h2 { font-size: clamp(32px, 4vw, 48px); font-weight: 700; line-height: 1.06; letter-spacing: -.03em; margin-top: 8px; }
   .sub { color: var(--dim); font-size: 16px; max-width: 540px; margin-top: 12px; }
   .shadow { text-shadow: 0 2px 24px rgba(0,0,0,.75), 0 0 2px rgba(0,0,0,.6); }
 
@@ -68,14 +69,14 @@
   .hello { min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: center; padding: 110px 0 110px; }
   .hello::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(11,12,15,.94), rgba(11,12,15,.8) 38%, rgba(11,12,15,.25) 66%, rgba(11,12,15,0) 84%); pointer-events: none; }
   .hello .wrap { position: relative; width: 100%; }
-  .hello h1 { font-size: clamp(60px, 9.5vw, 124px); font-weight: 900; line-height: .9; letter-spacing: -.02em; margin-top: 18px; }
+  .hello h1 { font-size: clamp(56px, 8.6vw, 112px); font-weight: 800; line-height: .94; letter-spacing: -.04em; margin-top: 14px; }
   .hello h1 span { color: var(--red); }
   .lead { margin-top: 22px; font-size: clamp(18px, 1.8vw, 22px); line-height: 1.5; color: var(--body); max-width: 600px; }
   .lead b { color: var(--ink); }
   .ctas { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 10px; }
   .stats { margin-top: 56px; display: grid; grid-template-columns: repeat(4, 1fr); max-width: 900px; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
   .stat { background: rgba(11,12,15,.72); padding: 18px 20px; }
-  .stat b { display: block; font-size: clamp(24px, 2.6vw, 32px); font-weight: 900; line-height: 1.05; }
+  .stat b { display: block; font-size: clamp(22px, 2.4vw, 30px); font-weight: 700; line-height: 1.1; letter-spacing: -.02em; }
   .stat span { display: block; margin-top: 6px; font-size: 13.5px; color: var(--dim); line-height: 1.4; }
 
   /* act one: what I've taught machines to notice — one idea per screen, over the line art */
@@ -83,10 +84,10 @@
   .story { min-height: 78vh; display: flex; align-items: center; padding: 60px 0; }
   .story::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(11,12,15,.82), rgba(11,12,15,.55) 45%, rgba(11,12,15,0) 80%); pointer-events: none; }
   .story .wrap { position: relative; width: 100%; }
-  .story .n { display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+  .story .n { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: var(--dim); }
   .story .n b { color: var(--cyan); font-size: 14px; }
   .story:nth-of-type(odd) .n b { color: var(--pink); }
-  .story h3 { margin-top: 16px; font-size: clamp(40px, 6.2vw, 82px); font-weight: 900; line-height: .98; letter-spacing: -.02em; max-width: 920px; }
+  .story h3 { margin-top: 14px; font-size: clamp(36px, 5.4vw, 72px); font-weight: 700; line-height: 1.02; letter-spacing: -.035em; max-width: 920px; }
   .story p { margin-top: 20px; max-width: 600px; font-size: 17px; line-height: 1.6; color: var(--body); }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
   .chips span { font-size: 13px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: rgba(11,12,15,.7); border: 1px solid var(--line); color: var(--ink); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
@@ -94,7 +95,7 @@
 
   /* the turn: the city renders in between these two lines */
   .say { min-height: 100vh; min-height: 100svh; display: flex; align-items: center; }
-  .say p { font-size: clamp(44px, 7vw, 96px); font-weight: 900; line-height: 1; letter-spacing: -.02em; }
+  .say p { font-size: clamp(42px, 6.4vw, 88px); font-weight: 700; line-height: 1.02; letter-spacing: -.04em; }
   .say p span { color: var(--cyan); }
   .say.two p span { color: var(--red); }
   .say small { display: block; margin-top: 18px; font-size: 16px; font-weight: 600; letter-spacing: 0; color: var(--body); }
@@ -104,10 +105,10 @@
   .head { margin-bottom: 34px; }
   .role { display: grid; grid-template-columns: 280px 1fr; gap: 32px; padding: 26px 0; border-top: 1px solid var(--line); }
   .role:last-child { border-bottom: 1px solid var(--line); }
-  .role .when { font-size: 13px; font-weight: 700; letter-spacing: .08em; color: var(--mute); text-transform: uppercase; }
-  .role h3 { font-size: 21px; font-weight: 900; margin-top: 6px; line-height: 1.2; }
+  .role .when { font-size: 14px; font-weight: 600; color: var(--mute); }
+  .role h3 { font-size: 21px; font-weight: 700; margin-top: 6px; line-height: 1.2; }
   .role .r { color: var(--dim); font-weight: 600; margin-top: 2px; }
-  .role .now { display: inline-block; margin-top: 10px; font-size: 11px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; color: #7fe0a0; background: rgba(60,200,110,.12); border-radius: 999px; padding: 3px 10px; }
+  .role .now { display: inline-block; margin-top: 10px; font-size: 12px; font-weight: 600; color: #7fe0a0; background: rgba(60,200,110,.12); border-radius: 999px; padding: 3px 10px; }
   .role ul { list-style: none; display: grid; gap: 10px; }
   .role li { position: relative; padding-left: 20px; color: var(--body); line-height: 1.6; font-size: 15.5px; }
   .role li::before { content: ''; position: absolute; left: 0; top: .72em; width: 8px; height: 2px; background: var(--red); }
@@ -119,16 +120,18 @@
   .stop:nth-child(2)::before { border-color: #a58dff; box-shadow: 0 0 12px rgba(165,141,255,.5); }
   .stop:nth-child(3)::before { border-color: var(--pink); box-shadow: 0 0 12px rgba(255,95,168,.5); }
   .stop.now::before { background: var(--red); border-color: var(--red); box-shadow: 0 0 0 5px rgba(216,31,38,.2), 0 0 16px rgba(216,31,38,.7); }
-  .stop .when { font-size: 12.5px; font-weight: 700; letter-spacing: .16em; color: var(--dim); }
-  .stop h3 { font-size: 19px; font-weight: 900; line-height: 1.2; margin-top: 8px; }
+  .stop .when { font-size: 14px; font-weight: 600; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .stop h3 { font-size: 19px; font-weight: 700; line-height: 1.2; margin-top: 8px; }
   .stop .course { color: var(--dim); font-size: 14px; margin-top: 2px; }
-  .stop .score { display: block; margin-top: 12px; font-size: 28px; font-weight: 900; line-height: 1; }
+  .stop .score { display: block; margin-top: 12px; font-size: 28px; font-weight: 700; line-height: 1; }
   .stop .score small { font-size: 14px; color: var(--dim); font-weight: 700; }
   .stop .note { margin-top: 6px; font-size: 14px; color: var(--body); }
   .awards { margin-top: 44px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 32px; list-style: none; }
   .awards li { padding: 13px 0 13px 30px; border-top: 1px solid var(--line); color: var(--body); position: relative; font-size: 15px; }
   .awards li::before { content: '★'; position: absolute; left: 4px; top: 12px; color: #e8b33c; font-size: 14px; }
-  .tools { margin-top: 36px; }
+  .tools { margin-top: 0; }
+  .tools > div { padding: 18px 0 !important; }
+  .tools dt { font-size: 15px !important; color: var(--ink) !important; font-weight: 600 !important; letter-spacing: -.01em !important; }
   .tools > div { display: grid; grid-template-columns: 200px 1fr; gap: 24px; padding: 14px 0; border-top: 1px solid var(--line); align-items: baseline; }
   .tools > div:last-child { border-bottom: 1px solid var(--line); }
   .tools dt { font-weight: 700; color: var(--dim); font-size: 13.5px; letter-spacing: .04em; }
@@ -142,10 +145,16 @@
   .contact dt { color: var(--mute); font-weight: 700; }
   .contact dd a { text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.25); }
   .contact dd a:hover { border-bottom-color: #fff; }
-  footer { padding: 36px 0 110px; font-size: 13.5px; color: var(--mute); display: grid; gap: 10px; }
+  .more { position: relative; min-height: 100vh; min-height: 100svh; display: flex; align-items: flex-end; padding: 120px 0 140px; }
+  .more::before { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(11,12,15,.95), rgba(11,12,15,.7) 34%, rgba(11,12,15,.1) 62%, rgba(11,12,15,0) 80%); pointer-events: none; }
+  .more .wrap { position: relative; width: 100%; }
+  .more .om { font-size: clamp(48px, 7.4vw, 104px); font-weight: 700; letter-spacing: -.045em; line-height: 1; }
+  .more p { margin-top: 18px; max-width: 620px; color: var(--body); font-size: 18px; line-height: 1.55; }
+  .more p b { color: var(--ink); }
+  footer { position: relative; background: rgba(11,12,15,.94); padding: 28px 0 110px; font-size: 13.5px; color: var(--mute); border-top: 1px solid var(--line); }
+  footer .fin { display: grid; gap: 8px; }
   footer a { color: var(--dim); }
-  footer .credit { color: var(--dim); }
-  footer .credit a { color: var(--ink); font-weight: 700; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.3); }
+  footer .sig { color: var(--body); font-weight: 600; font-size: 15px; }
 
   /* gentle reveal (only with script, not with reduced motion) */
   .js .rv { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
@@ -166,7 +175,7 @@
     .hello::before { background: linear-gradient(180deg, rgba(11,12,15,.88), rgba(11,12,15,.6) 60%, rgba(11,12,15,.3)); }
     .stats { grid-template-columns: 1fr 1fr; margin-top: 40px; }
     .stat { padding: 15px 15px 17px; }
-    .stat b { font-size: 22px; white-space: nowrap; }
+    .stat b { font-size: 19px; white-space: nowrap; }
     .intro, .ch { padding-top: 96px; }
     .story { min-height: 70vh; }
     .story::before { background: rgba(11,12,15,.45); }
@@ -207,9 +216,9 @@
 <main id="main">
   <section class="hello" id="hello" data-frame="0" data-veil="0.12" aria-labelledby="h-hello">
     <div class="wrap">
-      <div class="k">Mumbai, as a machine sees it</div>
+      <div class="k grad">Mumbai, as a machine sees it</div>
       <h1 id="h-hello">Rhea<br>Laloo<span>.</span></h1>
-      <p class="lead">AI Engineer at Tata Consultancy Services. I build <b>AI that notices what's wrong</b> (in logs, in code, on roads) before it turns into a problem.</p>
+      <p class="lead">AI Engineer at Tata Consultancy Services. I build <b>AI that notices what's wrong</b> (in logs, in code, on roads) so everything else just works.</p>
       <div class="ctas">
         <a class="btn" href="assets/rhea-laloo-resume.pdf" download="Rhea-Laloo-Resume.pdf">Download résumé</a>
         <a class="btn ghost" href="mailto:rhea.laloo@tcs.com">Email me</a>
@@ -245,7 +254,11 @@
     <div class="head rv"><div class="k"><em>04</em>Education</div><h2 id="h-edu">Where I learned to look</h2></div>
     <ol class="route rv" id="route"></ol>
     <ul class="awards rv" id="awards"></ul>
-    <dl class="tools rv" id="tools" aria-label="Toolkit"></dl>
+  </section>
+
+  <section class="ch wrap" id="specs" data-frame="113" data-veil="0.88" aria-labelledby="h-specs">
+    <div class="head rv"><div class="k">Toolkit</div><h2 id="h-specs">Tech specs</h2></div>
+    <dl class="tools rv" id="tools"></dl>
   </section>
 
   <div class="ch wrap" data-frame="119" data-veil="0.86">
@@ -266,14 +279,26 @@
         <dt>Based in</dt><dd>Mumbai, India</dd>
       </dl>
     </section>
-    <footer>
-      <span class="credit">The city behind this page is from <a href="mumbai.html">Mumbai GP</a>, a drivable Mumbai I built from scratch in three.js. Take it for a spin.</span>
-      <span>© Rhea Laloo · <a href="portfolio.html">Printable one-page version</a> · <a href="circuit.html">Original F1 circuit</a> · <a href="ASSETS.md">Assets &amp; licences</a></span>
-    </footer>
+
   </div>
+
+  <section class="more" id="onemore" data-frame="119" data-veil="0.05" aria-labelledby="h-more">
+    <div class="wrap rv">
+      <h2 id="h-more" class="om shadow">One more thing.</h2>
+      <p class="shadow">The Mumbai behind this page comes from <b>Mumbai GP</b>, a game I built from scratch in three.js: procedurally generated streets and buildings, 120 Hz car physics and a custom render pipeline. You can drive it.</p>
+      <div class="ctas"><a class="btn" href="mumbai.html">Drive Mumbai GP</a><a class="btn ghost" href="circuit.html">Original F1 circuit</a></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap fin">
+      <span class="sig">Designed and built by Rhea in Mumbai.</span>
+      <span>Scroll effect inspired by Apple's product pages · <a href="portfolio.html">Printable one-page version</a> · <a href="ASSETS.md">Assets &amp; licences</a></span>
+    </div>
+  </footer>
 </main>
 
-<script src="src/shared/portfolio-data.js?v=4"></script>
+<script src="src/shared/portfolio-data.js?v=5"></script>
 <script>
 (function () {
   var R = window.PORTFOLIO && window.PORTFOLIO.RESUME; if (!R) return;

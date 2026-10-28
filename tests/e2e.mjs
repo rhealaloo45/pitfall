@@ -35,7 +35,8 @@ try {
   await p.waitForTimeout(400);
   const jumped = await p.evaluate(() => { window.__backdrop.update(); return { top: Math.round(document.getElementById('contact').getBoundingClientRect().top), ch: document.querySelector('.rail a.on').textContent }; });
   check('rail: jumps straight to a chapter', jumped.top < 140 && /Contact/.test(jumped.ch), JSON.stringify(jumped));
-  check('landing: credits Mumbai GP and links to it', await p.$('footer .credit a[href="mumbai.html"]'));
+  const om = await at(p, '#onemore', 100);
+  check('landing: "One more thing." lifts the veil off the car and links to Mumbai GP', om.want === 119 && om.veil < 0.2 && await p.$('#onemore a[href="mumbai.html"]'), `frame ${om.want} · veil ${om.veil}`);
   check('landing: no sideways scroll', !b0.wide && !bC.wide);
   check('menu has no errors', errs.length === 0, errs.join('; '));
   await p.close();
