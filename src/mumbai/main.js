@@ -121,7 +121,7 @@ async function boot() {
   wireUI();
   wirePlay();
   state.mode = 'ready';
-  window.__game = { sim, world, state, rig, camera, input, nav, atmo, startDrive, recover, renderer, scene, advanceSim, openPanel, closePanel, pipeline, render };   // debugging / automated tests
+  window.__game = { sim, world, state, rig, camera, input, nav, atmo, startDrive, recover, renderer, scene, advanceSim, openPanel, closePanel, fastTravel, bigmapPick: (x, y, r) => bigmap.pick(x, y, r), pipeline, render };   // debugging / automated tests
   requestAnimationFrame(loop);
 }
 
@@ -171,8 +171,12 @@ function endIntro() {
   $('introTitle').classList.add('hidden'); $('skipIntro').style.display = 'none';
   rig.snapTo(sim.pos, sim.quat);
   startDrive();
-  if (state.gp) startLights();
-  else toast('Free roam', 'Explore — destinations are marked on the map');
+  // first visit: the career chapter opens on the grid, before any driving
+  const begin = () => { if (state.gp) startLights(); else toast('Free roam', 'Explore — press M and click a destination to jump there'); };
+  if (!state.visited.has('pitwall')) {
+    markVisited(placeById('pitwall'), true);
+    openPanel('pitwall', { closeLabel: state.gp ? 'Start the race' : 'Start driving', onClose: begin });
+  } else begin();
   setTimeout(() => { $('help').style.opacity = 0; }, 12000);
 }
 function startDrive() {
@@ -190,14 +194,15 @@ function startLights() {
   input.setEnabled(false);
   state.lightsOut = false;
   L.forEach(m => { m.emissiveIntensity = 0; });
-  for (let k = 0; k < 5; k++) setTimeout(() => { if (L[k]) L[k].emissiveIntensity = 5; audio.beep(false); }, 600 + k * 750);
+  for (let k = 0; k < 5; k++) setTimeout(() => { if (!state.gp) return; if (L[k]) L[k].emissiveIntensity = 5; audio.beep(false); }, 600 + k * 750);
   setTimeout(() => {
     L.forEach(m => { m.emissiveIntensity = 0; });
+    if (!state.gp) return;           // fast-travelled away during the countdown
     audio.beep(true);
     input.setEnabled(state.mode === 'drive');
     state.lightsOut = true;
     state.lapStart = performance.now(); state.lapRunning = true;
-    toast('Lights out — go!', 'Follow the red line to every chapter; the clock stops at the Pit Wall.');
+    toast('Lights out — go!', 'Follow the red line: Marine Drive, K. C. College, then the freeway to the finish at KJSIT.');
   }, 600 + 4 * 750 + 700 + Math.random() * 700);
 }
 
@@ -239,11 +244,7 @@ function checkPlaces() {
     if (!pl.elevated && p.y > world.terr.heightAt(pl.x, pl.z) + 6 && pl.id !== 'seaLink') continue;
     near = pl;
     if (!state.visited.has(pl.id)) {
-      state.visited.add(pl.id); minimap.found.add(pl.id); bigmap.found.add(pl.id);
-      if (world.layers.landmarks) { world.layers.landmarks.setVisited(pl.id); world.layers.landmarks.celebrate(pl.id); }
-      progressStore.set('mumbai.visited', [...state.visited]);
-      audio.chime();
-      toast(pl.kind === 'chapter' ? 'Chapter unlocked' : 'Landmark discovered', pl.name);
+      markVisited(pl);
       if (pl.kind === 'chapter' && sim.speed < 17) { openPanel(pl.id); }
     }
     if (state.target && pl.id === state.target.id) advanceTarget();
@@ -253,6 +254,15 @@ function checkPlaces() {
     if (near && state.mode === 'drive') { $('promptK').textContent = near.kind === 'chapter' ? 'Portfolio chapter' : 'Landmark'; $('promptT').textContent = near.name; $('prompt').style.display = 'flex'; }
     else $('prompt').style.display = 'none';
   }
+}
+function markVisited(pl, quiet = false) {
+  if (state.visited.has(pl.id)) return;
+  state.visited.add(pl.id); minimap.found.add(pl.id); bigmap.found.add(pl.id);
+  if (world.layers.landmarks) { world.layers.landmarks.setVisited(pl.id); if (!quiet) world.layers.landmarks.celebrate(pl.id); }
+  progressStore.set('mumbai.visited', [...state.visited]);
+  if (quiet) return;
+  audio.chime();
+  toast(pl.kind === 'chapter' ? 'Chapter unlocked' : 'Landmark discovered', pl.name);
 }
 function advanceTarget() {
   if (state.gp) {
@@ -269,15 +279,15 @@ function finishGP() {
   if (best == null || t < best) { progressStore.set('mumbai.best', t); toast('New best — Mumbai GP', fmt(t)); }
   else toast('Finish — Mumbai GP', `${fmt(t)} · best ${fmt(best)}`);
   state.gp = false; state.target = null;
-  openPanel('pitwall');
+  openPanel('kjsit');
   pickTarget();
 }
 const fmt = s => { const m = Math.floor(s / 60); return `${m}:${(s - m * 60).toFixed(1).padStart(4, '0')}`; };
 
 /* ---------------- panels ---------------- */
-function openPanel(id) {
+function openPanel(id, { closeLabel = 'Back to the road', onClose = null } = {}) {
   const c = panelContent(id); if (!c) return;
-  state.panelFor = id;
+  state.panelFor = id; state.panelOnClose = onClose;
   state.modeBeforePanel = state.mode === 'pause' ? 'drive' : state.mode;
   state.mode = 'panel';
   input.setEnabled(false);
@@ -286,7 +296,7 @@ function openPanel(id) {
   $('panelHead').style.background = c.accent; $('panelHead').style.color = c.dark ? '#14161b' : '#fff';
   $('panelBody').innerHTML = c.html;
   const foot = $('panelFoot');
-  foot.innerHTML = (c.footer || '') + '<button class="btn primary" id="panelClose">Back to the road <kbd>Esc</kbd></button>';
+  foot.innerHTML = (c.footer || '') + `<button class="btn primary" id="panelClose">${closeLabel} <kbd>Esc</kbd></button>`;
   $('panelClose').onclick = closePanel;
   $('panelWrap').style.display = 'flex';
   $('panelClose').focus();
@@ -298,6 +308,33 @@ function closePanel() {
   input.setEnabled(true);
   stepper.resync();            // continue exactly where we stopped
   audio.resume();
+  const after = state.panelOnClose; state.panelOnClose = null;
+  if (after) after();
+}
+
+/* ---------------- fast travel ---------------- */
+/** Jump to a destination (pause menu / big map). Ends a timed GP run; chapters open straight away. */
+function fastTravel(id) {
+  const pl = placeById(id); if (!pl) return;
+  if (state.mode === 'pause') { $('pause').style.display = 'none'; state.mode = 'drive'; }
+  if (bigmapOpen) toggleMap();
+  if (state.gp) {
+    state.gp = false; state.lapRunning = false; $('lap').style.display = 'none';
+    for (const m of (world.layers.landmarks && world.layers.landmarks.startLights) || []) m.emissiveIntensity = 0;
+    toast('Fast travel', 'GP timer stopped — you are in free roam now');
+  }
+  // land on the nearest road, facing the destination
+  const loc = nav.locate(pl.x, pl.z), r = loc.road, i = loc.i;
+  placeOnRoad(pl.x, pl.z, Math.atan2(pl.x - r.x[i], pl.z - r.z[i]));
+  carPose(); rig.snapTo(sim.pos, sim.quat); stepper.resync();
+  state.safe = null;
+  markVisited(pl, true);
+  state.prompt = null;
+  pickTarget();
+  if (state.mode !== 'drive') startDrive();
+  input.setEnabled(true);
+  if (pl.kind === 'chapter') openPanel(pl.id);
+  else toast('Fast travel', pl.name);
 }
 
 /* ---------------- spawn ---------------- */
@@ -310,6 +347,12 @@ function placeOnRoad(x, z, heading) {
   const px = r.x[i] + r.tz[i] * lane, pz = r.z[i] - r.tx[i] * lane;
   const y = world.groundAt(px, pz, r.h[i] + 3);
   sim.reset(new THREE.Vector3(px, y, pz), fwd ? h1 : h1 + Math.PI);
+  // reset() levels the car on the surface under its centre; on a slope or a road edge a wheel can start
+  // below the ground and the spring throws the car up — lift it so the highest wheel sits on the surface
+  const q = new THREE.Vector3(), c = world.groundAt(sim.pos.x, sim.pos.z, sim.pos.y + 3);
+  let top = c;
+  for (const w of sim.wheels) { q.set(w.x, 0, w.z).applyQuaternion(sim.quat); top = Math.max(top, world.groundAt(sim.pos.x + q.x, sim.pos.z + q.z, sim.pos.y + 3)); }
+  sim.pos.y += top - c;
 }
 function spawnAtStart() { placeOnRoad(SPAWN.x, SPAWN.z, SPAWN.heading); }
 
@@ -583,9 +626,10 @@ function showPane(name) {
   if (name === 'progress') {
     const ch = PLACES.filter(p => p.kind === 'chapter'), di = PLACES.filter(p => p.kind === 'discovery');
     const best = progressStore.get('mumbai.best', null), trap = progressStore.get('mumbai.trap', 0);
-    const li = arr => arr.map(p => `<div class="setting"><div>${p.name}</div><div class="opts">${state.visited.has(p.id) ? `<button class="on" data-open="${p.id}">Read</button>` : '<span class="small" style="margin:0">Not found yet</span>'}</div></div>`).join('');
-    pane.innerHTML = `<h3>Portfolio chapters</h3>${li(ch)}<h3 style="margin-top:22px">Landmarks</h3>${li(di)}<p class="small">Best Mumbai GP: ${best ? fmt(best) : '—'} · Top speed trap: ${trap || '—'} km/h</p>`;
+    const li = arr => arr.map(p => `<div class="setting"><div>${p.name}${state.visited.has(p.id) ? ' <span class="small" style="margin:0">✓</span>' : ''}</div><div class="opts"><button class="${state.visited.has(p.id) ? 'on' : ''}" data-open="${p.id}">Read</button><button data-go="${p.id}">Go there</button></div></div>`).join('');
+    pane.innerHTML = `<h3>Portfolio chapters</h3>${li(ch)}<h3 style="margin-top:22px">Landmarks</h3>${li(di)}<p class="small">“Go there” jumps the car to the spot (and ends a timed GP run). Best Mumbai GP: ${best ? fmt(best) : '—'} · Top speed trap: ${trap || '—'} km/h</p>`;
     pane.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { $('pause').style.display = 'none'; state.mode = 'drive'; openPanel(b.dataset.open); });
+    pane.querySelectorAll('[data-go]').forEach(b => b.onclick = () => fastTravel(b.dataset.go));
   }
 }
 
@@ -622,6 +666,11 @@ function wireUI() {
   });
   document.addEventListener('visibilitychange', () => { if (document.hidden && state.mode === 'drive') pause(); });
   sizeBigmap();
+  $('bigmapCanvas').addEventListener('click', e => {
+    const c = $('bigmapCanvas'), b = c.getBoundingClientRect();
+    const id = bigmap.pick((e.clientX - b.left) * c.width / b.width, (e.clientY - b.top) * c.height / b.height);
+    if (id && (state.mode === 'drive' || state.mode === 'pause')) fastTravel(id);
+  });
   if (isTouch) wireTouch();
 }
 function sizeBigmap() { const c = $('bigmapCanvas'); const r = $('bigmap').getBoundingClientRect(); c.width = Math.max(300, (r.width || innerWidth * 0.84)); c.height = Math.max(300, (r.height || innerHeight * 0.88)); }

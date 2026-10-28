@@ -9,31 +9,33 @@ export function panelContent(id) {
   const items = list => list.map(x => `<div class="item">${x}</div>`).join('');
   switch (id) {
     case 'villaTheresa': return {
-      kicker: 'Chapter 1 · School years', title: E.school.name, meta: `${E.school.place} · ${E.school.when}`, accent: '#7b3ff2',
+      kicker: 'Landmark · School years', title: E.school.name, meta: `${E.school.place} · ${E.school.when}`, accent: '#7b3ff2',
       html: `
         <div class="stats"><div class="stat"><b>${esc(E.school.score)}</b><span>${esc(E.school.course)}</span></div>
         <div class="stat"><b>2011–2019</b><span>Years at Villa Theresa</span></div></div>
-        <h3>Where it started</h3>
-        <p>Rhea completed her ICSE Science (Class 10) at ${esc(E.school.name)} on Peddar Road, scoring ${esc(E.school.score)}.</p>
-        <p class="note">Building shown is a stylised, game-scale interpretation — not a measured reproduction.</p>` };
+        <p>Rhea completed her ICSE Science (Class 10) here on Peddar Road. The full school story is the K. C. College chapter at Churchgate.</p>
+        <p class="note">Building shown is a stylised, game-scale interpretation — not a measured reproduction.</p>`, landmark: true };
     case 'kccollege': return {
-      kicker: 'Chapter 2 · Junior college', title: E.junior.name, meta: `${E.junior.place} · ${E.junior.when}`, accent: '#1f9d55',
+      kicker: 'Chapter 2 · School years', title: E.junior.name, meta: `${E.junior.place} · ${E.junior.when}`, accent: '#1f9d55',
       html: `
         <div class="stats"><div class="stat"><b>97.33%</b><span>${esc(E.junior.course)}</span></div>
-        <div class="stat"><b>Top 1%</b><span>of students across the board</span></div></div>
-        <h3>HSC Science</h3><p>${esc(E.junior.course)} — ${esc(E.junior.score)}.</p>
+        <div class="stat"><b>Top 1%</b><span>of students across the board</span></div>
+        <div class="stat"><b>${esc(E.school.score)}</b><span>${esc(E.school.course)}</span></div></div>
+        <h3>HSC Science</h3><p>${esc(E.junior.course)} at ${esc(E.junior.name)}, Churchgate — ${esc(E.junior.score)}.</p>
+        <h3>Before that</h3><p>${esc(E.school.course)} at ${esc(E.school.name)}, ${esc(E.school.place)} (${esc(E.school.when)}) — ${esc(E.school.score)}.</p>
         <p class="note">Building shown is a stylised, game-scale interpretation.</p>` };
     case 'kjsit': return {
-      kicker: 'Chapter 3 · Engineering', title: E.college.name, meta: `${E.college.place} · ${E.college.when}`, accent: '#d9a400', dark: true,
+      kicker: 'Chapter 3 · Engineering · Finish', title: E.college.name, meta: `${E.college.place} · ${E.college.when}`, accent: '#d9a400', dark: true,
       html: `
         <div class="stats"><div class="stat"><b>9.95</b><span>CGPA</span></div><div class="stat"><b>1st rank</b><span>in college</span></div><div class="stat"><b>B.Tech IT</b><span>2021–2025</span></div></div>
         <h3>Selected projects</h3>
         ${items(R.projects.map(p => `<div class="hd"><b>${esc(p.name)}<span class="tag">${esc(p.tag)}</span></b></div><div>${esc(p.text)}</div>`))}
         <h3>Achievements</h3>
         ${items(R.achievements.filter(a => /Avishkar|CiiA|CodeCheck|1st rank/i.test(a)).map(a => esc(a)))}
-        <p class="note">Campus shown is a stylised, game-scale interpretation of the Somaiya Ayurvihar campus off the Eastern Express Highway.</p>` };
+        <p class="note">Campus shown is a stylised, game-scale interpretation of the Somaiya Ayurvihar campus off the Eastern Express Highway.</p>`,
+      footer: `<a class="btn" href="${C.resume}" download="Rhea-Laloo-Resume.pdf">Download résumé (PDF)</a><a class="btn" href="${C.github}" target="_blank" rel="noopener">GitHub</a>` };
     case 'pitwall': return {
-      kicker: 'Final destination · AI engineering', title: `${R.name} — ${R.role}`, meta: `${R.location} · currently at Tata Consultancy Services`, accent: '#d81f26',
+      kicker: 'Chapter 1 · AI engineering', title: `${R.name} — ${R.role}`, meta: `${R.location} · currently at Tata Consultancy Services`, accent: '#d81f26',
       html: `
         <h3>Experience</h3>
         ${items(R.experience.map(x => `<div class="hd"><b>${esc(x.org)} — ${esc(x.role)}</b><span>${esc(x.when)}</span></div><ul>${x.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul>`))}

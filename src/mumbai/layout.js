@@ -132,19 +132,22 @@ export const RESERVED = [
 /* Portfolio destinations & discoveries. kind: 'chapter' (portfolio) | 'discovery' (landmark) */
 export const PLACES = [
   { id: 'gateway', kind: 'discovery', name: 'Gateway of India', x: 902, z: 1046, r: 26, icon: 'landmark' },
-  { id: 'pitwall', kind: 'chapter', name: 'Pit Wall — Career HQ', short: 'Career HQ', x: 852, z: 1012, r: 18, icon: 'finish', final: true },
+  { id: 'pitwall', kind: 'chapter', name: 'Pit Wall — Career HQ', short: 'Career HQ', x: 852, z: 1012, r: 18, icon: 'finish' },
   { id: 'kccollege', kind: 'chapter', name: 'K. C. College, Churchgate', short: 'K. C. College', x: 300, z: 785, r: 18, icon: 'school' },
   { id: 'marineDrive', kind: 'discovery', name: 'Marine Drive — Queen\'s Necklace', x: 132, z: 586, r: 30, icon: 'landmark' },
   { id: 'chowpatty', kind: 'discovery', name: 'Girgaum Chowpatty', x: -236, z: 352, r: 28, icon: 'landmark' },
-  { id: 'villaTheresa', kind: 'chapter', name: 'Villa Theresa High School', short: 'Villa Theresa', x: -228, z: -48, r: 18, icon: 'school' },
+  { id: 'villaTheresa', kind: 'discovery', name: 'Villa Theresa High School', short: 'Villa Theresa', x: -228, z: -48, r: 18, icon: 'school' },
   { id: 'seaLink', kind: 'discovery', name: 'Bandra–Worli Sea Link', x: -420, z: -1110, r: 30, icon: 'landmark', elevated: true },
   { id: 'bandraFort', kind: 'discovery', name: 'Bandra Fort', x: -528, z: -1578, r: 24, icon: 'landmark' },
   { id: 'bkc', kind: 'discovery', name: 'Bandra Kurla Complex', x: 250, z: -1640, r: 30, icon: 'landmark' },
-  { id: 'kjsit', kind: 'chapter', name: 'K. J. Somaiya Institute of Technology', short: 'KJSIT', x: 925, z: -1185, r: 20, icon: 'school' },
+  { id: 'kjsit', kind: 'chapter', name: 'K. J. Somaiya Institute of Technology', short: 'KJSIT', x: 925, z: -1185, r: 20, icon: 'school', final: true },
 ];
 
-/* Guided Mumbai GP route: an ordered list of waypoints (place ids or raw points). */
-export const GP_ROUTE = ['start', 'marineDrive', 'kccollege', 'chowpatty', 'villaTheresa', 'seaLink', 'bandraFort', 'bkc', 'kjsit', 'pitwall'];
+/* Guided Mumbai GP route: an ordered list of waypoints (place ids or raw points).
+   The Pit Wall (career) briefing opens on the grid before the lights, so the race
+   itself is a short sprint (~4 km): Marine Drive, Churchgate, then the Eastern
+   Freeway to the finish at KJSIT. Everything else stays open in free roam. */
+export const GP_ROUTE = ['start', 'marineDrive', 'kccollege', 'kjsit'];
 
 export const SPAWN = { x: 846, z: 1035, heading: -Math.PI / 2 - 0.05 };   // Apollo Bunder grid, facing west under the start gantry
 export const WORLD_BOUNDS = { minX: -760, maxX: 1300, minZ: -2100, maxZ: 1420 };
