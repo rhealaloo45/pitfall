@@ -4,7 +4,7 @@ A static site with no build step, deployed by GitHub Pages:
 
 | Page | What it is |
 |---|---|
-| `index.html` | The portfolio as six short chapters over one backdrop: Mumbai GP's flight down Marine Drive, neon line art at the top that renders into the city as you scroll and lands on the car, where chapter 05 reveals it is the game. Résumé, contact and highlights are on the first screen; a chapter rail jumps anywhere. Content comes from `src/shared/portfolio-data.js` |
+| `index.html` | The portfolio as a story: "I build AI that notices what's wrong". It opens on Mumbai as a machine sees it (neon line art), gives one screen to each thing taught to a machine (attacks in logs, outdated code, potholes, disease in a herd, patterns in people), turns on "A machine sees edges. I see home." as the city renders in, then experience, education and contact. Résumé, contact and highlights are on the first screen; a chapter rail jumps anywhere. The footer credits Mumbai GP for the backdrop. Content comes from `src/shared/portfolio-data.js` |
 | `mumbai.html` | **Mumbai GP**: a compact, stylised-real Mumbai to drive — Marine Drive, the Sea Link, Fort, Bandra, BKC — with portfolio chapters at the Pit Wall (career, shown on the grid before the race), K. C. College and KJSIT (the finish). The timed route is ~4 km; the map (M) and Pause → Progress jump straight to any chapter. |
 | `circuit.html` | The original F1 Track Day circuit (preserved) |
 | `portfolio.html` | Printable one-page résumé |
