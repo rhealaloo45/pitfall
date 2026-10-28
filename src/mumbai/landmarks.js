@@ -164,7 +164,7 @@ export function buildLandmarks(ctx) {
     // pavilion
     fb.prism(rectPts(p.x, p.z - 10, 14, 6, 0), gy - 0.4, gy + 7.6, new THREE.Color(0x2a2e35), [STYLE.glass, 3.8, 1.6, 77], new THREE.Color(0x33373d), [STYLE.roof, 3, 3, 5]);
     add(box(30, 0.5, 14), steel, p.x, gy + 7.9, p.z - 9.5);
-    const sign = new THREE.Mesh(new THREE.PlaneGeometry(16, 2.4), new THREE.MeshStandardMaterial({ map: signTexture(['PIT WALL', 'CAREER HQ · FINISH'], { bg: '#121418', accent: '#d81f26' }), emissive: 0xffffff, emissiveIntensity: 0.25, emissiveMap: null }));
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(16, 2.4), new THREE.MeshStandardMaterial({ map: signTexture(['PIT WALL', 'CAREER HQ · START'], { bg: '#121418', accent: '#d81f26' }), emissive: 0xffffff, emissiveIntensity: 0.25, emissiveMap: null }));
     sign.material.emissiveMap = sign.material.map;
     sign.position.set(p.x, gy + 9.5, p.z - 3.6); group.add(sign);
     add(box(16.4, 2.8, 0.3), steel, p.x, gy + 9.5, p.z - 3.8);
@@ -189,7 +189,7 @@ export function buildLandmarks(ctx) {
       void housing;
       lights.push(lm);
     }
-    const timing = new THREE.Mesh(new THREE.PlaneGeometry(5, 1), new THREE.MeshBasicMaterial({ map: signTexture(['MUMBAI GP · START / FINISH'], { bg: '#0d0f12', fg: '#ffd166', h: 160 }) }));
+    const timing = new THREE.Mesh(new THREE.PlaneGeometry(5, 1), new THREE.MeshBasicMaterial({ map: signTexture(['MUMBAI GP · START'], { bg: '#0d0f12', fg: '#ffd166', h: 160 }) }));
     timing.position.set(r.x[gi] - r.tx[gi] * 0.52, h + 8.4, r.z[gi] - r.tz[gi] * 0.52); timing.rotation.y = Math.atan2(r.tx[gi], r.tz[gi]); group.add(timing);
     // chequered line across the road
     const chk = canvasTexture(256, 32, g => { for (let y = 0; y < 2; y++) for (let x = 0; x < 16; x++) { g.fillStyle = (x + y) % 2 ? '#111' : '#eee'; g.fillRect(x * 16, y * 16, 16, 16); } });
@@ -288,7 +288,7 @@ export function buildLandmarks(ctx) {
     const [g1x, g1z] = F.T(-8, F.edge - 2), [g2x, g2z] = F.T(8, F.edge - 2);
     for (const [x, z] of [[g1x, g1z], [g2x, g2z]]) { add(box(1.4, 6, 1.4), plaster, x, gy + 2.6, z); colliders.post(x, z, 0.9, gy - 1, gy + 6); }
     const [gx, gz] = F.T(0, F.edge - 2);
-    const gm = new THREE.MeshStandardMaterial({ map: signTexture(['KJSIT', 'SOMAIYA AYURVIHAR CAMPUS'], { bg: '#7c2b1f', fg: '#ffffff', h: 220 }) });
+    const gm = new THREE.MeshStandardMaterial({ map: signTexture(['KJSIT · FINISH', 'MUMBAI GP · SOMAIYA AYURVIHAR'], { bg: '#7c2b1f', fg: '#ffffff', h: 220 }) });
     add(box(17.4, 2, 0.6), [plaster, plaster, plaster, plaster, gm, gm], gx, gy + 6.4, gz, F.rot);
   }
   function terracottaMat() { return new THREE.MeshStandardMaterial({ color: 0x9a4a32, roughness: 0.8 }); }

@@ -5,7 +5,7 @@ A static site with no build step, deployed by GitHub Pages:
 | Page | What it is |
 |---|---|
 | `index.html` | Environment select: Mumbai GP or the original circuit, plus quick links for recruiters |
-| `mumbai.html` | **Mumbai GP**: a compact, stylised-real Mumbai to drive — Marine Drive, the Sea Link, Fort, Bandra, BKC — with portfolio chapters at Villa Theresa, K. C. College and KJSIT, and the finish at the Gateway |
+| `mumbai.html` | **Mumbai GP**: a compact, stylised-real Mumbai to drive — Marine Drive, the Sea Link, Fort, Bandra, BKC — with portfolio chapters at the Pit Wall (career, shown on the grid before the race), K. C. College and KJSIT (the finish). The timed route is ~4 km; the map (M) and Pause → Progress jump straight to any chapter. |
 | `circuit.html` | The original F1 Track Day circuit (preserved) |
 | `portfolio.html` | The full portfolio on one page, no driving |
 

@@ -51,7 +51,7 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 7px; border: 1px soli
 #minimapWrap { position: absolute; left: 22px; bottom: 22px; width: 196px; height: 196px; border-radius: 50%; box-shadow: 0 8px 30px rgba(0,0,0,.45); }
 #minimap { width: 196px; height: 196px; display: block; }
 #bigmap { position: fixed; inset: 6vh 8vw; z-index: 35; display: none; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); pointer-events: auto; background: #0c0f13; }
-#bigmap canvas { width: 100%; height: 100%; display: block; }
+#bigmap canvas { width: 100%; height: 100%; display: block; cursor: pointer; }
 #bigmap .legend { position: absolute; left: 16px; top: 14px; font-size: 12px; color: var(--dim); background: rgba(10,12,16,.75); padding: 8px 12px; border-radius: 6px; line-height: 1.7; }
 #bigmap .legend b { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
 #objective { position: absolute; left: 22px; top: 20px; min-width: 260px; max-width: 360px; background: var(--panel); border-left: 4px solid var(--amber); border-radius: 6px; padding: 10px 14px 11px; backdrop-filter: blur(6px); }

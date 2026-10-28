@@ -48,6 +48,19 @@ export class Minimap {
     this.big = false; this.route = null; this.found = new Set(); this.target = null;
   }
   setRoute(points) { this.route = points; }
+  /** Big map only: id of the destination drawn nearest canvas pixel (cx, cy), or null. */
+  pick(cx, cy, radius = 18) {
+    const { c, base } = this;
+    const s = Math.min(c.width / base.canvas.width, c.height / base.canvas.height);
+    const ox = (c.width - base.canvas.width * s) / 2, oy = (c.height - base.canvas.height * s) / 2;
+    let best = null, bd = radius;
+    for (const p of PLACES) {
+      const [bx, by] = base.P(p.x, p.z);
+      const d = Math.hypot(ox + bx * s - cx, oy + by * s - cy);
+      if (d < bd) { bd = d; best = p.id; }
+    }
+    return best;
+  }
   draw(px, pz, heading, extra = {}) {
     const { c, g, base } = this;
     const W = c.width, H = c.height;
