@@ -12,9 +12,8 @@ const page = await ctx.newPage();
 await page.setViewportSize({ width: 1440, height: 900 });
 const cdp = await ctx.newCDPSession(page);
 await page.goto(url + '/index.html');
-await page.waitForFunction(() => window.__backdrop, null, { timeout: 15000 });
-await page.waitForFunction(() => performance.getEntriesByType('resource').filter(e => e.name.includes('/assets/reel/')).length >= 120, null, { timeout: 60000 });
-await page.waitForTimeout(1500);
+await page.waitForFunction(() => window.__story, null, { timeout: 20000 });
+await page.waitForTimeout(2500);
 await cdp.send('Emulation.setCPUThrottlingRate', { rate: throttle });
 
 await page.evaluate(() => {
