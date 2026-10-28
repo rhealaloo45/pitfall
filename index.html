@@ -8,15 +8,15 @@
 <meta name="theme-color" content="#0b0c0f">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Rhea Laloo — AI Engineer">
-<meta property="og:description" content="LLM tooling, anomaly-detection pipelines and full-stack apps — plus a Mumbai you can drive.">
-<meta property="og:image" content="https://rhealaloo45.github.io/pitfall/assets/reel/d/119.webp">
+<meta property="og:description" content="AI Engineer at TCS in Mumbai: LLM tooling, anomaly-detection pipelines and full-stack apps.">
+<meta property="og:image" content="https://rhealaloo45.github.io/pitfall/assets/reel/d/030.webp">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="src/ui/reel.css">
 <style>
-  :root { --ink: #f1efea; --body: #c9c5bd; --dim: #9b978f; --mute: #6f6b65; --red: #c8151d; --bg: #0b0c0f; --card: #121418; --line: rgba(255,255,255,.08); --font: 'Titillium Web', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  :root { --ink: #f1efea; --body: #c9c5bd; --dim: #9b978f; --mute: #6f6b65; --red: #c8151d; --cyan: #39d4ff; --pink: #ff5fa8; --bg: #0b0c0f; --card: #121418; --line: rgba(255,255,255,.08); --font: 'Titillium Web', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; scroll-padding-top: 72px; }
   body { font-family: var(--font); color: var(--ink); background: var(--bg); -webkit-font-smoothing: antialiased; line-height: 1.5; }
@@ -43,35 +43,32 @@
   .btn.ghost { background: rgba(255,255,255,.04); border-color: var(--line); color: var(--ink); }
   .btn.ghost:hover { background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.18); }
   .btn.sm { padding: 8px 14px; font-size: 13.5px; }
-  .pill { display: inline-flex; align-items: center; padding: 12px 18px; border-radius: 8px; background: rgba(255,255,255,.04); border: 1px solid var(--line); text-decoration: none; font-weight: 700; font-size: 14.5px; }
-  .pill:hover { background: rgba(255,255,255,.09); }
 
-  /* hero */
-  .hero { padding: 76px 0 72px; position: relative; }
-  .hero::before { content: ''; position: absolute; inset: -60px 0 0; background: radial-gradient(900px 520px at 80% 0%, rgba(200,120,60,.13), transparent 62%), radial-gradient(700px 500px at 0% 20%, rgba(200,21,29,.08), transparent 60%); pointer-events: none; }
-  .hero .wrap.top { position: relative; display: grid; grid-template-columns: 1.25fr .75fr; gap: 48px; align-items: center; }
+  /* hero, over a faint line-art Marine Drive */
+  .hero { position: relative; padding: 84px 0 64px; overflow: hidden; }
+  .skyline { position: absolute; inset: 0; background: url(assets/reel/d/030.webp) 70% 78% / cover no-repeat; opacity: .55; pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 8%, #000 52%, #000 74%, transparent 100%), linear-gradient(to right, rgba(0,0,0,.14), #000 62%);
+    -webkit-mask-composite: source-in; mask-image: linear-gradient(to bottom, transparent 8%, #000 52%, #000 74%, transparent 100%), linear-gradient(to right, rgba(0,0,0,.14), #000 62%); mask-composite: intersect; }
+  .hero .wrap { position: relative; }
   .hero .k { font-size: 13px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; color: var(--dim); }
-  .hero h1 { font-size: clamp(52px, 8.4vw, 108px); font-weight: 900; line-height: .92; letter-spacing: -.02em; margin-top: 16px; }
+  .hero h1 { font-size: clamp(56px, 9vw, 116px); font-weight: 900; line-height: .92; letter-spacing: -.02em; margin-top: 16px; }
   .hero h1 span { color: var(--red); }
-  .hero .lead { margin-top: 22px; font-size: clamp(17px, 1.6vw, 20px); line-height: 1.55; color: var(--body); max-width: 600px; }
+  .hero .lead { margin-top: 22px; font-size: clamp(17px, 1.6vw, 20px); line-height: 1.55; color: var(--body); max-width: 560px; }
   .hero .lead b { color: var(--ink); font-weight: 700; }
   .ctas { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 10px; }
-  .teaser { display: block; text-decoration: none; border-radius: 14px; overflow: hidden; background: var(--card); border: 1px solid var(--line); transition: transform .3s, border-color .3s; }
-  .teaser:hover { transform: translateY(-3px); border-color: rgba(255,255,255,.18); }
-  .teaser .img { aspect-ratio: 16/10; background: #000 url(assets/reel/d/030.webp) center/cover; position: relative; }
-  .teaser .img::after { content: 'Featured build'; position: absolute; left: 12px; top: 12px; background: rgba(10,11,14,.75); color: #eee; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
-  .teaser .t { padding: 14px 16px 16px; }
-  .teaser b { display: block; font-size: 17px; }
-  .teaser span { font-size: 14px; color: var(--dim); }
-  .stats { position: relative; margin-top: 56px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-  .stat { background: var(--bg); padding: 20px 22px; }
+  .hero .btn.ghost { background: rgba(18,20,24,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .stats { margin-top: 140px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .stat { background: rgba(11,12,15,.9); padding: 20px 22px; }
   .stat b { display: block; font-size: clamp(26px, 3vw, 34px); font-weight: 900; line-height: 1.05; letter-spacing: -.01em; }
   .stat span { display: block; margin-top: 6px; font-size: 13.5px; color: var(--dim); line-height: 1.4; }
+  .cap { margin-top: 12px; text-align: right; font-size: 12.5px; color: var(--mute); }
+  .cap a { color: var(--dim); text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.15); }
+  .cap a:hover { color: var(--ink); }
 
   /* sections */
-  section.block { padding-top: 84px; padding-bottom: 20px; }
-  .sh { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; }
-  .sh .k { font-size: 12.5px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; color: var(--red); }
+  section.block { padding-top: 88px; padding-bottom: 8px; }
+  .sh { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; }
+  .sh .k, .feature .k { font-size: 12.5px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; color: var(--red); }
   .sh h2 { font-size: clamp(30px, 3.6vw, 42px); font-weight: 900; line-height: 1.05; margin-top: 8px; letter-spacing: -.01em; }
   .sh p { color: var(--dim); font-size: 15px; max-width: 420px; }
 
@@ -96,33 +93,43 @@
   .card p { color: var(--body); font-size: 15px; line-height: 1.6; }
   .card .m { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14px; font-weight: 700; color: var(--ink); }
 
-  /* featured build (the reel) */
-  #mumbai { padding-top: 84px; }
-  #mumbai .reel-copy { padding-top: 0; }
-  #mumbai .reel-copy .kick { color: var(--red); }
-  .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 20px; }
-  .chips span { font-size: 12.5px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.06); color: var(--body); }
-  .reel { background: linear-gradient(rgba(0,0,0,0), #000 240px, #000 calc(100% - 240px), rgba(0,0,0,0)); }
-  .reel-track { height: 360vh; }
-
-  /* education + awards */
-  .edu { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .edu .card b.score { font-size: 30px; font-weight: 900; line-height: 1; color: var(--ink); }
-  .edu .card .where { color: var(--dim); font-size: 14px; }
-  .awards { margin-top: 16px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 32px; list-style: none; }
-  .awards li { padding: 14px 0 14px 30px; border-top: 1px solid var(--line); color: var(--body); position: relative; font-size: 15px; }
-  .awards li::before { content: '★'; position: absolute; left: 4px; top: 13px; color: #e8b33c; font-size: 14px; }
-
   /* skills */
-  .skills { display: grid; gap: 0; }
   .skills > div { display: grid; grid-template-columns: 280px 1fr; gap: 32px; padding: 18px 0; border-top: 1px solid var(--line); align-items: baseline; }
   .skills > div:last-child { border-bottom: 1px solid var(--line); }
   .skills dt { font-weight: 700; color: var(--dim); font-size: 14px; letter-spacing: .04em; }
   .skills dd { display: flex; flex-wrap: wrap; gap: 8px; }
   .skills dd span { padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--line); font-size: 14px; font-weight: 600; }
 
+  /* education: the route across the city */
+  .route { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; position: relative; padding-top: 34px; }
+  .route::before { content: ''; position: absolute; left: 7px; right: 7px; top: 6px; height: 2px; background: linear-gradient(90deg, var(--cyan), var(--pink) 60%, var(--red)); opacity: .75; }
+  .stop { position: relative; }
+  .stop::before { content: ''; position: absolute; left: 0; top: -34px; width: 14px; height: 14px; border-radius: 50%; background: var(--bg); border: 2px solid var(--cyan); box-shadow: 0 0 12px rgba(57,212,255,.5); }
+  .stop:nth-child(2)::before { border-color: #a58dff; box-shadow: 0 0 12px rgba(165,141,255,.5); }
+  .stop:nth-child(3)::before { border-color: var(--pink); box-shadow: 0 0 12px rgba(255,95,168,.5); }
+  .stop.now::before { background: var(--red); border-color: var(--red); box-shadow: 0 0 0 5px rgba(200,21,29,.2), 0 0 16px rgba(200,21,29,.7); }
+  .stop .place { font-size: 12px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+  .stop .when { font-size: 13px; color: var(--mute); margin-top: 2px; }
+  .stop h3 { font-size: 19px; font-weight: 900; line-height: 1.2; margin-top: 10px; }
+  .stop .course { color: var(--dim); font-size: 14px; margin-top: 2px; }
+  .stop .score { display: block; margin-top: 12px; font-size: 28px; font-weight: 900; line-height: 1; }
+  .stop .score small { font-size: 14px; color: var(--dim); font-weight: 700; }
+  .stop .note { margin-top: 6px; font-size: 14px; color: var(--body); }
+  .awards { margin-top: 44px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 32px; list-style: none; }
+  .awards li { padding: 14px 0 14px 30px; border-top: 1px solid var(--line); color: var(--body); position: relative; font-size: 15px; }
+  .awards li::before { content: '★'; position: absolute; left: 4px; top: 13px; color: #e8b33c; font-size: 14px; }
+
+  /* Mumbai GP: the same places, drivable */
+  .feature { display: grid; grid-template-columns: .85fr 1.15fr; gap: 40px; align-items: center; padding: 36px; background: var(--card); border: 1px solid var(--line); border-radius: 20px; }
+  .feature h2 { font-size: clamp(30px, 3.6vw, 42px); font-weight: 900; line-height: 1.05; margin-top: 8px; letter-spacing: -.01em; }
+  .feature p { margin-top: 14px; color: var(--body); font-size: 16px; line-height: 1.6; }
+  .feature p b { color: var(--ink); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .chips span { font-size: 12.5px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.06); color: var(--body); }
+  .feature .ctas { margin-top: 24px; }
+
   /* contact */
-  .contact { margin: 84px 0 0; padding: 56px 48px; border-radius: 20px; background: radial-gradient(700px 300px at 100% 0%, rgba(200,21,29,.22), transparent 70%), var(--card); border: 1px solid var(--line); display: grid; grid-template-columns: 1.2fr .8fr; gap: 40px; align-items: center; }
+  .contact { margin: 88px 0 0; padding: 56px 48px; border-radius: 20px; background: radial-gradient(700px 300px at 100% 0%, rgba(200,21,29,.22), transparent 70%), var(--card); border: 1px solid var(--line); display: grid; grid-template-columns: 1.2fr .8fr; gap: 40px; align-items: center; }
   .contact h2 { font-size: clamp(32px, 4.4vw, 52px); font-weight: 900; line-height: 1.02; letter-spacing: -.01em; }
   .contact p { margin-top: 14px; color: var(--body); font-size: 17px; }
   .contact .ctas { margin-top: 24px; }
@@ -139,27 +146,28 @@
   @media (prefers-reduced-motion: reduce) { .js .rv { opacity: 1; transform: none; transition: none; } html { scroll-behavior: auto; } }
 
   @media (max-width: 980px) {
-    .hero .wrap.top { grid-template-columns: 1fr; }
-    .teaser { max-width: 520px; }
-    .cards, .edu { grid-template-columns: 1fr 1fr; }
-    .contact { grid-template-columns: 1fr; padding: 40px 28px; }
+    .cards { grid-template-columns: 1fr 1fr; }
+    .route { grid-template-columns: 1fr 1fr; row-gap: 40px; }
+    .route::before { display: none; }
+    .feature, .contact { grid-template-columns: 1fr; }
+    .contact { padding: 40px 28px; }
   }
   @media (max-width: 760px) {
     .nav ul { display: none; }
     .nav .cv { margin-left: auto; }
-    .hero { padding: 48px 0 56px; display: flex; flex-direction: column; }
-    /* phones: the proof straight after the buttons, the game teaser after that */
-    .hero .wrap.top { display: contents; }
-    .hero .intro { order: 1; padding: 0 24px; position: relative; }
-    .hero .stats-wrap { order: 2; width: 100%; }
-    .hero .teaser { order: 3; margin: 28px 24px 0; position: relative; }
-    .stats { grid-template-columns: 1fr 1fr; margin-top: 36px; }
+    .hero { padding: 52px 0 44px; }
+    .skyline { background-position: 62% 70%; background-size: auto 62%; opacity: .5; }
+    .stats { grid-template-columns: 1fr 1fr; margin-top: 120px; }
     .stat { padding: 16px 16px 18px; }
     .stat b { font-size: 23px; white-space: nowrap; }
     .role, .skills > div { grid-template-columns: 1fr; gap: 12px; }
-    .cards, .edu, .awards { grid-template-columns: 1fr; }
-    section.block, #mumbai { padding-top: 64px; }
-    .reel-track { height: 320vh; }
+    .cards, .awards { grid-template-columns: 1fr; }
+    /* the route runs down the page on phones */
+    .route { grid-template-columns: 1fr; row-gap: 30px; padding: 0 0 0 30px; }
+    .route::before { display: block; left: 6px; right: auto; top: 8px; bottom: 8px; width: 2px; height: auto; background: linear-gradient(var(--cyan), var(--pink) 60%, var(--red)); }
+    .stop::before { left: -30px; top: 3px; }
+    .feature { padding: 24px 20px; gap: 24px; }
+    section.block { padding-top: 68px; }
   }
 </style>
 </head>
@@ -173,7 +181,6 @@
     <ul>
       <li><a href="#experience">Experience</a></li>
       <li><a href="#work">Work</a></li>
-      <li><a href="#mumbai">Mumbai GP</a></li>
       <li><a href="#education">Education</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
@@ -182,30 +189,24 @@
 </nav>
 
 <header class="hero" id="top">
-  <div class="wrap top">
-    <div class="intro">
-      <div class="k">AI Engineer · Tata Consultancy Services · Mumbai</div>
-      <h1>Rhea<br>Laloo<span>.</span></h1>
-      <p class="lead">I build <b>LLM tooling</b> and <b>anomaly-detection pipelines</b> at TCS, and full-stack apps that people actually use. On the side, I built a city you can drive.</p>
-      <div class="ctas">
-        <a class="btn" href="assets/rhea-laloo-resume.pdf" download="Rhea-Laloo-Resume.pdf">Download résumé</a>
-        <a class="btn ghost" href="mailto:rhea.laloo@tcs.com">Email me</a>
-        <a class="btn ghost" href="https://github.com/rhealaloo45" target="_blank" rel="noopener">GitHub</a>
-        <a class="btn ghost" href="https://linkedin.com/in/rhealaloo" target="_blank" rel="noopener">LinkedIn</a>
-      </div>
+  <div class="skyline" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="k">AI Engineer · Mumbai</div>
+    <h1>Rhea<br>Laloo<span>.</span></h1>
+    <p class="lead">I build <b>LLM tooling</b> and <b>anomaly-detection pipelines</b> at Tata Consultancy Services, and full-stack apps that people actually use.</p>
+    <div class="ctas">
+      <a class="btn" href="assets/rhea-laloo-resume.pdf" download="Rhea-Laloo-Resume.pdf">Download résumé</a>
+      <a class="btn ghost" href="mailto:rhea.laloo@tcs.com">Email me</a>
+      <a class="btn ghost" href="https://github.com/rhealaloo45" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn ghost" href="https://linkedin.com/in/rhealaloo" target="_blank" rel="noopener">LinkedIn</a>
     </div>
-    <a class="teaser" href="#mumbai">
-      <div class="img" role="img" aria-label="Marine Drive drawn as neon line art"></div>
-      <div class="t"><b>Mumbai GP →</b><span>My portfolio as a drivable Mumbai, built from scratch in three.js.</span></div>
-    </a>
-  </div>
-  <div class="wrap stats-wrap">
     <div class="stats" aria-label="Highlights">
       <div class="stat"><b>9.95 CGPA</b><span>1st rank in college · B.Tech IT, KJSIT</span></div>
       <div class="stat"><b>chub-guard</b><span>AI linter shipped on PyPI, npm &amp; VS Code</span></div>
       <div class="stat"><b>100+</b><span>students mentored across 5 states · Yuvai Hackathon</span></div>
       <div class="stat"><b>Top 80 / 695</b><span>CiiA, twice · RoadHawk pothole detector</span></div>
     </div>
+    <div class="cap">Marine Drive, drawn by code I wrote · <a href="#mumbai">more below</a></div>
   </div>
 </header>
 
@@ -220,44 +221,31 @@
     <div class="cards" id="cards"></div>
   </section>
 
-  <div id="mumbai">
-    <section class="reel" data-src="assets/reel" data-frames="120" aria-label="Mumbai GP: the city drawn as line art, then rendered">
-      <div class="reel-copy">
-        <div class="kick">Featured build · Mumbai GP</div>
-        <h2>Drawn in code.<br><span>Driven by you.</span></h2>
-        <p>A stylised Mumbai built from scratch in three.js: procedurally generated streets and buildings, 120 Hz car physics and a custom render pipeline. My portfolio waits at its landmarks.</p>
-        <div class="chips"><span>three.js · WebGL</span><span>Procedural generation</span><span>Vehicle physics</span><span>Playwright tests</span><span>No build step</span></div>
-      </div>
-      <div class="reel-track"><div class="reel-sticky">
-        <div class="reel-device">
-          <div class="reel-screen"><div class="reel-glass">
-            <img class="reel-poster" src="assets/reel/d/119.webp" alt="An open-wheel race car on Marine Drive at golden hour, in Mumbai GP" width="1280" height="720" loading="lazy">
-            <canvas aria-hidden="true"></canvas>
-            <div class="reel-hud" aria-hidden="true">
-              <div class="lap"><div><span>MUMBAI GP</span><span>S1</span></div><div><span>Time</span><b>0:41.2</b></div></div>
-              <div class="mini"></div>
-              <div class="speed"><div><div class="num">186</div><div class="unit">KM/H</div></div><div class="gear">5</div></div>
-            </div>
-          </div></div>
-          <div class="reel-base"></div>
-        </div>
-        <div class="reel-caption">
-          <p data-reel-fade>Frames captured from the game. The real thing runs live in your browser.</p>
-          <div class="acts" data-reel-fade><a class="btn" href="mumbai.html">Drive Mumbai GP</a><a class="pill" href="circuit.html">Original F1 circuit</a></div>
-        </div>
-      </div></div>
-    </section>
-  </div>
-
-  <section class="block wrap" id="education" aria-labelledby="h-edu">
-    <div class="sh rv"><div><div class="k">Education &amp; awards</div><h2 id="h-edu">Top of the class</h2></div></div>
-    <div class="edu" id="edu"></div>
-    <ul class="awards rv" id="awards"></ul>
-  </section>
-
   <section class="block wrap" id="skills" aria-labelledby="h-skills">
     <div class="sh rv"><div><div class="k">Skills</div><h2 id="h-skills">Toolkit</h2></div></div>
     <dl class="skills" id="skillList"></dl>
+  </section>
+
+  <section class="block wrap" id="education" aria-labelledby="h-edu">
+    <div class="sh rv"><div><div class="k">Education</div><h2 id="h-edu">Peddar Road → Churchgate → Sion</h2></div><p>School and college across Mumbai, top of the class at each stop, then straight into AI engineering.</p></div>
+    <ol class="route rv" id="route"></ol>
+    <ul class="awards rv" id="awards"></ul>
+  </section>
+
+  <section class="block wrap" id="mumbai" aria-labelledby="h-gp">
+    <div class="feature rv">
+      <div>
+        <div class="k">Side project · Mumbai GP</div>
+        <h2 id="h-gp">That route, drivable.</h2>
+        <p>Villa Theresa, K. C. College and KJSIT are all places in <b>Mumbai GP</b>, a drivable Mumbai I built from scratch in three.js: procedurally generated streets and buildings, 120 Hz car physics and a custom render pipeline. The same portfolio is waiting at its landmarks.</p>
+        <div class="chips"><span>three.js · WebGL</span><span>Procedural generation</span><span>Vehicle physics</span><span>Playwright tests</span></div>
+        <div class="ctas"><a class="btn" href="mumbai.html">Drive Mumbai GP</a><a class="btn ghost" href="circuit.html">Original F1 circuit</a></div>
+      </div>
+      <div class="scrub" data-src="assets/reel" data-frames="120" data-step="2">
+        <img src="assets/reel/d/119.webp" alt="An open-wheel race car on Marine Drive at golden hour, in Mumbai GP" width="1280" height="720" loading="lazy">
+        <canvas aria-hidden="true"></canvas>
+      </div>
+    </div>
   </section>
 
   <div class="wrap">
@@ -290,22 +278,30 @@
   var R = window.PORTFOLIO && window.PORTFOLIO.RESUME; if (!R) return;
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   var $ = function (id) { return document.getElementById(id); };
+  var years = function (w) { var y = String(w).match(/\d{4}/g) || []; return y.length > 1 ? y[0] + ' — ' + y[1] : (y[0] || '') + (/present/i.test(w) ? ' — now' : ''); };
+
   $('roles').innerHTML = R.experience.map(function (x, i) {
     return '<article class="role rv"><div><div class="when">' + esc(x.when) + '</div><h3>' + esc(x.org) + '</h3><div class="r">' + esc(x.role) + '</div>' +
       (i === 0 ? '<span class="now">Current</span>' : '') + '</div><ul>' + x.points.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul></article>';
   }).join('');
+
   $('cards').innerHTML = (R.highlights || []).map(function (h) {
     return '<article class="card rv"><div class="tag">' + esc(h.tag) + (h.where ? ' <i>· ' + esc(h.where) + '</i>' : '') + '</div><h3>' + esc(h.name) + '</h3><p>' + esc(h.text) + '</p><div class="m">' + esc(h.metric) + '</div></article>';
   }).join('');
-  var E = R.education;
-  $('edu').innerHTML = [E.college, E.junior, E.school].map(function (e) {
-    var score = e.score.split(' — '), main = score[0].replace('CGPA ', ''), note = score[1] || '';
-    return '<article class="card rv"><div class="tag">' + esc(e.course) + '</div><b class="score">' + esc(main) + (e === E.college ? ' <span style="font-size:15px;color:#9b978f;font-weight:700">CGPA</span>' : '') + '</b><h3>' + esc(e.name) + '</h3><div class="where">' + esc(e.place) + ' · ' + esc(e.when) + '</div>' + (note ? '<p>' + esc(note.charAt(0).toUpperCase() + note.slice(1)) + '</p>' : '') + '</article>';
-  }).join('');
-  $('awards').innerHTML = R.achievements.filter(function (a) { return !/^Secured 1st rank/.test(a); }).map(function (a) { return '<li>' + esc(a.replace(/\.$/, '')) + '</li>'; }).join('');
+
   $('skillList').innerHTML = Object.keys(R.skills).map(function (k) {
     return '<div class="rv"><dt>' + esc(k) + '</dt><dd>' + R.skills[k].split(', ').map(function (s) { return '<span>' + esc(s) + '</span>'; }).join('') + '</dd></div>';
   }).join('');
+
+  // education as stops along a route across the city, ending at the current job
+  var E = R.education, job = R.experience[0];
+  $('route').innerHTML = [E.school, E.junior, E.college].map(function (e) {
+    var s = e.score.split(' — '), main = s[0], note = s[1] || '', cg = /^CGPA /.test(main);
+    return '<li class="stop"><div class="place">' + esc(e.place.split(',')[0]) + '</div><div class="when">' + esc(years(e.when)) + '</div><h3>' + esc(e.name) + '</h3><div class="course">' + esc(e.course) + '</div>' +
+      '<b class="score">' + esc(main.replace('CGPA ', '')) + (cg ? ' <small>CGPA</small>' : '') + '</b>' + (note ? '<div class="note">' + esc(note.charAt(0).toUpperCase() + note.slice(1)) + '</div>' : '') + '</li>';
+  }).join('') + '<li class="stop now"><div class="place">Now</div><div class="when">' + esc(years(job.when)) + '</div><h3>' + esc(job.org) + '</h3><div class="course">' + esc(job.role) + '</div><div class="note" style="margin-top:12px">LLM tooling, log anomaly detection and security analysis.</div></li>';
+
+  $('awards').innerHTML = R.achievements.filter(function (a) { return !/^Secured 1st rank/.test(a); }).map(function (a) { return '<li>' + esc(a.replace(/\.$/, '')) + '</li>'; }).join('');
 
   // nav border once the page moves; reveal sections as they arrive
   var nav = document.querySelector('.nav');

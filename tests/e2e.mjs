@@ -6,7 +6,6 @@ const results = [];
 const check = (name, ok, info = '') => { results.push({ name, ok: !!ok, info }); console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}${info ? ' — ' + info : ''}`); };
 const { srv, url } = await serve();
 const { browser, ctx } = await launch({ width: 960, height: 540 });
-const innerHeightOf = h => h * 1.6;   // a pinned reel is several screens tall; a still one is under ~1.6
 const pageErrors = page => { const errs = []; page.on('pageerror', e => errs.push(e.message)); page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errs.push(m.text().slice(0, 200)); }); return errs; };
 
 try {
@@ -16,34 +15,34 @@ try {
   const links = await p.$$eval('a', as => as.map(a => a.getAttribute('href')));
   check('menu links to both worlds and the portfolio', ['mumbai.html', 'circuit.html', 'portfolio.html'].every(h => links.includes(h)));
   check('landing: résumé and contact in the hero', await p.$('.hero a[href="assets/rhea-laloo-resume.pdf"]') && await p.$('.hero a[href^="mailto:"]'));
-  const land = await p.evaluate(() => ({ roles: document.querySelectorAll('#roles .role').length, cards: document.querySelectorAll('#cards .card').length, edu: document.querySelectorAll('#edu .card').length, skills: document.querySelectorAll('#skillList dd span').length }));
-  check('landing: experience, work, education and skills render from the shared data', land.roles === 3 && land.cards === 6 && land.edu === 3 && land.skills > 10, JSON.stringify(land));
-  // scroll reel: frames scrub with scroll, then the picture lands in the laptop with the call to action
-  const reelAt = (page, f) => page.evaluate(async f => {
-    const sec = document.querySelector('section.reel'), t = sec.querySelector('.reel-track');
-    scrollTo({ top: t.getBoundingClientRect().top + scrollY + (t.offsetHeight - innerHeight) * f, behavior: 'instant' });
-    await new Promise(r => setTimeout(r, 120)); sec.reel.update();
-    const cta = sec.querySelector('.acts');
-    return { frame: sec.reel.frame(), total: sec.reel.total, tf: sec.querySelector('.reel-device').style.transform, cta: +getComputedStyle(cta).opacity, wide: document.documentElement.scrollWidth > innerWidth };
-  }, f);
-  await p.waitForFunction(() => document.querySelector('section.reel').reel, null, { timeout: 10000 });
-  await reelAt(p, 0);
-  await p.waitForFunction(() => performance.getEntriesByType('resource').filter(e => e.name.includes('/assets/reel/')).length >= 120, null, { timeout: 30000 });
-  const r0 = await reelAt(p, 0), r5 = await reelAt(p, 0.39), r1 = await reelAt(p, 1);
-  check('reel: frames scrub with scroll', r0.frame === 0 && r5.frame > 40 && r5.frame < 80 && r1.frame === r1.total - 1, `${r0.frame} → ${r5.frame} → ${r1.frame}`);
-  const sc = tf => +(/scale\(([\d.]+)\)/.exec(tf) || [0, 0])[1];
-  check('reel: starts full-bleed, lands in the laptop', sc(r0.tf) > 1.1 && sc(r1.tf) === 1, `scale ${sc(r0.tf)} → ${sc(r1.tf)}`);
-  check('reel: call to action appears at the end', r0.cta < 0.05 && r1.cta > 0.95);
-  check('reel: no sideways scroll', !r0.wide && !r1.wide);
+  const land = await p.evaluate(() => ({ roles: document.querySelectorAll('#roles .role').length, cards: document.querySelectorAll('#cards .card').length, stops: document.querySelectorAll('#route .stop').length, skills: document.querySelectorAll('#skillList dd span').length }));
+  check('landing: experience, work, education and skills render from the shared data', land.roles === 3 && land.cards === 6 && land.stops === 4 && land.skills > 10, JSON.stringify(land));
+  // Mumbai GP card: its picture scrubs from line art to the render as it scrolls into view
+  const scrubAt = (page, top) => page.evaluate(async top => {
+    const el = document.querySelector('.scrub');
+    scrollTo({ top: el.getBoundingClientRect().top + scrollY - top, behavior: 'instant' });
+    await new Promise(r => setTimeout(r, 120)); el.scrub.update();
+    return { frame: el.scrub.frame(), total: el.scrub.total, wide: document.documentElement.scrollWidth > innerWidth };
+  }, top);
+  await p.waitForFunction(() => document.querySelector('.scrub').scrub, null, { timeout: 10000 });
+  await scrubAt(p, 540);
+  await p.waitForFunction(() => performance.getEntriesByType('resource').filter(e => e.name.includes('/assets/reel/')).length >= 61, null, { timeout: 30000 });
+  const s0 = await scrubAt(p, 538), s5 = await scrubAt(p, 380);
+  await scrubAt(p, -60);
+  await p.waitForFunction(() => { const el = document.querySelector('.scrub'); el.scrub.update(); return el.scrub.frame() === el.scrub.total - 1; }, null, { timeout: 10000 }).catch(() => {});
+  const s1 = await scrubAt(p, -60);
+  check('Mumbai GP card: picture scrubs with scroll', s0.frame <= 1 && s5.frame > 10 && s5.frame < 50 && s1.frame === s1.total - 1, `${s0.frame} → ${s5.frame} → ${s1.frame} of ${s1.total}`);
+  check('Mumbai GP card: links to the game', await p.$('#mumbai a[href="mumbai.html"]'));
+  check('landing: no sideways scroll', !s0.wide && !s1.wide);
   check('menu has no errors', errs.length === 0, errs.join('; '));
   await p.close();
 
-  // reduced motion: no pinning, the finished frame in its frame
+  // reduced motion: the finished still, no scrubbing
   p = await ctx.newPage(); errs = pageErrors(p);
   await p.emulateMedia({ reducedMotion: 'reduce' });
   await p.goto(url + '/index.html');
-  const rm = await p.evaluate(() => { const s = document.querySelector('section.reel'); return { cls: s.className, h: s.querySelector('.reel-track').offsetHeight, poster: +getComputedStyle(s.querySelector('.reel-poster')).opacity }; });
-  check('reel: reduced motion shows a still, unpinned', /reel-static/.test(rm.cls) && rm.h < innerHeightOf(540) && rm.poster === 1, `${rm.cls} · ${rm.h}px`);
+  const rm = await p.evaluate(() => { const s = document.querySelector('.scrub'); return { cls: s.className, img: +getComputedStyle(s.querySelector('img')).opacity }; });
+  check('Mumbai GP card: reduced motion shows the still', /scrub-static/.test(rm.cls) && rm.img === 1, rm.cls);
   await p.close();
 
   /* ---------- portfolio ---------- */
@@ -52,10 +51,7 @@ try {
   const items = await p.$$eval('.item', x => x.length);
   check('portfolio renders resume content', items >= 9, `${items} items`);
   check('portfolio résumé link', await p.$('a[href="assets/rhea-laloo-resume.pdf"]'));
-  await p.waitForFunction(() => document.querySelector('section.reel').reel, null, { timeout: 10000 });
-  const pr = await reelAt(p, 1);
-  check('portfolio: short reel plays every other frame and lands', pr.total === 61 && pr.frame === 60 && pr.cta > 0.95, `${pr.frame}/${pr.total}`);
-  check('portfolio: reel links to Mumbai GP', await p.$('.reel a[href="mumbai.html"]'));
+  check('portfolio: links to Mumbai GP', await p.$('.play a[href="mumbai.html"]'));
   check('portfolio has no errors', errs.length === 0, errs.join('; '));
   await p.close();
 
