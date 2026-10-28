@@ -15,11 +15,13 @@ try {
   await p.goto(url + '/index.html');
   const links = await p.$$eval('a', as => as.map(a => a.getAttribute('href')));
   check('menu links to both worlds and the portfolio', ['mumbai.html', 'circuit.html', 'portfolio.html'].every(h => links.includes(h)));
-  check('menu previews exist', (await p.$$eval('.shot', s => s.length)) === 2);
+  check('landing: résumé and contact in the hero', await p.$('.hero a[href="assets/rhea-laloo-resume.pdf"]') && await p.$('.hero a[href^="mailto:"]'));
+  const land = await p.evaluate(() => ({ roles: document.querySelectorAll('#roles .role').length, cards: document.querySelectorAll('#cards .card').length, edu: document.querySelectorAll('#edu .card').length, skills: document.querySelectorAll('#skillList dd span').length }));
+  check('landing: experience, work, education and skills render from the shared data', land.roles === 3 && land.cards === 6 && land.edu === 3 && land.skills > 10, JSON.stringify(land));
   // scroll reel: frames scrub with scroll, then the picture lands in the laptop with the call to action
   const reelAt = (page, f) => page.evaluate(async f => {
     const sec = document.querySelector('section.reel'), t = sec.querySelector('.reel-track');
-    scrollTo(0, t.getBoundingClientRect().top + scrollY + (t.offsetHeight - innerHeight) * f);
+    scrollTo({ top: t.getBoundingClientRect().top + scrollY + (t.offsetHeight - innerHeight) * f, behavior: 'instant' });
     await new Promise(r => setTimeout(r, 120)); sec.reel.update();
     const cta = sec.querySelector('.acts');
     return { frame: sec.reel.frame(), total: sec.reel.total, tf: sec.querySelector('.reel-device').style.transform, cta: +getComputedStyle(cta).opacity, wide: document.documentElement.scrollWidth > innerWidth };
