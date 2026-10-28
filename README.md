@@ -4,10 +4,10 @@ A static site with no build step, deployed by GitHub Pages:
 
 | Page | What it is |
 |---|---|
-| `index.html` | The portfolio, content first: résumé, contact and highlights at the top, then experience, selected work, Mumbai GP as a featured build (a scroll reel: neon line art renders into the city and lands in a laptop), education, skills and contact. Content comes from `src/shared/portfolio-data.js` |
+| `index.html` | The portfolio, content first: résumé, contact and highlights at the top (over a faint line-art Marine Drive), then experience, selected work, skills, education as a route across Mumbai (Peddar Road → Churchgate → Sion → TCS), and Mumbai GP as the side project where that route becomes drivable. Content comes from `src/shared/portfolio-data.js` |
 | `mumbai.html` | **Mumbai GP**: a compact, stylised-real Mumbai to drive — Marine Drive, the Sea Link, Fort, Bandra, BKC — with portfolio chapters at the Pit Wall (career, shown on the grid before the race), K. C. College and KJSIT (the finish). The timed route is ~4 km; the map (M) and Pause → Progress jump straight to any chapter. |
 | `circuit.html` | The original F1 Track Day circuit (preserved) |
-| `portfolio.html` | Printable one-page résumé (a short version of the reel at the end) |
+| `portfolio.html` | Printable one-page résumé |
 
 ## Run locally
 
@@ -20,9 +20,9 @@ python3 -m http.server 4173      # then open http://localhost:4173
 ```bash
 npm install                      # dev-only: three.js for Node tests
 npm test                         # vehicle-dynamics + world-generation unit tests (21)
-npm run test:e2e                 # headless Chromium: all pages, reels, gameplay, circuit regression, phone (47 checks)
+npm run test:e2e                 # headless Chromium: all pages, the Mumbai GP card, gameplay, circuit regression, phone (45 checks)
 npm run previews                 # re-capture the menu / title-screen previews (needs ffmpeg)
-npm run reel                     # re-render the scroll-reel frames into assets/reel (needs a GPU, ~1 min)
+npm run reel                     # re-render the Mumbai GP card frames into assets/reel (needs a GPU, ~1 min)
 ```
 
 Graphics quality is detected from the GPU (Low / Medium / High) and can be changed in Pause → Settings.
@@ -44,7 +44,7 @@ For testing, `mumbai.html?quality=low|medium|high` forces a preset.
   landmark and car parts are merged by material, terrain tiles swap to a coarse LOD beyond ~380 m.
   High ≈ 650 draw calls / 3.4 M triangles per frame including shadows and AO; Medium ≈ 300 / 1.8 M.
 
-## The scroll reel
+## The Mumbai GP card
 
 `tools/reel/capture.mjs` loads `mumbai.html` in headless Chromium on the real GPU and, for each of 120 frames,
 renders the golden-hour city plus depth, normal and layer passes (`tools/reel/page.js`). Edges of those passes
@@ -52,9 +52,10 @@ become the neon line art (buildings white, roads cyan, palms pink, the car red, 
 wipe that sweeps from the camera outwards blends line art into the render. Frames are saved as WebP at 1280 px
 (`assets/reel/d`, ~7.5 MB) and 640 px for phones (`assets/reel/m`, ~2.7 MB).
 
-`src/ui/reel.js` pins the section, draws the frame for the scroll position on a canvas (frames load coarse-to-fine
-once the section is near), then scales the picture from full-bleed into the laptop. Reduced motion or no script
-shows the last frame, unpinned.
+`src/ui/reel.js` draws the frame for the card's scroll position on a canvas, so the picture turns from line art into
+the city as it scrolls into view, with no pinning and no extra scrolling. It plays every other frame, loads them
+coarse-to-fine once the card is near, and uses the 640 px set on small screens. Reduced motion or no script shows
+the final still. Frame 30 (line art) is also the faint skyline behind the hero.
 
 ## Code map
 
@@ -78,7 +79,7 @@ src/mumbai/landmarks.js        Gateway, Taj, Sea Link, Bandra Fort, school, coll
 src/mumbai/props.js            leaf-card trees and palms, lamps, cars, taxis, autos, BEST buses, pedestrians, boats
 src/mumbai/play.js             knockable props, chai collectibles, ramps, pigeons, traffic
 src/mumbai/main.js             game loop, states, HUD, panels, settings, secrets
-src/ui/reel.js, reel.css       the scroll reel on the menu and portfolio pages
+src/ui/reel.js, reel.css       the scroll-scrubbed picture on the Mumbai GP card
 tools/reel/                    renders the reel frames from the live game
 ```
 
