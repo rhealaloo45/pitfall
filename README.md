@@ -4,10 +4,10 @@ A static site with no build step, deployed by GitHub Pages:
 
 | Page | What it is |
 |---|---|
-| `index.html` | Environment select: Mumbai GP or the original circuit, plus quick links for recruiters. A scroll reel shows Mumbai as neon line art that renders into the city and lands in a laptop |
+| `index.html` | The portfolio, content first: résumé, contact and highlights at the top, then experience, selected work, Mumbai GP as a featured build (a scroll reel: neon line art renders into the city and lands in a laptop), education, skills and contact. Content comes from `src/shared/portfolio-data.js` |
 | `mumbai.html` | **Mumbai GP**: a compact, stylised-real Mumbai to drive — Marine Drive, the Sea Link, Fort, Bandra, BKC — with portfolio chapters at the Pit Wall (career, shown on the grid before the race), K. C. College and KJSIT (the finish). The timed route is ~4 km; the map (M) and Pause → Progress jump straight to any chapter. |
 | `circuit.html` | The original F1 Track Day circuit (preserved) |
-| `portfolio.html` | The full portfolio on one page, no driving (a short version of the reel at the end) |
+| `portfolio.html` | Printable one-page résumé (a short version of the reel at the end) |
 
 ## Run locally
 
@@ -20,7 +20,7 @@ python3 -m http.server 4173      # then open http://localhost:4173
 ```bash
 npm install                      # dev-only: three.js for Node tests
 npm test                         # vehicle-dynamics + world-generation unit tests (21)
-npm run test:e2e                 # headless Chromium: all pages, reels, gameplay, circuit regression, phone (46 checks)
+npm run test:e2e                 # headless Chromium: all pages, reels, gameplay, circuit regression, phone (47 checks)
 npm run previews                 # re-capture the menu / title-screen previews (needs ffmpeg)
 npm run reel                     # re-render the scroll-reel frames into assets/reel (needs a GPU, ~1 min)
 ```
