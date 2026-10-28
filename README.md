@@ -23,6 +23,7 @@ npm test                         # vehicle-dynamics + world-generation unit test
 npm run test:e2e                 # headless Chromium: all pages, the backdrop and chapter rail, gameplay, circuit regression, phone
 npm run previews                 # re-capture the menu / title-screen previews (needs ffmpeg)
 npm run reel                     # re-render the backdrop frames into assets/reel (needs a GPU, ~1 min)
+npm run perf                     # scroll the landing page with the CPU slowed 4× and report frame times
 ```
 
 Graphics quality is detected from the GPU (Low / Medium / High) and can be changed in Pause → Settings.
@@ -57,6 +58,11 @@ each chapter has a keyframe (`data-frame`) and a veil darkness (`data-veil`), fr
 middles, and the veil fades per chapter so text always sits on a dark enough background. Frames load coarse-to-fine;
 phones and slow connections get the 640 px set. Reduced motion holds one still per chapter; without script the page
 shows a still line-art backdrop. The same script drives the chapter rail.
+
+Keeping it smooth on 60 Hz screens: only the frames near the scroll position are decoded, off the main thread
+(`createImageBitmap`); the canvas is sized to the frames rather than the screen; the DOM is only written when a
+value changes; and nothing on the page uses `backdrop-filter` or a `fixed` background, both of which force
+repaints over a picture that changes every frame. `npm run perf` went from ~30% of frames over 25 ms to under 1%.
 
 ## Code map
 

@@ -10,7 +10,8 @@
     "test": "node --test tests/vehicle.test.mjs tests/world.test.mjs",
     "test:e2e": "node tests/e2e.mjs",
     "previews": "node tests/make-previews.mjs",
-    "reel": "node tools/reel/capture.mjs"
+    "reel": "node tools/reel/capture.mjs",
+    "perf": "node tests/perf-scroll.mjs --gpu --throttle 4"
   },
   "devDependencies": {
     "three": "0.160.0"
