@@ -1,17 +1,22 @@
-/* Landing-page story: one scroll-driven drive. Black-and-white line art at the top; colour comes in as
-   the car comes into focus; it passes potholes (RoadHawk), cows (the cattle app), stops for people at a
-   crossing (ADHD / mental-fitness models), then the camera rises into my room: the laptop on the desk
-   (chub-guard), and the attack on it (log anomaly detection). The machine's "noticing" is drawn as
-   detection boxes over the scene. Also drives the chapter rail. */
+/* Landing-page story: one scroll-driven drive that runs behind the whole page.
+   Act one (the story track): black-and-white line art, then colour as the car comes into focus; potholes
+   (RoadHawk), cows (the cattle app), people at a crossing (ADHD / mental-fitness models), then up into my
+   room: the laptop (chub-guard) and the attack on it (log anomaly detection). The model's "noticing" is
+   drawn as detection boxes over the scene.
+   Act two (the rest of the page): out of the window and onto Marine Drive at night; the car cruises the
+   Queen's Necklace behind Experience, Education and Contact, and ends on "One more thing".
+   Also drives the chapter rail and the veil that keeps text readable over the scene. */
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { buildCar } from '../vehicle/car-model.js';
 import { CAR_SPEC } from '../vehicle/sim.js';
-import { INK, LINES, NIGHT, ink, outline, freeze, buildStreet, buildPotholes, buildCows, buildCrossing, buildRoom, buildSky } from './world.js';
+import { INK, LINES, NIGHT, ink, outline, freeze, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildSky } from './world.js';
+import { buildRoom } from './room.js';
+import { buildMarineDrive, along, LENGTH } from './marine.js';
 import { screenTex, drawScreen } from './screen.js';
 
 const $ = id => document.getElementById(id);
-const track = $('story'), canvas = $('scene'), detLayer = $('det'), stage = canvas.parentElement;
+const track = $('story'), canvas = $('scene'), detLayer = $('det'), stage = canvas.parentElement, veil = $('veil');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const small = matchMedia('(max-width: 760px)').matches;
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
@@ -27,13 +32,12 @@ let pr = Math.min(maxPR, 1.5);
 renderer.setPixelRatio(pr);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = !small;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0xf0d2b6, 90, 320);
-const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 1200);
+scene.fog = new THREE.Fog(0xf0d2b6, 90, 340);
+const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 1500);
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
@@ -50,23 +54,33 @@ const street = buildStreet(scene);
 const holes = buildPotholes(scene);
 const herd = buildCows(scene);
 const crossing = buildCrossing(scene);
-const pictureTex = new THREE.TextureLoader().load('assets/stills/mumbai-gp-car.webp'); pictureTex.colorSpace = THREE.SRGBColorSpace;
-const room = buildRoom(scene, { screenTex, pictureTex });
+const STILL = 'assets/stills/mumbai-gp-car.webp';
+const room = buildRoom(scene, { screenTex, stillUrl: STILL });
+const marine = buildMarineDrive(scene, facadeMat);
 const car = buildCar();
 car.root.traverse(o => { if (o.isMesh) { o.castShadow = true; for (const m of [].concat(o.material)) ink(m); } });
 ink(car.contactShadow.material);
+const headlight = new THREE.SpotLight(0xfff1dc, 0, 60, 0.55, 0.6, 1.4);
+headlight.position.set(0, 0.6, 1.2); headlight.target.position.set(0, -1.5, 22);
+car.body.add(headlight, headlight.target);
+// a warm streetlight that rides with the car on Marine Drive, so it reads at night
+const carLight = new THREE.PointLight(0xffc98f, 0, 16, 1.6); carLight.position.set(-3, 5, 2); car.root.add(carLight);
 scene.add(car.root, car.contactShadow);
 for (const g of [street, crossing.group, room.group]) outline(g);
 for (const h of holes) outline(h.obj, 20);
 for (const c of herd) outline(c.obj, 35);
 outline(car.root, 40, { bake: false });   // the car moves: its outlines ride on each part
 car.root.traverse(o => { o.userData.moving = true; });
-for (const g of [street, crossing.group, room.group, ...holes.map(h => h.obj), ...herd.map(c => c.obj)]) freeze(g);
+for (const g of [street, crossing.group, room.group, marine, ...holes.map(h => h.obj), ...herd.map(c => c.obj)]) freeze(g);
 
+let lastEnv = -1;
+const envMats = [];
+scene.traverse(o => { for (const m of [].concat(o.material || [])) if ('envMapIntensity' in m && !envMats.some(e => e[0] === m)) envMats.push([m, m.envMapIntensity]); });
 const sim = { wheels: [0, 1, 2, 3].map(() => ({ len: CAR_SPEC.restLength, steer: 0, spin: 0 })), steerAngle: 0, brakeLight: false, rpm: 5200, gear: 3, speed: 0 };
 const carPos = V(2.2, 0.345, 0), carQuat = new THREE.Quaternion();
+let carHeading = 0;
 
-/* ---------- timeline (p: 0 → 1 across the story) ---------- */
+/* ---------- timeline: T runs 0 → 1 through the story, 1 → 2 through the rest of the page ---------- */
 function keyed(p, keys) {
   if (p <= keys[0][0]) return keys[0][1];
   for (let i = 0; i < keys.length - 1; i++) {
@@ -76,31 +90,55 @@ function keyed(p, keys) {
   return keys[keys.length - 1][1];
 }
 const CAR_Z = [[0, 0], [0.1, 0], [0.3, 106], [0.44, 172], [0.52, 240.5], [0.63, 240.5], [0.72, 306], [1, 306]];
+// act two: distance driven from z = 306 — 40 m to the end of the street, then along Marine Drive
+const CAR_D = [[0, 0], [0.12, 0], [1, 40 + LENGTH - 70]];
 const carX = z => 2.2 + (z > 34 && z < 104 ? Math.sin((z - 34) * 0.11) * 0.55 : 0);
-// camera keys: position and target, either fixed or relative to the car
-const rel = (dx, dy, dz) => c => V(c.x + dx, c.y + dy, c.z + dz);
+function placeCar(T) {
+  if (T <= 1) {
+    const z = keyed(T, CAR_Z), x = carX(z);
+    carHeading = Math.atan2((carX(z + 0.5) - x) * 2, 1);
+    carPos.set(x, 0.345, z);
+    return z;
+  }
+  const d = keyed(T - 1, CAR_D);
+  if (d < 40) { carPos.set(2.2, 0.345, 306 + d); carHeading = 0; }
+  else { const a = along(d - 40, 2.2); carPos.set(a.p.x, 0.345, a.p.z); carHeading = a.heading; }
+  return 306 + d;
+}
+// camera keys: fixed points, or offsets in the car's own frame (x = across, y = up, z = ahead)
+const rel = (dx, dy, dz) => c => { const s = Math.sin(carHeading), co = Math.cos(carHeading); return V(c.x + co * dx + s * dz, c.y + dy, c.z - s * dx + co * dz); };
 const at = (x, y, z) => () => V(x, y, z);
 const CAM = [
-  { p: 0.0, pos: at(-3.5, 15, -32), look: at(4.5, 1.5, 62), fov: 46 },
-  { p: 0.09, pos: at(-9, 7, -14), look: rel(0, 0.6, 10), fov: 42 },
-  { p: 0.16, pos: rel(-4.4, 2.7, -8.6), look: rel(0, 0.5, 16), fov: 46 },
-  { p: 0.3, pos: rel(-4.4, 2.7, -8.6), look: rel(0, 0.5, 16), fov: 46 },
-  { p: 0.37, pos: rel(-7.6, 2.3, 6.5), look: at(1.5, 1.0, 194), fov: 44 },
-  { p: 0.44, pos: rel(-6.6, 2.4, 9), look: at(1.0, 1.1, 194), fov: 44 },
-  { p: 0.52, pos: at(-8.6, 2.6, 233), look: at(0.4, 1.4, 249.5), fov: 44 },
-  { p: 0.62, pos: at(-8.0, 2.4, 237), look: at(0, 1.5, 249), fov: 42 },
-  { p: 0.69, pos: at(0.6, 12.3, 329), look: at(9.6, 12.15, 329), fov: 40 },
-  { p: 0.75, pos: at(9.2, 12.0, 329), look: at(16.4, 11.3, 329), fov: 48 },
-  { p: 0.8, pos: at(15.36, 11.0, 328.28), look: at(16.5, 10.94, 328.56), fov: 38, tall: { pos: at(15.0, 11.02, 329), look: at(16.5, 10.78, 329), fov: 52 } },
-  { p: 0.88, pos: at(15.4, 10.99, 328.3), look: at(16.5, 10.94, 328.56), fov: 38, tall: { pos: at(15.02, 11.01, 329), look: at(16.5, 10.78, 329), fov: 52 } },
-  { p: 1.0, pos: at(14.9, 11.12, 328.1), look: at(16.5, 10.96, 328.5), fov: 44, tall: { pos: at(14.75, 11.1, 329), look: at(16.5, 10.8, 329), fov: 56 } },
+  { t: 0.0, pos: at(-3.5, 15, -32), look: at(4.5, 1.5, 62), fov: 46 },
+  { t: 0.09, pos: at(-9, 7, -14), look: rel(0, 0.6, 10), fov: 42 },
+  { t: 0.16, pos: rel(-4.4, 2.7, -8.6), look: rel(0, 0.5, 16), fov: 46 },
+  { t: 0.3, pos: rel(-4.4, 2.7, -8.6), look: rel(0, 0.5, 16), fov: 46 },
+  { t: 0.37, pos: rel(-7.6, 2.3, 6.5), look: at(1.5, 1.0, 194), fov: 44 },
+  { t: 0.44, pos: rel(-6.6, 2.4, 9), look: at(1.0, 1.1, 194), fov: 44 },
+  { t: 0.52, pos: at(-8.6, 2.6, 233), look: at(0.4, 1.4, 249.5), fov: 44 },
+  { t: 0.62, pos: at(-8.0, 2.4, 237), look: at(0, 1.5, 249), fov: 42 },
+  { t: 0.69, pos: at(0.6, 12.3, 329), look: at(9.6, 12.15, 329), fov: 40 },
+  { t: 0.745, pos: at(9.4, 12.0, 329), look: at(16.4, 11.6, 329), fov: 50 },
+  { t: 0.775, pos: at(12.2, 11.85, 329.4), look: at(17.7, 11.85, 329), fov: 54, tall: { pos: at(11.4, 11.9, 329), look: at(17.7, 11.6, 329), fov: 64 } },
+  { t: 0.81, pos: at(15.36, 11.0, 328.28), look: at(16.5, 10.94, 328.56), fov: 38, tall: { pos: at(15.0, 11.02, 329), look: at(16.5, 10.78, 329), fov: 52 } },
+  { t: 0.88, pos: at(15.4, 10.99, 328.3), look: at(16.5, 10.94, 328.56), fov: 38, tall: { pos: at(15.02, 11.01, 329), look: at(16.5, 10.78, 329), fov: 52 } },
+  { t: 1.0, pos: at(14.9, 11.12, 328.1), look: at(16.5, 10.96, 328.5), fov: 44, tall: { pos: at(14.75, 11.1, 329), look: at(16.5, 10.8, 329), fov: 56 } },
+  // act two: turn round, out of the window, down to the car, and along Marine Drive
+  { t: 1.06, pos: at(13.6, 12.0, 329), look: at(3, 11, 329), fov: 50 },
+  { t: 1.12, pos: at(5.5, 13.2, 327), look: rel(0, 0.5, 6), fov: 50 },
+  { t: 1.24, pos: rel(-5, 2.8, -10), look: rel(0, 0.6, 14), fov: 48 },
+  { t: 1.42, pos: rel(-10.5, 2.6, 2), look: rel(0, 0.9, 3), fov: 44 },
+  { t: 1.62, pos: rel(-75, 32, -20), look: rel(22, 0, 95), fov: 50 },   // high over the bay: the Queen's Necklace
+  { t: 1.82, pos: rel(-4.6, 2.4, -9.5), look: rel(0, 0.6, 16), fov: 48 },
+  { t: 2.0, pos: rel(-7.2, 1.3, 6.2), look: rel(-3.4, 1.3, -2), fov: 40, tall: { pos: rel(-5.4, 1.6, 7.4), look: rel(0, 0.8, -1), fov: 48 } },   // the car on the right, the necklace behind it
 ];
 const _a = V(0, 0, 0), _b = V(0, 0, 0), _la = V(0, 0, 0), _lb = V(0, 0, 0);
-function placeCamera(p) {
-  let i = 0; while (i < CAM.length - 2 && p > CAM[i + 1].p) i++;
+function placeCamera(T) {
+  let i = 0; while (i < CAM.length - 2 && T > CAM[i + 1].t) i++;
   // tall (phone) screens see less sideways: some shots have their own framing
   const tall = camera.aspect < 0.9, pick = k => (tall && k.tall ? k.tall : k);
-  const A = pick(CAM[i]), B = pick(CAM[i + 1]), t = reduced ? (p - CAM[i].p < CAM[i + 1].p - p ? 0 : 1) : sstep(clamp((p - CAM[i].p) / (CAM[i + 1].p - CAM[i].p)));
+  const A = pick(CAM[i]), B = pick(CAM[i + 1]), k0 = CAM[i].t, k1 = CAM[i + 1].t;
+  const t = reduced ? (T - k0 < k1 - T ? 0 : 1) : sstep(clamp((T - k0) / (k1 - k0)));
   _a.copy(A.pos(carPos)); _b.copy(B.pos(carPos)); _la.copy(A.look(carPos)); _lb.copy(B.look(carPos));
   camera.position.lerpVectors(_a, _b, t);
   camera.lookAt(_la.lerp(_lb, t));
@@ -143,8 +181,9 @@ function updateBoxes(p, w, h) {
 
 /* ---------- one frame ---------- */
 const clock = new THREE.Clock();
-let pTarget = 0, pNow = 0, dist = 0, lastZ = 0, time = 0;
-const red = new THREE.Color(), dayTop = new THREE.Color(0x2b4a7a), dayBot = new THREE.Color(0xf3c9a2), nightTop = new THREE.Color(0x070b18), nightBot = new THREE.Color(0x2c2340);
+let tTarget = 0, tNow = 0, dist = 0, lastD = 0, time = 0;
+const dayTop = new THREE.Color(0x2b4a7a), dayBot = new THREE.Color(0xf3c9a2), nightTop = new THREE.Color(0x050a1a), nightBot = new THREE.Color(0x221c38);
+const sunDay = new THREE.Color(0xffe0bd), moonC = new THREE.Color(0x9fb4ff);
 let avg = 16, adaptT = 0;
 function adapt(dt) {
   avg = avg * 0.9 + dt * 1000 * 0.1; adaptT += dt;
@@ -152,36 +191,43 @@ function adapt(dt) {
   const next = avg > 24 && pr > 1 ? Math.max(1, pr - 0.25) : avg < 15 && pr < maxPR && adaptT > 4 ? Math.min(maxPR, pr + 0.25) : pr;
   if (next !== pr) { pr = next; renderer.setPixelRatio(pr); renderer.setSize(innerWidth, innerHeight, false); adaptT = 0; }
 }
+const stageVars = { alert: '', cozy: '' };
+function setVar(k, v) { if (stageVars[k] !== v) { stageVars[k] = v; stage.style.setProperty('--' + k, v); } }
 function frame() {
   const dt = Math.min(0.05, clock.getDelta()); time += dt; adapt(dt);
-  pNow = reduced ? pTarget : pNow + (pTarget - pNow) * (1 - Math.exp(-dt * 7));
-  const p = pNow;
+  tNow = reduced ? tTarget : tNow + (tTarget - tNow) * (1 - Math.exp(-dt * 7));
+  const T = tNow, p = Math.min(1, T), a = Math.max(0, T - 1);
 
   // style: line art → colour
   INK.value = 1 - sstep(clamp((p - 0.085) / 0.08));
   LINES.opacity = INK.value; LINES.visible = INK.value > 0.01;
   // the car
-  const z = keyed(p, CAR_Z), x = carX(z);
-  const heading = Math.atan2((carX(z + 0.5) - x) * 2, 1);
-  carPos.set(x, 0.345, z); carQuat.setFromAxisAngle(V(0, 1, 0), heading);
-  dist += Math.abs(z - lastZ); lastZ = z;
-  sim.speed = Math.abs(z - (keyed(clamp(p + 0.002), CAR_Z))) * 20;
+  const d = placeCar(T);
+  carQuat.setFromAxisAngle(V(0, 1, 0), carHeading);
+  dist += Math.abs(d - lastD); lastD = d;
   for (const w of sim.wheels) w.spin = dist / CAR_SPEC.wheelRadius;
-  sim.steerAngle = heading * 0.6; sim.brakeLight = p > 0.49 && p < 0.63;
+  sim.steerAngle = 0; sim.brakeLight = (p > 0.49 && p < 0.63) || (T > 1 && T < 1.12);
   car.update(carPos, carQuat, sim, dt, 0);
-  // evening falls as we head home; the room lights come on
-  const night = sstep(clamp((p - 0.63) / 0.12));
-  sun.intensity = 2.4 * (1 - night); hemi.intensity = 0.9 * (1 - night * 0.92);
+  // evening falls as we head home, and stays night along Marine Drive (moonlight, the Queen's Necklace)
+  const night = sstep(clamp((p - 0.63) / 0.12)), inRoom = T > 0.72 && T < 1.1, outside = clamp((a - 0.08) / 0.06);
+  sun.intensity = inRoom ? 0 : 2.4 * (1 - night) + 0.45 * night * (T > 1 ? outside : 1);
+  sun.color.lerpColors(sunDay, moonC, night);
+  hemi.intensity = 0.9 * (1 - night) + (inRoom ? 0.26 : T > 1 ? 0.32 * outside : 0.07 * night);
+  // the studio reflections that make the car shine by day are dimmed after dark
+  const env = 1 - night * 0.82;
+  if (Math.abs(env - lastEnv) > 0.01) { lastEnv = env; for (const [m, base] of envMats) m.envMapIntensity = base * env; }
   for (const m of NIGHT.mats) m.emissiveIntensity = night * 1.3;
   sky.top.value.lerpColors(dayTop, nightTop, night); sky.bottom.value.lerpColors(dayBot, nightBot, night);
-  scene.fog.color.copy(sky.bottom.value);
-  const focus = p < 0.66 ? carPos : room.screenTarget;
+  scene.fog.color.copy(sky.bottom.value); scene.fog.far = T > 1 ? 520 : 340;
+  headlight.intensity = night > 0.3 ? 45 * night : 0;
+  carLight.intensity = T > 1.1 ? 26 * outside : 0;
+  const focus = T > 1.1 || p < 0.66 ? carPos : room.screenTarget;
   sun.position.set(focus.x - 30, 40, focus.z - 22); sun.target.position.copy(focus);
   // the signal: red while people cross, then green
   const L = crossing.lights, go = p > 0.615, amber = p > 0.6 && !go;
   L.red.emissiveIntensity = !go && !amber ? 4 : 0.05; L.amber.emissiveIntensity = amber ? 4 : 0.05; L.green.emissiveIntensity = go ? 4 : 0.05;
   // people cross while it's red; their "brains" light up as the model reads the patterns
-  crossing.people.forEach(({ obj }, i) => {
+  if (p > 0.4 && p < 0.7) crossing.people.forEach(({ obj }, i) => {
     const u = obj.userData, c = clamp((p - 0.47 - u.delay * 0.1) / (0.12 / u.speed));
     const px = -u.dir * 7.6 + u.dir * 15.2 * sstep(c);
     obj.position.set(px, 0.16 * (Math.abs(px) > 6 ? 1 : 0), u.lane);
@@ -193,38 +239,47 @@ function frame() {
     u.brain.position.y = 1.74 + b * 0.42; u.brain.rotation.y = time * 0.8 + i;
     u.bw.material.opacity = b; u.glow.material.opacity = b * (0.25 + Math.sin(time * 4 + i * 2) * 0.12);
   });
-  // my room: lamp on; then the attack turns it red and packets stream in through the window
-  const RL = room.lights, attack = sstep(clamp((p - 0.885) / 0.05));
-  RL.lampLight.intensity = 5 * night * (1 - attack * 0.6); RL.ceiling.intensity = 1.3 * night * (1 - attack * 0.85);
-  RL.screenGlow.intensity = 1.2 * night;
+  // my room: warm lamps, fairy lights; then the attack turns it red and packets stream into the laptop
+  const RL = room.lights, attack = sstep(clamp((p - 0.885) / 0.05)) * (1 - sstep(clamp((a - 0.02) / 0.05)));
+  const glowOn = night * (inRoom ? 1 : 0.6);
+  RL.lampLight.intensity = 4.5 * glowOn * (1 - attack * 0.6); RL.floorLight.intensity = 3.2 * glowOn * (1 - attack * 0.7);
+  RL.moon.intensity = 1.6 * glowOn;
   RL.alarm.intensity = attack * (9 + Math.sin(time * 6) * 4);
-  stage.style.setProperty('--alert', (attack * (0.75 + Math.sin(time * 6) * 0.25)).toFixed(3));
+  room.fairy.glow.material.size = 0.42 * (0.92 + Math.sin(time * 2.3) * 0.08);
+  setVar('alert', (attack * (0.75 + Math.sin(time * 6) * 0.25)).toFixed(3));
+  setVar('cozy', (sstep(clamp((T - 0.72) / 0.04)) * (1 - sstep(clamp((T - 1.05) / 0.05)))).toFixed(2));
   room.packets.visible = attack > 0.02;
   if (room.packets.visible) {
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = V(1, 1, 1), tgt = room.screenTarget;
     for (let i = 0; i < 140; i++) {
-      // streams of packets converging on the screen from around and behind the laptop
-      const f = (time * 0.6 + i / 140 * 3) % 1, a = (i * 2.39996) % (Math.PI * 2), rr = 0.35 + ((i * 37) % 17) / 17 * 0.5;
-      const from = _a.set(tgt.x + 0.25 + Math.cos(a) * 0.15, tgt.y + Math.sin(a) * rr * 0.6, tgt.z + Math.cos(a * 1.7) * rr);
+      const f = (time * 0.6 + i / 140 * 3) % 1, ang = (i * 2.39996) % (Math.PI * 2), rr = 0.35 + ((i * 37) % 17) / 17 * 0.5;
+      const from = _a.set(tgt.x + 0.25 + Math.cos(ang) * 0.15, tgt.y + Math.sin(ang) * rr * 0.6, tgt.z + Math.cos(ang * 1.7) * rr);
       const pos = _b.lerpVectors(from, tgt, f * f);
       s.setScalar(attack * (0.6 + (1 - f)));
       room.packets.setMatrixAt(i, m.compose(pos, q, s));
     }
     room.packets.instanceMatrix.needsUpdate = true;
   }
-  if (p > 0.66) drawScreen(p > 0.875 ? 'logs' : 'code', time, p > 0.875 ? clamp((p - 0.875) / 0.1) : clamp((p - 0.74) / 0.12));
-  placeCamera(p);
-  const w = canvas.clientWidth, h = canvas.clientHeight;
-  updateBoxes(p, w, h);
+  if (p > 0.66 && T < 1.12) drawScreen(p > 0.875 ? 'logs' : 'code', time, p > 0.875 ? clamp((p - 0.875) / 0.1) : clamp((p - 0.74) / 0.12));
+  // only draw what this part of the page can see
+  marine.visible = T > 0.6;
+  const onStreet = T < 1.16;
+  street.visible = onStreet; crossing.group.visible = T > 0.3 && T < 0.75;
+  for (const h of holes) h.obj.visible = T < 0.4;
+  for (const c of herd) c.obj.visible = T > 0.25 && T < 0.6;
+  room.group.visible = T > 0.6 && T < 1.16;
+  placeCamera(T);
+  updateBoxes(p, canvas.clientWidth, canvas.clientHeight);
   renderer.render(scene, camera);
-  return Math.abs(pTarget - pNow) > 0.0002;
 }
 
 /* ---------- scroll, size, loop ---------- */
-let trackTop = 0, trackSpan = 1;
+let trackTop = 0, trackSpan = 1, afterStart = 0, afterSpan = 1, veils = [];
 function measure() {
   const r = track.getBoundingClientRect();
   trackTop = r.top + scrollY; trackSpan = Math.max(1, track.offsetHeight - innerHeight);
+  afterStart = trackTop + trackSpan; afterSpan = Math.max(1, document.documentElement.scrollHeight - innerHeight - afterStart);
+  veils = [...document.querySelectorAll('[data-veil]')].map(el => { const b = el.getBoundingClientRect(); return { top: b.top + scrollY, bottom: b.bottom + scrollY, v: el.dataset.veil }; });
 }
 function resize() {
   const w = innerWidth, h = innerHeight;
@@ -234,23 +289,33 @@ function resize() {
   camera.updateProjectionMatrix();
   measure();
 }
-const onScroll = () => { pTarget = clamp((scrollY - trackTop) / trackSpan); };
-let visible = true, raf = 0;
-const loop = () => { raf = 0; if (!visible) return; frame(); raf = requestAnimationFrame(loop); };
-new IntersectionObserver(es => { visible = es[0].isIntersecting; if (visible && !raf) { clock.getDelta(); raf = requestAnimationFrame(loop); } }).observe(track);
+let lastVeil = '';
+function onScroll() {
+  const y = scrollY;
+  tTarget = clamp((y - trackTop) / trackSpan) + clamp((y - afterStart) / afterSpan);
+  // the veil: dark behind dense sections so text reads, clear during the drive and for "One more thing"
+  const mid = y + innerHeight * 0.55, sec = veils.find(v => mid >= v.top && mid < v.bottom), v = sec ? sec.v : '0';
+  if (v !== lastVeil) { lastVeil = v; veil.style.opacity = v; }
+}
+let raf = 0;
+const loop = () => { raf = 0; if (document.hidden) return; frame(); raf = requestAnimationFrame(loop); };
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !raf) { clock.getDelta(); raf = requestAnimationFrame(loop); } });
 addEventListener('scroll', onScroll, { passive: true });
 addEventListener('resize', () => { resize(); onScroll(); });
 new ResizeObserver(() => { measure(); onScroll(); }).observe(document.body);
-resize(); onScroll(); pNow = pTarget;
+resize(); onScroll(); tNow = tTarget;
+// compile every material and upload every texture up front, so nothing stalls mid-scroll
 room.packets.visible = true;
 scene.traverse(o => { for (const m of [].concat(o.material || [])) for (const k of ['map', 'emissiveMap', 'normalMap']) if (m[k]) renderer.initTexture(m[k]); });
 renderer.compile(scene, camera);
 room.packets.visible = false;
 frame();
+raf = requestAnimationFrame(loop);
 document.documentElement.classList.add('scene-ready');
 
 /* ---------- chapter rail ---------- */
 const rail = document.querySelector('.rail');
+let railUpdate = () => {};
 if (rail) {
   const links = [...rail.querySelectorAll('a')], secs = links.map(a => document.querySelector(a.getAttribute('href'))), fill = rail.querySelector('.fill');
   let cur = -1;
@@ -261,5 +326,6 @@ if (rail) {
     if (fill) fill.style.transform = `scaleX(${clamp(scrollY / Math.max(1, document.documentElement.scrollHeight - innerHeight)).toFixed(3)})`;
   };
   addEventListener('scroll', () => requestAnimationFrame(upd), { passive: true }); upd();
+  railUpdate = upd;
 }
-window.__story = { renderer, p: () => pNow, target: () => pTarget, ink: () => INK.value, camera, scene, frame, snap: () => { onScroll(); pNow = pTarget; frame(); }, boxes: () => targets.filter(t => t.on).map(t => t.el.textContent) };   // for tests
+window.__story = { renderer, p: () => Math.min(1, tNow), t: () => tNow, target: () => tTarget, ink: () => INK.value, camera, scene, frame, snap: () => { measure(); onScroll(); tNow = tTarget; frame(); railUpdate(); }, boxes: () => targets.filter(t => t.on).map(t => t.el.textContent), car: () => carPos.clone() };   // for tests

@@ -91,7 +91,7 @@ function windowsTex(seed) {
 export const NIGHT = { mats: [] };   // facade materials whose windows light up after dark
 
 const WINDOW_SETS = [];
-function facadeMat(tint, seed, w, h) {
+export function facadeMat(tint, seed, w, h) {
   if (!WINDOW_SETS.length) for (let i = 0; i < 5; i++) WINDOW_SETS.push(windowsTex(11 + i * 7));
   const set = WINDOW_SETS[seed % WINDOW_SETS.length];
   const map = set.map.clone(), glow = set.glow.clone();   // clones share the image: one upload each
@@ -100,22 +100,18 @@ function facadeMat(tint, seed, w, h) {
   NIGHT.mats.push(m);
   return m;
 }
-/** The window grid of a street-facing facade as lines, so the line art has detail. */
-function windowLines(x, z0, w, h) {
-  const pts = [];
+/** The window grid of a street-facing facade as lines, so the line art has detail (appended to pts). */
+function windowLines(x, z0, w, h, pts) {
   for (let y = 1.4; y < h - 1; y += 2.6) for (let z = z0 + 1.2; z < z0 + w - 1.2; z += 2.4) {
     const a = [x, y, z], b = [x, y, z + 1.2], c = [x, y + 1.3, z + 1.2], d = [x, y + 1.3, z];
     pts.push(...a, ...b, ...b, ...c, ...c, ...d, ...d, ...a);
   }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-  const l = new THREE.LineSegments(g, LINES); l.userData.edge = true;
-  return l;
 }
 
 /* ---------------- the street ---------------- */
 export function buildStreet(scene) {
   const G = new THREE.Group(); G.name = 'street'; scene.add(G);
-  const L = 420;
+  const L = 376;   // z −30 → 346, where Marine Drive takes over
   const asphalt = mat(0x2c2f34, { roughness: 0.95 });
   const road = new THREE.Mesh(new THREE.PlaneGeometry(12, L), asphalt);
   road.rotation.x = -Math.PI / 2; road.position.set(0, 0, L / 2 - 30); road.receiveShadow = true; road.userData.noEdges = true;
@@ -133,23 +129,30 @@ export function buildStreet(scene) {
   }
   // buildings either side: plain massing with window grids, a few heights and tints
   const tints = [0xe9e3d8, 0xd7dde4, 0xe6d3c3, 0xcfd6cc, 0xded7e6];
+  const byTint = tints.map(() => []), winPts = [];
   let k = 0;
   for (const sx of [-1, 1]) {
-    for (let z = -40; z < 395; ) {
+    for (let z = -40; z < 336; ) {
       const w = 10 + ((k * 7) % 9), h = 7 + ((k * 13) % 12), d = 9 + ((k * 5) % 6);
-      if (sx > 0 && z + w > 312 && z < 346) { z = 346; continue; }   // leave room for my building
-      const m = facadeMat(tints[k % tints.length], 11 + k, w, h);
-      const b = box(d, h, w, m, sx * (9.6 + d / 2), h / 2, z + w / 2);
-      b.receiveShadow = true;
-      G.add(b, windowLines(sx * 9.58, z, w, h));
+      if (sx > 0 && z + w > 312) break;   // my building, then Marine Drive
+      if (z + w > 340) break;
+      // a box whose UVs repeat one window bay every 6 m across and 9 m up, so one material fits every size
+      const g = new THREE.BoxGeometry(d, h, w), uv = g.attributes.uv;
+      for (let i = 0; i < uv.count; i++) { const face = Math.floor(i / 4), across = face < 2 ? w : face < 4 ? d : d, up = face < 2 || face > 3 ? h : w; uv.setXY(i, uv.getX(i) * across / 6, uv.getY(i) * up / 9); }
+      g.translate(sx * (9.6 + d / 2), h / 2, z + w / 2);
+      byTint[k % tints.length].push(g);
+      windowLines(sx * 9.58, z, w, h, winPts);
       z += w + 1.5; k++;
     }
   }
+  byTint.forEach((geos, i) => { if (!geos.length) return; const b = new THREE.Mesh(mergeGeometries(geos), facadeMat(tints[i], 11 + i, 6, 9)); b.receiveShadow = true; G.add(b); });
+  const wl = new THREE.BufferGeometry(); wl.setAttribute('position', new THREE.Float32BufferAttribute(winPts, 3));
+  const winLines = new THREE.LineSegments(wl, LINES); winLines.userData.edge = true; G.add(winLines);
   // trees on the pavement
   const trunk = mat(0x6b5240), leaf = mat(0x5f8f4e, { flatShading: true });
   const trG = new THREE.CylinderGeometry(0.14, 0.2, 2.4, 6).translate(0, 1.2, 0), crG = new THREE.IcosahedronGeometry(1.6, 1).scale(1, 0.9, 1).translate(0, 3.3, 0);
   const spots = [];
-  for (let z = 6; z < 380; z += 17) for (const sx of [-1, 1]) if (!(z > 225 && z < 262)) spots.push([sx * 7.4, 0.16, z + (sx > 0 ? 8 : 0)]);   // keep the crossing clear
+  for (let z = 6; z < 330; z += 17) for (const sx of [-1, 1]) if (!(z > 225 && z < 262) && !(sx > 0 && z > 300)) spots.push([sx * 7.4, 0.16, z + (sx > 0 ? 8 : 0)]);   // keep the crossing clear
   const trI = new THREE.InstancedMesh(trG, trunk, spots.length), crI = new THREE.InstancedMesh(crG, leaf, spots.length);
   const M4 = new THREE.Matrix4(), edgePts = [], eT = new THREE.EdgesGeometry(trG, 30).attributes.position.array, eC = new THREE.EdgesGeometry(crG, 30).attributes.position.array;
   spots.forEach(([x, y, z], i) => {
@@ -271,86 +274,6 @@ export function buildCrossing(scene) {
     G.add(p); people.push({ obj: p, size: new THREE.Vector3(0.7, 1.95, 0.7) });
   }
   return { group: G, lights, people };
-}
-
-/* ---------------- my building: a lit window, and the room behind it ---------------- */
-export const ROOM = { x0: 9.9, x1: 17.7, y0: 10, y1: 14, z0: 321.8, z1: 336.2, win: { z0: 325, z1: 333, y0: 10.8, y1: 13.4 } };
-export function buildRoom(scene, { screenTex, pictureTex }) {
-  const G = new THREE.Group(); G.name = 'room'; scene.add(G);
-  const R = ROOM, W = R.win;
-  const facade = mat(0xe8e1d6, { roughness: 0.9 }), solid = facadeMat(0xe2dace, 77, 22, 30);
-  const fx = 9.7;   // facade centre (0.4 thick, its outer face at x = 9.5)
-  // building around the room
-  G.add(box(14.6, 9.8, 22, solid, 9.5 + 7.3, 4.9, 329));            // floors below
-  G.add(box(14.6, 16, 22, solid, 9.5 + 7.3, 14.2 + 8, 329));        // floors above
-  G.add(box(14.6, 4.2, 3.8, solid, 9.5 + 7.3, 12, 318 + 1.9));      // beside the room
-  G.add(box(14.6, 4.2, 3.8, solid, 9.5 + 7.3, 12, 340 - 1.9));
-  G.add(box(6.4, 4.2, 14.4, solid, 17.7 + 3.2, 12, 329));           // behind
-  // front wall pieces around the window
-  G.add(box(0.4, W.y0 - 9.8, W.z1 - W.z0, facade, fx, (9.8 + W.y0) / 2, (W.z0 + W.z1) / 2));
-  G.add(box(0.4, 14.2 - W.y1, W.z1 - W.z0, facade, fx, (W.y1 + 14.2) / 2, (W.z0 + W.z1) / 2));
-  G.add(box(0.4, 4.4, W.z0 - 321.8, facade, fx, 12, (321.8 + W.z0) / 2));
-  G.add(box(0.4, 4.4, 336.2 - W.z1, facade, fx, 12, (W.z1 + 336.2) / 2));
-  // window frame + mullion
-  const frame = mat(0x2b2e33, { roughness: 0.4, metalness: 0.3 });
-  G.add(box(0.12, 0.1, W.z1 - W.z0, frame, 9.52, W.y0, (W.z0 + W.z1) / 2), box(0.12, 0.1, W.z1 - W.z0, frame, 9.52, W.y1, (W.z0 + W.z1) / 2));
-  // inside: warm walls, wooden floor
-  const wall = mat(0xe9dfd0, { roughness: 0.95, side: THREE.BackSide }), floor = mat(0x9a6b45, { roughness: 0.7 });
-  // the room's inner walls sit a hair inside the building's surfaces so the two never fight for the same pixels
-  const shell = new THREE.Mesh(new THREE.BoxGeometry(R.x1 - R.x0 - 0.08, R.y1 - R.y0 - 0.08, R.z1 - R.z0 - 0.08), wall);
-  shell.position.set((R.x0 + R.x1) / 2, (R.y0 + R.y1) / 2, (R.z0 + R.z1) / 2); shell.receiveShadow = true; shell.userData.noEdges = true;
-  G.add(shell);
-  const fl = new THREE.Mesh(new THREE.PlaneGeometry(R.x1 - R.x0, R.z1 - R.z0), floor); fl.rotation.x = -Math.PI / 2; fl.position.set((R.x0 + R.x1) / 2, R.y0 + 0.01, (R.z0 + R.z1) / 2); fl.receiveShadow = true;
-  G.add(fl);
-  // desk against the back wall
-  const wood = mat(0xc89b6d, { roughness: 0.6 }), dark = mat(0x2a2d32, { roughness: 0.5 });
-  const dz = 329, deskX = 16.7, top = R.y0 + 0.76;
-  G.add(box(1.1, 0.06, 3.2, wood, deskX, top - 0.03, dz));
-  for (const sz of [-1, 1]) for (const sx of [-1, 1]) G.add(box(0.06, 0.73, 0.06, dark, deskX + sx * 0.48, R.y0 + 0.365, dz + sz * 1.52));
-  // laptop: aluminium, no logo; screen faces the window
-  const alu = ink(new THREE.MeshPhysicalMaterial({ color: 0xd9dbde, roughness: 0.35, metalness: 0.85, clearcoat: 0.3 }));
-  const laptop = new THREE.Group(); laptop.position.set(deskX - 0.1, top, dz);
-  const base = box(0.3, 0.018, 0.46, alu, 0, 0.009, 0); laptop.add(base);
-  const lid = new THREE.Group(); lid.position.set(0.15, 0.018, 0); lid.rotation.z = -0.32; laptop.add(lid);
-  lid.add(box(0.012, 0.3, 0.46, alu, 0.006, 0.15, 0));
-  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.43, 0.27), ink(new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false })));
-  scr.position.set(-0.001, 0.152, 0); scr.rotation.y = -Math.PI / 2; scr.userData.noEdges = true; scr.userData.keep = true; lid.add(scr);
-  const keys = box(0.2, 0.002, 0.4, dark, -0.02, 0.019, 0); keys.userData.noEdges = true; laptop.add(keys);
-  G.add(laptop);
-  // lamp, plant, mug, books, chair, picture
-  const lampM = mat(0x262a2f, { roughness: 0.4, metalness: 0.5 });
-  const lampG = new THREE.Group(); lampG.position.set(deskX + 0.25, top, dz - 1.15);
-  lampG.add(box(0.22, 0.03, 0.22, lampM, 0, 0.015, 0));
-  const lArm = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.55, 6), lampM); lArm.position.set(-0.05, 0.28, 0.05); lArm.rotation.x = 0.25; lampG.add(lArm);
-  const shade = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.16, 12, 1, true), ink(new THREE.MeshStandardMaterial({ color: 0x262a2f, emissive: 0xffc58a, emissiveIntensity: 0.6, side: THREE.DoubleSide }))); shade.position.set(-0.12, 0.55, 0.12); shade.rotation.z = 0.6; lampG.add(shade);
-  G.add(lampG);
-  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.08, 0.2, 10), mat(0xe9e6df)); pot.position.set(deskX + 0.2, top + 0.1, dz + 1.2);
-  const leaves = new THREE.Mesh(new THREE.IcosahedronGeometry(0.2, 1), mat(0x4f8c4a, { flatShading: true })); leaves.position.set(deskX + 0.2, top + 0.36, dz + 1.2); leaves.scale.set(1, 1.3, 1);
-  const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.1, 12), mat(0xd94848)); mug.position.set(deskX - 0.25, top + 0.05, dz - 0.55);
-  G.add(pot, leaves, mug);
-  const bookC = [0x3f6fb5, 0xd9a23c, 0x9b4d6a, 0x4c8c74, 0xe6e0d4];
-  bookC.forEach((c, i) => G.add(box(0.2, 0.26 + (i % 2) * 0.05, 0.05, mat(c), deskX + 0.38, top + 0.14, dz + 0.6 + i * 0.06)));
-  const chair = new THREE.Group(); chair.position.set(15.7, R.y0, dz + 1.9); chair.rotation.y = 0.9;
-  chair.add(box(0.5, 0.08, 0.5, dark, 0, 0.48, 0), box(0.08, 0.6, 0.5, dark, -0.24, 0.8, 0), box(0.06, 0.45, 0.06, lampM, 0, 0.23, 0));
-  G.add(chair);
-  const rug = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 4.4), mat(0x2f5d62, { roughness: 1 })); rug.rotation.x = -Math.PI / 2; rug.position.set(14.2, R.y0 + 0.015, dz); rug.userData.noEdges = true;
-  G.add(rug);
-  const shelf = box(0.3, 0.04, 2.2, wood, R.x1 - 0.16, 12.0, dz + 3.6); G.add(shelf);
-  [0x3f6fb5, 0xd9a23c, 0x9b4d6a, 0x4c8c74, 0xe6e0d4, 0xc8553d].forEach((c, i) => G.add(box(0.22, 0.3 + (i % 3) * 0.05, 0.06, mat(c), R.x1 - 0.18, 12.18, dz + 2.7 + i * 0.09)));
-  const pic = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.73), ink(new THREE.MeshStandardMaterial({ map: pictureTex, roughness: 0.6 })));
-  pic.position.set(R.x1 - 0.03, 12.25, dz - 0.2); pic.rotation.y = -Math.PI / 2; pic.userData.noEdges = true;
-  G.add(pic, box(0.03, 0.85, 1.42, mat(0xf2efe9), R.x1 - 0.015, 12.25, dz - 0.2));
-  // lights: the desk lamp and a warm ceiling glow; the attack turns them red
-  const lampLight = new THREE.PointLight(0xffc58a, 0, 7, 1.6); lampLight.position.set(deskX - 0.1, top + 0.7, dz - 0.9);
-  const ceiling = new THREE.PointLight(0xffd6a8, 0, 11, 1.6); ceiling.position.set(13.2, 12.9, dz - 1.5);
-  const alarm = new THREE.PointLight(0xff2030, 0, 10, 1.4); alarm.position.set(12, 13, dz);
-  const screenGlow = new THREE.PointLight(0x9fc4ff, 0, 3, 1.5); screenGlow.position.set(deskX - 0.6, top + 0.25, dz);
-  G.add(lampLight, ceiling, alarm, screenGlow);
-  // the attack: red packets streaming in through the window to the laptop
-  const pk = new THREE.InstancedMesh(new THREE.BoxGeometry(0.014, 0.014, 0.014), new THREE.MeshBasicMaterial({ color: 0xff2233, toneMapped: false }), 140);
-  pk.userData.noEdges = true; pk.visible = false; pk.frustumCulled = false; pk.userData.moving = true;
-  G.add(pk);
-  return { group: G, laptop, lights: { lampLight, ceiling, alarm, screenGlow }, packets: pk, screenTarget: new THREE.Vector3(deskX - 0.12, top + 0.17, dz) };
 }
 
 /* ---------------- sky ---------------- */

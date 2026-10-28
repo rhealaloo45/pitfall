@@ -4,7 +4,7 @@ A static site with no build step, deployed by GitHub Pages:
 
 | Page | What it is |
 |---|---|
-| `index.html` | The portfolio as a drive: a real-time 3D street that opens as black-and-white line art and comes into colour as the car rolls past the problems each project solves — potholes (RoadHawk), cows (the cattle app), people at a crossing (ADHD / mental-fitness models) — then rises into my room: the laptop (chub-guard) and the attack on it (log anomaly detection). Experience, education, tech specs and contact follow; "One more thing" links the car to Mumbai GP. Résumé, contact and highlights are on the first screen; a chapter rail jumps anywhere. Content comes from `src/shared/portfolio-data.js` |
+| `index.html` | The portfolio as a drive: a real-time 3D street that opens as black-and-white line art and comes into colour as the car rolls past the problems each project solves — potholes (RoadHawk), cows (the cattle app), people at a crossing (ADHD / mental-fitness models) — then rises into my room (pinboard, fairy lights, a window onto the Queen's Necklace): the laptop (chub-guard) and the attack on it (log anomaly detection). The camera then goes back out and the car cruises Marine Drive at night behind Experience, Education, Tech specs and Contact, ending on "One more thing" (Mumbai GP). Résumé, contact and highlights are on the first screen; a chapter rail jumps anywhere. Content comes from `src/shared/portfolio-data.js` |
 | `mumbai.html` | **Mumbai GP**: a compact, stylised-real Mumbai to drive — Marine Drive, the Sea Link, Fort, Bandra, BKC — with portfolio chapters at the Pit Wall (career, shown on the grid before the race), K. C. College and KJSIT (the finish). The timed route is ~4 km; the map (M) and Pause → Progress jump straight to any chapter. |
 | `circuit.html` | The original F1 Track Day circuit (preserved) |
 | `portfolio.html` | Printable one-page résumé |
@@ -47,9 +47,11 @@ For testing, `mumbai.html?quality=low|medium|high` forces a preset.
 ## The drive (landing page)
 
 `src/story/` is a small, separate three.js scene, not the game: `world.js` builds the street, potholes, cows,
-crossing and people, my building and room; `screen.js` draws the laptop's screen (an editor where chub-guard
+crossing and people; `room.js` my room; `marine.js` Marine Drive at night (the curve, promenade and sea wall,
+the Queen's Necklace lamps and their reflections, Art Deco fronts, palms, Nariman Point); `screen.js` draws the laptop's screen (an editor where chub-guard
 flags an outdated API, then a log stream where the anomaly model catches an attack); `main.js` maps scroll
-position to a timeline (car position, camera shots, line art → colour, dusk → night, the signal, the attack)
+position to a timeline (car position, camera shots, line art → colour, dusk → night, the signal, the attack);
+the timeline continues past the story through the rest of the page, with a veil that darkens behind dense text
 and draws the model's detection boxes over the scene. The car is the same procedural car as Mumbai GP.
 
 Everything goes through one `INK` uniform, which blends the whole scene to black so only the white outlines
@@ -58,7 +60,8 @@ as a page; with reduced motion the camera cuts between shots, and without WebGL 
 
 Kept smooth on ordinary 60 Hz laptops: outlines are baked into one object per group, static objects are
 frozen (no per-frame matrix work), cows and trees are merged / instanced, window textures are shared, all
-materials and textures are compiled and uploaded before the first scroll, shadows are small and only cast by
+materials and textures are compiled and uploaded before the first scroll, each part of the page only draws what
+it can see, the street's buildings are merged per colour, shadows are small and only cast by
 things that move, the laptop screen only redraws once the room is in view, and the resolution steps down if
 frames run slow. `npm run perf` (CPU slowed 4×) holds 60 fps with under 2% of frames over 25 ms.
 
