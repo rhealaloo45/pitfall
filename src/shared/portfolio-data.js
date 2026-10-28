@@ -121,14 +121,13 @@ const RESUME = {
     { name:'RoadHawk — IoT Pothole Detector', tag:'IoT', text:'Raspberry Pi based pothole detection system using CNNs, sensors and Google Maps integration with a Django backend.' },
     { name:'SDS — Online Quiz Website', tag:'Web', text:'Online quiz platform with 200+ questions, separate student/teacher logins, scheduling and real-time results.' },
   ],
-  // short project cards for the landing page — condensed from the experience and project entries above
-  highlights:[
-    { name:'chub-guard', tag:'LLM tooling', where:'TCS', text:'AI-powered linter that flags deprecated and outdated code patterns against documentation indexed in Context Hub.', metric:'Published on PyPI, npm & VS Code' },
-    { name:'Log anomaly detection', tag:'ML · Security', where:'TCS', text:'End-to-end pipeline over large-scale system logs: Autoencoders and Isolation Forest, SHAP for root cause, and LLM analysis to classify likely attack types.', metric:'Autoencoders · SHAP · LLMs' },
-    { name:'RoadHawk', tag:'IoT · Vision', text:'Raspberry Pi pothole detector using CNNs and sensors, with Google Maps integration and a Django backend.', metric:'CiiA Top 80 of 695 teams, twice' },
-    { name:'Cattle management app', tag:'Mobile · ML', where:'Nareshwadi', text:'Full-stack React Native app for 50+ cattle with lifecycle tracking, offline milk entry and alerts, plus disease and milk-yield prediction.', metric:'94% prediction accuracy' },
-    { name:'ADHD detection', tag:'ML', text:'Naive Bayes, SVM and Random Forest compared on the ADHD-200 dataset.', metric:'87.2% accuracy' },
-    { name:'Mental-fitness forecasting', tag:'ML', where:'IBM SkillBuild', text:'Regression model trained on 20+ years of historical data to forecast mental-fitness trends across 15+ countries.', metric:'98% accuracy' },
+  // the landing page's story: what each project taught a machine to notice — condensed from the entries above
+  stories:[
+    { tag:'TCS · Security', title:'Attacks hiding in system logs.', text:'An end-to-end pipeline over large-scale system logs: Autoencoders and Isolation Forest flag the anomalies, SHAP explains their root cause, and LLM-based analysis classifies the likely attack type.', chips:['Autoencoders', 'Isolation Forest', 'SHAP', 'LLMs'] },
+    { tag:'TCS · LLM tooling', title:'Outdated code, before it ships.', text:'chub-guard is an AI-powered linter that checks code against documentation indexed in Context Hub and flags deprecated and outdated patterns.', chips:['Published on PyPI, npm & VS Code'] },
+    { tag:'RoadHawk · IoT', title:'Potholes, spotted and mapped.', text:'A Raspberry Pi pothole detector using CNNs and sensors, with Google Maps integration and a Django backend.', chips:['CiiA Top 80 of 695 teams, twice', 'Raspberry Pi', 'CNNs'] },
+    { tag:'Nareshwadi Learning Centre · Mobile + ML', title:'Disease in a herd, predicted.', text:'A full-stack React Native app for 50+ cattle with lifecycle tracking, offline milk entry and alerts, plus a Random Forest model for disease and milk-yield trends, shaped by rounds of testing with farm staff.', chips:['94% accuracy', 'React Native', 'Random Forest'] },
+    { tag:'Research · ML', title:'Patterns in people.', text:'ADHD detection on the ADHD-200 dataset, comparing Naive Bayes, SVM and Random Forest. And at IBM SkillBuild, a regression model forecasting mental-fitness trends across 15+ countries from 20+ years of data.', chips:['87.2% · Random Forest', '98% · regression'] },
   ],
   education:{
     school:{ name:'Villa Theresa High School', place:'Peddar Road, Mumbai', course:'ICSE Science (Class 10)', score:'91.83%', when:'Jun 2011 — May 2019' },

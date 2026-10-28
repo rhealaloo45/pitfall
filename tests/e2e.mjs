@@ -15,8 +15,8 @@ try {
   const links = await p.$$eval('a', as => as.map(a => a.getAttribute('href')));
   check('menu links to both worlds and the portfolio', ['mumbai.html', 'circuit.html', 'portfolio.html'].every(h => links.includes(h)));
   check('landing: résumé and contact on the first screen', await p.$('#hello a[href="assets/rhea-laloo-resume.pdf"]') && await p.$('#hello a[href^="mailto:"]'));
-  const land = await p.evaluate(() => ({ roles: document.querySelectorAll('#roles .role').length, cards: document.querySelectorAll('#cards .card').length, stops: document.querySelectorAll('#route .stop').length, tools: document.querySelectorAll('#tools dd span').length }));
-  check('landing: experience, work, route and toolkit render from the shared data', land.roles === 3 && land.cards === 6 && land.stops === 4 && land.tools > 10, JSON.stringify(land));
+  const land = await p.evaluate(() => ({ stories: document.querySelectorAll('#stories .story').length, roles: document.querySelectorAll('#roles .role').length, stops: document.querySelectorAll('#route .stop').length, tools: document.querySelectorAll('#tools dd span').length }));
+  check('landing: stories, experience, education and toolkit render from the shared data', land.stories === 5 && land.roles === 3 && land.stops === 4 && land.tools > 10, JSON.stringify(land));
   // the backdrop: Mumbai GP's flight down Marine Drive, advanced by scroll; the chapter rail follows
   const at = (page, sel, dy = 0) => page.evaluate(async ([sel, dy]) => {
     const el = document.querySelector(sel);
@@ -26,17 +26,17 @@ try {
   }, [sel, dy]);
   await p.waitForFunction(() => window.__backdrop, null, { timeout: 10000 });
   await p.waitForFunction(() => performance.getEntriesByType('resource').filter(e => e.name.includes('/assets/reel/')).length >= 120, null, { timeout: 30000 });
-  const b0 = await at(p, '#hello'), b1 = await at(p, '#work'), bA = await at(p, '.say'), bB = await at(p, '.say.two'), bG = await at(p, '#mumbai');
-  check('backdrop: line art at the top, the city renders between the two lines, the car at Mumbai GP', b0.want === 0 && b1.want > 10 && b1.want < 36 && bA.want <= 40 && bB.want >= 80 && bG.want >= 115, [b0, b1, bA, bB, bG].map(x => x.want).join(' → '));
-  check('backdrop: veil darkens behind dense chapters, clears for the reveal', b0.veil < 0.3 && b1.veil > 0.8 && bB.veil < 0.3 && bG.veil < 0.2, [b0, b1, bB, bG].map(x => x.veil).join(' · '));
-  check('rail: follows the chapter', /Hello/.test(b0.ch) && /Work/.test(b1.ch) && /Mumbai GP/.test(bG.ch), [b0.ch, b1.ch, bG.ch].join(' · '));
+  const b0 = await at(p, '#hello'), b1 = await at(p, '.story:nth-of-type(3)'), bA = await at(p, '.say'), bB = await at(p, '.say.two'), bE = await at(p, '#experience', 200), bC = await at(p, '#contact');
+  check('backdrop: line art behind the work, the city renders between the two lines', b0.want === 0 && b1.want > 8 && b1.want < 34 && bA.want <= 40 && bB.want >= 80 && bC.want >= 115, [b0, b1, bA, bB, bC].map(x => x.want).join(' → '));
+  check('backdrop: veil darkens behind dense chapters, clears for the turn', b0.veil < 0.3 && b1.veil < 0.7 && bA.veil < 0.3 && bB.veil < 0.3 && bE.veil > 0.8, [b0, b1, bA, bB, bE].map(x => x.veil).join(' · '));
+  check('rail: follows the chapter', /Hello/.test(b0.ch) && /Work/.test(b1.ch) && /Experience/.test(bE.ch) && /Contact/.test(bC.ch), [b0.ch, b1.ch, bE.ch, bC.ch].join(' · '));
   await p.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, 0); });
   await p.click('.rail a[href="#contact"]');
   await p.waitForTimeout(400);
   const jumped = await p.evaluate(() => { window.__backdrop.update(); return { top: Math.round(document.getElementById('contact').getBoundingClientRect().top), ch: document.querySelector('.rail a.on').textContent }; });
   check('rail: jumps straight to a chapter', jumped.top < 140 && /Contact/.test(jumped.ch), JSON.stringify(jumped));
-  check('landing: Mumbai GP links to the game', await p.$('#mumbai a[href="mumbai.html"]'));
-  check('landing: no sideways scroll', !b0.wide && !bG.wide);
+  check('landing: credits Mumbai GP and links to it', await p.$('footer .credit a[href="mumbai.html"]'));
+  check('landing: no sideways scroll', !b0.wide && !bC.wide);
   check('menu has no errors', errs.length === 0, errs.join('; '));
   await p.close();
 
@@ -45,8 +45,8 @@ try {
   await p.emulateMedia({ reducedMotion: 'reduce' });
   await p.goto(url + '/index.html');
   await p.waitForFunction(() => window.__backdrop, null, { timeout: 10000 });
-  const rm = [await at(p, '#hello', 100), await at(p, '#experience', 200), await at(p, '#mumbai', 100)].map(x => x.want);
-  check('backdrop: reduced motion holds one still per chapter', rm[0] === 0 && rm[1] === 16 && rm[2] === 119, rm.join(' · '));
+  const rm = [await at(p, '#hello', 100), await at(p, '#experience', 200), await at(p, '#contact')].map(x => x.want);
+  check('backdrop: reduced motion holds one still per chapter', rm[0] === 0 && rm[1] === 96 && rm[2] === 119, rm.join(' · '));
   await p.close();
 
   /* ---------- portfolio ---------- */

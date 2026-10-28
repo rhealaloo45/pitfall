@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rhea Laloo — AI Engineer</title>
-<meta name="description" content="Rhea Laloo, AI Engineer at Tata Consultancy Services in Mumbai. LLM tooling, anomaly-detection pipelines and full-stack apps. 9.95 CGPA, 1st rank.">
+<meta name="description" content="Rhea Laloo, AI Engineer at Tata Consultancy Services in Mumbai. I build AI that notices what's wrong — in logs, in code, on roads — before it turns into a problem.">
 <meta name="theme-color" content="#0b0c0f">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Rhea Laloo — AI Engineer">
-<meta property="og:description" content="AI Engineer at TCS in Mumbai: LLM tooling, anomaly-detection pipelines and full-stack apps.">
+<meta property="og:description" content="I build AI that notices what's wrong — in logs, in code, on roads — before it turns into a problem.">
 <meta property="og:image" content="https://rhealaloo45.github.io/pitfall/assets/reel/d/030.webp">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/reel/d/000.webp">
 <style>
-  :root { --ink: #f1efea; --body: #cdc9c1; --dim: #a29e96; --mute: #77736c; --red: #d81f26; --cyan: #39d4ff; --pink: #ff5fa8; --bg: #0b0c0f; --card: rgba(18,20,24,.72); --line: rgba(255,255,255,.1); --font: 'Titillium Web', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  :root { --ink: #f1efea; --body: #d2cec6; --dim: #a6a29a; --mute: #7a766f; --red: #d81f26; --cyan: #39d4ff; --pink: #ff5fa8; --bg: #0b0c0f; --line: rgba(255,255,255,.1); --font: 'Titillium Web', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; scroll-padding-top: 64px; }
   body { font-family: var(--font); color: var(--ink); background: var(--bg) url(assets/reel/d/000.webp) 62% 50% / cover fixed; -webkit-font-smoothing: antialiased; line-height: 1.5; }
@@ -26,13 +26,13 @@
   .skip:focus { left: 12px; }
   .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
-  /* the city behind everything, and a veil whose darkness follows the chapter */
+  /* the city behind everything (src/ui/backdrop.js), and a veil whose darkness follows the chapter */
   #city { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -2; background: var(--bg); opacity: 0; transition: opacity .6s; }
   #city.ready { opacity: 1; }
   #veil { position: fixed; inset: 0; z-index: -1; background: var(--bg); opacity: .82; pointer-events: none; transition: opacity .7s ease; }
 
   /* top bar */
-  .bar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; }
+  .bar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: linear-gradient(rgba(11,12,15,.92), rgba(11,12,15,.6) 60%, rgba(11,12,15,0)); }
   .bar .wrap { height: 64px; display: flex; align-items: center; gap: 16px; }
   .brand { font-weight: 900; font-size: 17px; text-decoration: none; letter-spacing: .01em; }
   .brand span { color: var(--red); }
@@ -40,8 +40,8 @@
   .open i { width: 7px; height: 7px; border-radius: 50%; background: #4fdc8a; box-shadow: 0 0 8px #4fdc8a; }
   .bar .btn { margin-left: auto; }
 
-  /* chapter rail (bottom): where you are, and a jump to anywhere */
-  .rail { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 50; display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 999px; background: rgba(11,12,15,.66); border: 1px solid var(--line); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  /* chapter rail */
+  .rail { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 50; display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 999px; background: rgba(11,12,15,.7); border: 1px solid var(--line); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
   .rail a { display: flex; align-items: center; gap: 7px; text-decoration: none; font-size: 13px; font-weight: 700; color: var(--dim); padding: 7px 12px; border-radius: 999px; transition: background .25s, color .25s; white-space: nowrap; }
   .rail a b { font-size: 11px; color: var(--mute); font-weight: 700; }
   .rail a:hover { color: var(--ink); }
@@ -57,22 +57,20 @@
   .btn.ghost:hover { background: rgba(40,42,48,.7); border-color: rgba(255,255,255,.22); }
   .btn.sm { padding: 8px 14px; font-size: 13.5px; }
 
-  /* chapters */
-  .ch { position: relative; padding-top: 120px; padding-bottom: 40px; }
+  .hello, .story, .say, .ch { position: relative; }
   .k { font-size: 12.5px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; color: var(--red); }
   .k em { font-style: normal; color: var(--dim); margin-right: 10px; }
   h2 { font-size: clamp(32px, 4vw, 48px); font-weight: 900; line-height: 1.04; letter-spacing: -.01em; margin-top: 10px; }
-  .sub { color: var(--dim); font-size: 16px; max-width: 520px; margin-top: 12px; }
-  .head { margin-bottom: 34px; }
+  .sub { color: var(--dim); font-size: 16px; max-width: 540px; margin-top: 12px; }
+  .shadow { text-shadow: 0 2px 24px rgba(0,0,0,.75), 0 0 2px rgba(0,0,0,.6); }
 
-  /* 01 hello */
-  .hello, .gp, .say { position: relative; }
+  /* hello: Mumbai as a machine sees it */
   .hello { min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: center; padding: 110px 0 110px; }
   .hello::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(11,12,15,.94), rgba(11,12,15,.8) 38%, rgba(11,12,15,.25) 66%, rgba(11,12,15,0) 84%); pointer-events: none; }
   .hello .wrap { position: relative; width: 100%; }
   .hello h1 { font-size: clamp(60px, 9.5vw, 124px); font-weight: 900; line-height: .9; letter-spacing: -.02em; margin-top: 18px; }
   .hello h1 span { color: var(--red); }
-  .lead { margin-top: 22px; font-size: clamp(17px, 1.6vw, 20px); line-height: 1.55; color: var(--body); max-width: 560px; }
+  .lead { margin-top: 22px; font-size: clamp(18px, 1.8vw, 22px); line-height: 1.5; color: var(--body); max-width: 600px; }
   .lead b { color: var(--ink); }
   .ctas { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 10px; }
   .stats { margin-top: 56px; display: grid; grid-template-columns: repeat(4, 1fr); max-width: 900px; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
@@ -80,7 +78,30 @@
   .stat b { display: block; font-size: clamp(24px, 2.6vw, 32px); font-weight: 900; line-height: 1.05; }
   .stat span { display: block; margin-top: 6px; font-size: 13.5px; color: var(--dim); line-height: 1.4; }
 
-  /* 02 experience */
+  /* act one: what I've taught machines to notice — one idea per screen, over the line art */
+  .intro { padding-top: 120px; padding-bottom: 10px; }
+  .story { min-height: 78vh; display: flex; align-items: center; padding: 60px 0; }
+  .story::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(11,12,15,.82), rgba(11,12,15,.55) 45%, rgba(11,12,15,0) 80%); pointer-events: none; }
+  .story .wrap { position: relative; width: 100%; }
+  .story .n { display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+  .story .n b { color: var(--cyan); font-size: 14px; }
+  .story:nth-of-type(odd) .n b { color: var(--pink); }
+  .story h3 { margin-top: 16px; font-size: clamp(40px, 6.2vw, 82px); font-weight: 900; line-height: .98; letter-spacing: -.02em; max-width: 920px; }
+  .story p { margin-top: 20px; max-width: 600px; font-size: 17px; line-height: 1.6; color: var(--body); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .chips span { font-size: 13px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: rgba(11,12,15,.7); border: 1px solid var(--line); color: var(--ink); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .chips span:first-child { border-color: rgba(57,212,255,.45); }
+
+  /* the turn: the city renders in between these two lines */
+  .say { min-height: 100vh; min-height: 100svh; display: flex; align-items: center; }
+  .say p { font-size: clamp(44px, 7vw, 96px); font-weight: 900; line-height: 1; letter-spacing: -.02em; }
+  .say p span { color: var(--cyan); }
+  .say.two p span { color: var(--red); }
+  .say small { display: block; margin-top: 18px; font-size: 16px; font-weight: 600; letter-spacing: 0; color: var(--body); }
+
+  /* act two: the person */
+  .ch { padding-top: 120px; padding-bottom: 30px; }
+  .head { margin-bottom: 34px; }
   .role { display: grid; grid-template-columns: 280px 1fr; gap: 32px; padding: 26px 0; border-top: 1px solid var(--line); }
   .role:last-child { border-bottom: 1px solid var(--line); }
   .role .when { font-size: 13px; font-weight: 700; letter-spacing: .08em; color: var(--mute); text-transform: uppercase; }
@@ -91,28 +112,6 @@
   .role li { position: relative; padding-left: 20px; color: var(--body); line-height: 1.6; font-size: 15.5px; }
   .role li::before { content: ''; position: absolute; left: 0; top: .72em; width: 8px; height: 2px; background: var(--red); }
 
-  /* 03 work */
-  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px 22px 20px; display: flex; flex-direction: column; gap: 10px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: border-color .25s, transform .25s; }
-  .card:hover { border-color: rgba(255,255,255,.2); transform: translateY(-2px); }
-  .card .tag { font-size: 11.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
-  .card .tag i { font-style: normal; color: var(--mute); }
-  .card h3 { font-size: 21px; font-weight: 900; line-height: 1.15; }
-  .card p { color: var(--body); font-size: 15px; line-height: 1.6; }
-  .card .m { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14px; font-weight: 700; }
-  .tools { margin-top: 28px; display: grid; gap: 0; }
-  .tools > div { display: grid; grid-template-columns: 200px 1fr; gap: 24px; padding: 14px 0; border-top: 1px solid var(--line); align-items: baseline; }
-  .tools dt { font-weight: 700; color: var(--dim); font-size: 13.5px; letter-spacing: .04em; }
-  .tools dd { display: flex; flex-wrap: wrap; gap: 7px; }
-  .tools dd span { padding: 4px 11px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--line); font-size: 13.5px; font-weight: 600; }
-
-  /* the breather: the city renders in between these two lines */
-  .say { min-height: 100vh; min-height: 100svh; display: flex; align-items: center; }
-  .say p { font-size: clamp(40px, 6.4vw, 84px); font-weight: 900; line-height: 1; letter-spacing: -.02em; max-width: 900px; text-shadow: 0 4px 30px rgba(0,0,0,.6); }
-  .say p span { color: var(--cyan); }
-  .say.two p span { color: var(--red); }
-
-  /* 04 the route */
   .route { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; position: relative; padding-top: 34px; }
   .route::before { content: ''; position: absolute; left: 7px; right: 7px; top: 6px; height: 2px; background: linear-gradient(90deg, var(--cyan), var(--pink) 60%, var(--red)); opacity: .8; }
   .stop { position: relative; }
@@ -120,9 +119,8 @@
   .stop:nth-child(2)::before { border-color: #a58dff; box-shadow: 0 0 12px rgba(165,141,255,.5); }
   .stop:nth-child(3)::before { border-color: var(--pink); box-shadow: 0 0 12px rgba(255,95,168,.5); }
   .stop.now::before { background: var(--red); border-color: var(--red); box-shadow: 0 0 0 5px rgba(216,31,38,.2), 0 0 16px rgba(216,31,38,.7); }
-  .stop .place { font-size: 12px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
-  .stop .when { font-size: 13px; color: var(--mute); margin-top: 2px; }
-  .stop h3 { font-size: 19px; font-weight: 900; line-height: 1.2; margin-top: 10px; }
+  .stop .when { font-size: 12.5px; font-weight: 700; letter-spacing: .16em; color: var(--dim); }
+  .stop h3 { font-size: 19px; font-weight: 900; line-height: 1.2; margin-top: 8px; }
   .stop .course { color: var(--dim); font-size: 14px; margin-top: 2px; }
   .stop .score { display: block; margin-top: 12px; font-size: 28px; font-weight: 900; line-height: 1; }
   .stop .score small { font-size: 14px; color: var(--dim); font-weight: 700; }
@@ -130,28 +128,24 @@
   .awards { margin-top: 44px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 32px; list-style: none; }
   .awards li { padding: 13px 0 13px 30px; border-top: 1px solid var(--line); color: var(--body); position: relative; font-size: 15px; }
   .awards li::before { content: '★'; position: absolute; left: 4px; top: 12px; color: #e8b33c; font-size: 14px; }
+  .tools { margin-top: 36px; }
+  .tools > div { display: grid; grid-template-columns: 200px 1fr; gap: 24px; padding: 14px 0; border-top: 1px solid var(--line); align-items: baseline; }
+  .tools > div:last-child { border-bottom: 1px solid var(--line); }
+  .tools dt { font-weight: 700; color: var(--dim); font-size: 13.5px; letter-spacing: .04em; }
+  .tools dd { display: flex; flex-wrap: wrap; gap: 7px; }
+  .tools dd span { padding: 4px 11px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--line); font-size: 13.5px; font-weight: 600; }
 
-  /* 05 Mumbai GP: the backdrop turns out to be the game */
-  .gp { min-height: 100vh; min-height: 100svh; display: flex; align-items: flex-end; padding: 120px 0 120px; }
-  .gp::before { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(11,12,15,.95), rgba(11,12,15,.78) 38%, rgba(11,12,15,.25) 68%, rgba(11,12,15,0) 88%); pointer-events: none; }
-  .gp h2, .gp .k { text-shadow: 0 2px 24px rgba(0,0,0,.7); }
-  .gp .wrap { position: relative; width: 100%; }
-  .gp h2 { font-size: clamp(38px, 5.4vw, 68px); max-width: 760px; }
-  .gp p { margin-top: 16px; max-width: 620px; color: var(--body); font-size: 17px; line-height: 1.6; }
-  .gp p b { color: var(--ink); }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-  .chips span { font-size: 12.5px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: rgba(11,12,15,.6); border: 1px solid var(--line); color: var(--body); }
-
-  /* 06 contact */
-  .contact { padding: 56px 48px; border-radius: 20px; background: radial-gradient(700px 300px at 100% 0%, rgba(216,31,38,.22), transparent 70%), rgba(18,20,24,.8); border: 1px solid var(--line); display: grid; grid-template-columns: 1.2fr .8fr; gap: 40px; align-items: center; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-  .contact h2 { margin-top: 10px; font-size: clamp(32px, 4.4vw, 52px); }
+  .contact { padding: 56px 48px; border-radius: 20px; background: radial-gradient(700px 300px at 100% 0%, rgba(216,31,38,.22), transparent 70%), rgba(18,20,24,.82); border: 1px solid var(--line); display: grid; grid-template-columns: 1.2fr .8fr; gap: 40px; align-items: center; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .contact h2 { font-size: clamp(32px, 4.4vw, 52px); }
   .contact p { margin-top: 14px; color: var(--body); font-size: 17px; }
   .contact dl { display: grid; grid-template-columns: auto 1fr; gap: 10px 18px; font-size: 15px; }
   .contact dt { color: var(--mute); font-weight: 700; }
   .contact dd a { text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.25); }
   .contact dd a:hover { border-bottom-color: #fff; }
-  footer { padding: 36px 0 110px; font-size: 13px; color: var(--mute); display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  footer { padding: 36px 0 110px; font-size: 13.5px; color: var(--mute); display: grid; gap: 10px; }
   footer a { color: var(--dim); }
+  footer .credit { color: var(--dim); }
+  footer .credit a { color: var(--ink); font-weight: 700; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.3); }
 
   /* gentle reveal (only with script, not with reduced motion) */
   .js .rv { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
@@ -159,7 +153,6 @@
   @media (prefers-reduced-motion: reduce) { .js .rv { opacity: 1; transform: none; transition: none; } html { scroll-behavior: auto; } }
 
   @media (max-width: 980px) {
-    .cards { grid-template-columns: 1fr 1fr; }
     .route { grid-template-columns: 1fr 1fr; row-gap: 40px; }
     .route::before { display: none; }
     .contact { grid-template-columns: 1fr; padding: 40px 28px; }
@@ -174,14 +167,15 @@
     .stats { grid-template-columns: 1fr 1fr; margin-top: 40px; }
     .stat { padding: 15px 15px 17px; }
     .stat b { font-size: 22px; white-space: nowrap; }
-    .ch { padding-top: 96px; }
-    .gp { padding-bottom: 100px; }
+    .intro, .ch { padding-top: 96px; }
+    .story { min-height: 70vh; }
+    .story::before { background: rgba(11,12,15,.45); }
+    .story p { font-size: 16px; }
     .role, .tools > div { grid-template-columns: 1fr; gap: 10px; }
-    .cards, .awards { grid-template-columns: 1fr; }
+    .awards { grid-template-columns: 1fr; }
     .route { grid-template-columns: 1fr; row-gap: 30px; padding: 0 0 0 30px; }
     .route::before { display: block; left: 6px; right: auto; top: 8px; bottom: 8px; width: 2px; height: auto; background: linear-gradient(var(--cyan), var(--pink) 60%, var(--red)); }
     .stop::before { left: -30px; top: 3px; }
-    .say p { font-size: 44px; }
     .rail { bottom: 12px; max-width: calc(100vw - 24px); }
     .rail a { padding: 8px 9px; font-size: 12.5px; }
   }
@@ -189,7 +183,7 @@
 </head>
 <body>
 <script>document.documentElement.classList.add('js');</script>
-<a class="skip" href="#experience">Skip to experience</a>
+<a class="skip" href="#work">Skip to work</a>
 <canvas id="city" aria-hidden="true"></canvas>
 <div id="veil" aria-hidden="true"></div>
 
@@ -203,20 +197,19 @@
 
 <nav class="rail" aria-label="Chapters">
   <a href="#hello"><b>01</b><span>Hello</span></a>
-  <a href="#experience"><b>02</b><span>Experience</span></a>
-  <a href="#work"><b>03</b><span>Work</span></a>
-  <a href="#education"><b>04</b><span>Route</span></a>
-  <a href="#mumbai"><b>05</b><span>Mumbai GP</span></a>
-  <a href="#contact"><b>06</b><span>Contact</span></a>
+  <a href="#work"><b>02</b><span>Work</span></a>
+  <a href="#experience"><b>03</b><span>Experience</span></a>
+  <a href="#education"><b>04</b><span>Education</span></a>
+  <a href="#contact"><b>05</b><span>Contact</span></a>
   <i class="track"><span class="fill"></span></i>
 </nav>
 
 <main id="main">
   <section class="hello" id="hello" data-frame="0" data-veil="0.12" aria-labelledby="h-hello">
     <div class="wrap">
-      <div class="k"><em>01</em>AI Engineer · Mumbai</div>
+      <div class="k">Mumbai, as a machine sees it</div>
       <h1 id="h-hello">Rhea<br>Laloo<span>.</span></h1>
-      <p class="lead">I build <b>LLM tooling</b> and <b>anomaly-detection pipelines</b> at Tata Consultancy Services, and full-stack apps that people actually use.</p>
+      <p class="lead">AI Engineer at Tata Consultancy Services. I build <b>AI that notices what's wrong</b> (in logs, in code, on roads) before it turns into a problem.</p>
       <div class="ctas">
         <a class="btn" href="assets/rhea-laloo-resume.pdf" download="Rhea-Laloo-Resume.pdf">Download résumé</a>
         <a class="btn ghost" href="mailto:rhea.laloo@tcs.com">Email me</a>
@@ -232,40 +225,33 @@
     </div>
   </section>
 
-  <section class="ch wrap" id="experience" data-frame="16" data-veil="0.88" aria-labelledby="h-exp">
-    <div class="head rv"><div class="k"><em>02</em>Experience</div><h2 id="h-exp">Where I've worked</h2></div>
+  <section id="work" aria-labelledby="h-work">
+    <div class="intro wrap" data-frame="6" data-veil="0.55">
+      <div class="k shadow"><em>02</em>Work</div>
+      <h2 id="h-work" class="shadow">What I've taught machines to notice</h2>
+    </div>
+    <div id="stories"></div>
+  </section>
+
+  <div class="say wrap" data-frame="36" data-veil="0.1"><p class="rv shadow">A machine sees<br><span>edges.</span></p></div>
+  <div class="say two wrap" data-frame="84" data-veil="0.16"><p class="rv shadow">I see<br><span>home.</span><small>Mumbai, where all of this started.</small></p></div>
+
+  <section class="ch wrap" id="experience" data-frame="96" data-veil="0.88" aria-labelledby="h-exp">
+    <div class="head rv"><div class="k"><em>03</em>Experience</div><h2 id="h-exp">Where I build it</h2></div>
     <div id="roles"></div>
   </section>
 
-  <section class="ch wrap" id="work" data-frame="28" data-veil="0.88" aria-labelledby="h-work">
-    <div class="head rv"><div class="k"><em>03</em>Work</div><h2 id="h-work">Things I've built</h2><p class="sub">ML pipelines, LLM tooling, IoT and mobile, from production at TCS to award-winning college projects.</p></div>
-    <div class="cards" id="cards"></div>
-    <dl class="tools rv" id="tools" aria-label="Toolkit"></dl>
-  </section>
-
-  <div class="say wrap" data-frame="36" data-veil="0.12"><p class="rv">Every build starts<br>as a <span>sketch.</span></p></div>
-  <div class="say two wrap" data-frame="84" data-veil="0.18"><p class="rv">And ships as<br>the <span>real thing.</span></p></div>
-
-  <section class="ch wrap" id="education" data-frame="96" data-veil="0.86" aria-labelledby="h-edu">
-    <div class="head rv"><div class="k"><em>04</em>The route</div><h2 id="h-edu">Peddar Road → Churchgate → Sion</h2><p class="sub">School and college across Mumbai, top of the class at each stop, then straight into AI engineering.</p></div>
+  <section class="ch wrap" id="education" data-frame="108" data-veil="0.86" aria-labelledby="h-edu">
+    <div class="head rv"><div class="k"><em>04</em>Education</div><h2 id="h-edu">Where I learned to look</h2></div>
     <ol class="route rv" id="route"></ol>
     <ul class="awards rv" id="awards"></ul>
-  </section>
-
-  <section class="gp" id="mumbai" data-frame="119" data-veil="0.04" aria-labelledby="h-gp">
-    <div class="wrap rv">
-      <div class="k"><em>05</em>Mumbai GP</div>
-      <h2 id="h-gp">You've been scrolling through it.</h2>
-      <p>The city behind this page is <b>Mumbai GP</b>, a drivable Mumbai I built from scratch in three.js: procedurally generated streets and buildings, 120 Hz car physics and a custom render pipeline. Villa Theresa, K. C. College and KJSIT are all in it, and so is this portfolio.</p>
-      <div class="chips"><span>three.js · WebGL</span><span>Procedural generation</span><span>Vehicle physics</span><span>Playwright tests</span></div>
-      <div class="ctas"><a class="btn" href="mumbai.html">Drive Mumbai GP</a><a class="btn ghost" href="circuit.html">Original F1 circuit</a></div>
-    </div>
+    <dl class="tools rv" id="tools" aria-label="Toolkit"></dl>
   </section>
 
   <div class="ch wrap" data-frame="119" data-veil="0.86">
     <section class="contact rv" id="contact" aria-labelledby="h-contact">
       <div>
-        <div class="k"><em>06</em>Contact</div>
+        <div class="k"><em>05</em>Contact</div>
         <h2 id="h-contact">Let's build something.</h2>
         <p>Open to AI/ML engineering roles and interesting collaborations.</p>
         <div class="ctas">
@@ -281,13 +267,13 @@
       </dl>
     </section>
     <footer>
-      <span>© Rhea Laloo · Built by hand with three.js, no build step. <a href="ASSETS.md">Assets &amp; licences</a></span>
-      <span><a href="portfolio.html">Printable one-page version</a> · <a href="mumbai.html">Mumbai GP</a> · <a href="circuit.html">Original circuit</a></span>
+      <span class="credit">The city behind this page is from <a href="mumbai.html">Mumbai GP</a>, a drivable Mumbai I built from scratch in three.js. Take it for a spin.</span>
+      <span>© Rhea Laloo · <a href="portfolio.html">Printable one-page version</a> · <a href="circuit.html">Original F1 circuit</a> · <a href="ASSETS.md">Assets &amp; licences</a></span>
     </footer>
   </div>
 </main>
 
-<script src="src/shared/portfolio-data.js?v=3"></script>
+<script src="src/shared/portfolio-data.js?v=4"></script>
 <script>
 (function () {
   var R = window.PORTFOLIO && window.PORTFOLIO.RESUME; if (!R) return;
@@ -295,28 +281,31 @@
   var $ = function (id) { return document.getElementById(id); };
   var years = function (w) { var y = String(w).match(/\d{4}/g) || []; return y.length > 1 ? y[0] + ' — ' + y[1] : (y[0] || '') + (/present/i.test(w) ? ' — now' : ''); };
 
+  // act one: one thing taught to a machine per screen; the line art drifts behind them
+  var S = R.stories || [];
+  $('stories').innerHTML = S.map(function (s, i) {
+    return '<article class="story" data-frame="' + Math.round(8 + i * 5.5) + '" data-veil="0.55"><div class="wrap rv">' +
+      '<div class="n shadow"><b>' + String(i + 1).padStart(2, '0') + '</b>' + esc(s.tag) + '</div>' +
+      '<h3 class="shadow">' + esc(s.title) + '</h3><p class="shadow">' + esc(s.text) + '</p>' +
+      '<div class="chips">' + s.chips.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') + '</div></div></article>';
+  }).join('');
+
   $('roles').innerHTML = R.experience.map(function (x, i) {
     return '<article class="role rv"><div><div class="when">' + esc(x.when) + '</div><h3>' + esc(x.org) + '</h3><div class="r">' + esc(x.role) + '</div>' +
       (i === 0 ? '<span class="now">Current</span>' : '') + '</div><ul>' + x.points.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul></article>';
   }).join('');
 
-  $('cards').innerHTML = (R.highlights || []).map(function (h) {
-    return '<article class="card rv"><div class="tag">' + esc(h.tag) + (h.where ? ' <i>· ' + esc(h.where) + '</i>' : '') + '</div><h3>' + esc(h.name) + '</h3><p>' + esc(h.text) + '</p><div class="m">' + esc(h.metric) + '</div></article>';
-  }).join('');
-
-  $('tools').innerHTML = Object.keys(R.skills).map(function (k) {
-    return '<div><dt>' + esc(k) + '</dt><dd>' + R.skills[k].split(', ').map(function (s) { return '<span>' + esc(s) + '</span>'; }).join('') + '</dd></div>';
-  }).join('');
-
-  // education as stops along a route across the city, ending at the current job
   var E = R.education, job = R.experience[0];
   $('route').innerHTML = [E.school, E.junior, E.college].map(function (e) {
     var s = e.score.split(' — '), main = s[0], note = s[1] || '', cg = /^CGPA /.test(main);
-    return '<li class="stop"><div class="place">' + esc(e.place.split(',')[0]) + '</div><div class="when">' + esc(years(e.when)) + '</div><h3>' + esc(e.name) + '</h3><div class="course">' + esc(e.course) + '</div>' +
+    return '<li class="stop"><div class="when">' + esc(years(e.when)) + '</div><h3>' + esc(e.name) + '</h3><div class="course">' + esc(e.course) + '</div>' +
       '<b class="score">' + esc(main.replace('CGPA ', '')) + (cg ? ' <small>CGPA</small>' : '') + '</b>' + (note ? '<div class="note">' + esc(note.charAt(0).toUpperCase() + note.slice(1)) + '</div>' : '') + '</li>';
-  }).join('') + '<li class="stop now"><div class="place">Now</div><div class="when">' + esc(years(job.when)) + '</div><h3>' + esc(job.org) + '</h3><div class="course">' + esc(job.role) + '</div><div class="note" style="margin-top:12px">LLM tooling, log anomaly detection and security analysis.</div></li>';
+  }).join('') + '<li class="stop now"><div class="when">' + esc(years(job.when)) + '</div><h3>' + esc(job.org) + '</h3><div class="course">' + esc(job.role) + '</div><div class="note" style="margin-top:12px">Putting it to work: anomaly detection, LLM security analysis and chub-guard.</div></li>';
 
   $('awards').innerHTML = R.achievements.filter(function (a) { return !/^Secured 1st rank/.test(a); }).map(function (a) { return '<li>' + esc(a.replace(/\.$/, '')) + '</li>'; }).join('');
+  $('tools').innerHTML = Object.keys(R.skills).map(function (k) {
+    return '<div><dt>' + esc(k) + '</dt><dd>' + R.skills[k].split(', ').map(function (s) { return '<span>' + esc(s) + '</span>'; }).join('') + '</dd></div>';
+  }).join('');
 
   if ('IntersectionObserver' in window) {
     var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, { rootMargin: '0px 0px -8% 0px' });
