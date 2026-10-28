@@ -36,6 +36,15 @@ try {
   await p.waitForTimeout(700);
   const jumped = await p.evaluate(() => ({ top: Math.round(document.getElementById('contact').getBoundingClientRect().top), hash: location.hash, h: innerHeight }));
   check('rail: jumps straight to a chapter', jumped.hash === '#contact' && jumped.top >= 0 && jumped.top < jumped.h * 0.8, JSON.stringify(jumped));
+  // act two: the car keeps driving behind the rest of the page (Marine Drive at night), under a readable veil
+  const behind = sel => p.evaluate(async sel => {
+    const el = document.querySelector(sel); scrollTo({ top: el.getBoundingClientRect().top + scrollY - innerHeight * 0.3, behavior: 'instant' });
+    await new Promise(r => setTimeout(r, 80)); window.__story.snap();
+    return { t: +window.__story.t().toFixed(2), z: Math.round(window.__story.car().z), veil: +document.getElementById('veil').style.opacity };
+  }, sel);
+  const bE = await behind('#experience'), bM = await behind('#onemore');
+  check('drive: the car drives on behind Experience, under a veil', bE.t > 1 && bE.veil > 0.6, JSON.stringify(bE));
+  check('drive: "One more thing" clears the veil on Marine Drive', bM.t > 1.8 && bM.veil < 0.1 && bM.z > bE.z, JSON.stringify(bM));
   check('landing: "One more thing." links to Mumbai GP', await p.$('#onemore a[href="mumbai.html"]'));
   check('landing: no sideways scroll', !d0.wide && !dA.wide);
   check('menu has no errors', errs.length === 0, errs.join('; '));
