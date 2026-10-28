@@ -24,9 +24,11 @@ export function serve(port = 0) {
   });
 }
 
-export async function launch({ width = 1280, height = 720 } = {}) {
+export async function launch({ width = 1280, height = 720, gpu = false } = {}) {
   const { chromium } = require('playwright');
-  const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  // gpu: the real GPU (Metal on macOS), used by the frame-capture tool; tests use SwiftShader so they run anywhere
+  const args = gpu ? ['--use-angle=metal', '--ignore-gpu-blocklist', '--enable-gpu'] : ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
+  const browser = await chromium.launch({ args });
   const ctx = await browser.newContext({ viewport: { width, height } });
   await ctx.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());
   await ctx.route(/cdn\.jsdelivr\.net\/npm\/three@0\.160\.0\/(.*)/, r => {

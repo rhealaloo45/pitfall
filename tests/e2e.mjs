@@ -6,6 +6,7 @@ const results = [];
 const check = (name, ok, info = '') => { results.push({ name, ok: !!ok, info }); console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}${info ? ' — ' + info : ''}`); };
 const { srv, url } = await serve();
 const { browser, ctx } = await launch({ width: 960, height: 540 });
+const innerHeightOf = h => h * 1.6;   // a pinned reel is several screens tall; a still one is under ~1.6
 const pageErrors = page => { const errs = []; page.on('pageerror', e => errs.push(e.message)); page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errs.push(m.text().slice(0, 200)); }); return errs; };
 
 try {
@@ -15,7 +16,32 @@ try {
   const links = await p.$$eval('a', as => as.map(a => a.getAttribute('href')));
   check('menu links to both worlds and the portfolio', ['mumbai.html', 'circuit.html', 'portfolio.html'].every(h => links.includes(h)));
   check('menu previews exist', (await p.$$eval('.shot', s => s.length)) === 2);
+  // scroll reel: frames scrub with scroll, then the picture lands in the laptop with the call to action
+  const reelAt = (page, f) => page.evaluate(async f => {
+    const sec = document.querySelector('section.reel'), t = sec.querySelector('.reel-track');
+    scrollTo(0, t.getBoundingClientRect().top + scrollY + (t.offsetHeight - innerHeight) * f);
+    await new Promise(r => setTimeout(r, 120)); sec.reel.update();
+    const cta = sec.querySelector('.acts');
+    return { frame: sec.reel.frame(), total: sec.reel.total, tf: sec.querySelector('.reel-device').style.transform, cta: +getComputedStyle(cta).opacity, wide: document.documentElement.scrollWidth > innerWidth };
+  }, f);
+  await p.waitForFunction(() => document.querySelector('section.reel').reel, null, { timeout: 10000 });
+  await reelAt(p, 0);
+  await p.waitForFunction(() => performance.getEntriesByType('resource').filter(e => e.name.includes('/assets/reel/')).length >= 120, null, { timeout: 30000 });
+  const r0 = await reelAt(p, 0), r5 = await reelAt(p, 0.39), r1 = await reelAt(p, 1);
+  check('reel: frames scrub with scroll', r0.frame === 0 && r5.frame > 40 && r5.frame < 80 && r1.frame === r1.total - 1, `${r0.frame} → ${r5.frame} → ${r1.frame}`);
+  const sc = tf => +(/scale\(([\d.]+)\)/.exec(tf) || [0, 0])[1];
+  check('reel: starts full-bleed, lands in the laptop', sc(r0.tf) > 1.1 && sc(r1.tf) === 1, `scale ${sc(r0.tf)} → ${sc(r1.tf)}`);
+  check('reel: call to action appears at the end', r0.cta < 0.05 && r1.cta > 0.95);
+  check('reel: no sideways scroll', !r0.wide && !r1.wide);
   check('menu has no errors', errs.length === 0, errs.join('; '));
+  await p.close();
+
+  // reduced motion: no pinning, the finished frame in its frame
+  p = await ctx.newPage(); errs = pageErrors(p);
+  await p.emulateMedia({ reducedMotion: 'reduce' });
+  await p.goto(url + '/index.html');
+  const rm = await p.evaluate(() => { const s = document.querySelector('section.reel'); return { cls: s.className, h: s.querySelector('.reel-track').offsetHeight, poster: +getComputedStyle(s.querySelector('.reel-poster')).opacity }; });
+  check('reel: reduced motion shows a still, unpinned', /reel-static/.test(rm.cls) && rm.h < innerHeightOf(540) && rm.poster === 1, `${rm.cls} · ${rm.h}px`);
   await p.close();
 
   /* ---------- portfolio ---------- */
@@ -24,6 +50,10 @@ try {
   const items = await p.$$eval('.item', x => x.length);
   check('portfolio renders resume content', items >= 9, `${items} items`);
   check('portfolio résumé link', await p.$('a[href="assets/rhea-laloo-resume.pdf"]'));
+  await p.waitForFunction(() => document.querySelector('section.reel').reel, null, { timeout: 10000 });
+  const pr = await reelAt(p, 1);
+  check('portfolio: short reel plays every other frame and lands', pr.total === 61 && pr.frame === 60 && pr.cta > 0.95, `${pr.frame}/${pr.total}`);
+  check('portfolio: reel links to Mumbai GP', await p.$('.reel a[href="mumbai.html"]'));
   check('portfolio has no errors', errs.length === 0, errs.join('; '));
   await p.close();
 

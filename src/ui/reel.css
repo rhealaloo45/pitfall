@@ -1,0 +1,66 @@
+/* Scroll reel (src/ui/reel.js). --k (0 → 1) is the shrink progress, set by the script. */
+.reel { position: relative; color: #f1efea; --k: 1; }
+.reel-copy { text-align: center; max-width: 780px; margin: 0 auto; padding: 96px 24px 56px; }
+.reel-copy .kick { font-size: 13px; font-weight: 700; letter-spacing: .32em; text-transform: uppercase; color: #9b978f; }
+.reel-copy h2 { font-size: clamp(34px, 5.6vw, 64px); font-weight: 900; line-height: 1.02; margin-top: 14px; letter-spacing: -.01em; }
+.reel-copy h2 span { color: #c8151d; }
+.reel-copy p { margin: 18px auto 0; max-width: 620px; font-size: 17px; line-height: 1.6; color: #a9a59d; }
+
+.reel-track { position: relative; height: 460vh; }
+.reel-sticky { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(18px, 3.2vh, 34px); }
+.reel-backdrop { position: absolute; inset: 0; background: #000; pointer-events: none; }
+
+.reel-device { position: relative; z-index: 1; width: min(880px, 86vw, 128vh); will-change: transform; }
+.reel-screen { position: relative; background: rgba(10, 10, 12, var(--k)); border-radius: 18px 18px 6px 6px; padding: 1.5% 1.5% 2.2%; box-shadow: 0 0 0 1px rgba(42, 43, 48, var(--k)) inset, 0 30px 80px rgba(0, 0, 0, calc(.55 * var(--k))); }
+.reel-glass { position: relative; aspect-ratio: 16 / 9; background: #000; border-radius: 4px; overflow: hidden; container-type: inline-size; }
+.reel-glass canvas, .reel-poster { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
+.reel-js .reel-poster { opacity: 0; }
+.reel-js.reel-static .reel-poster { opacity: 1; }
+.reel-base { position: relative; width: 116%; left: -8%; height: clamp(9px, 1.7vw, 16px); background: linear-gradient(#45464b, #26272b 45%, #121215); border-radius: 2px 2px 14px 14px / 2px 2px 100% 100%; opacity: var(--k); }
+.reel-base::before { content: ''; position: absolute; left: 50%; top: 0; width: 15%; height: 42%; transform: translateX(-50%); background: #18191c; border-radius: 0 0 8px 8px; }
+.reel-device::after { content: ''; position: absolute; left: -10%; right: -10%; bottom: -34px; height: 40px; background: radial-gradient(50% 50% at 50% 30%, rgba(0, 0, 0, .7), transparent 70%); opacity: var(--k); pointer-events: none; }
+
+/* a slice of the game's HUD appears on the laptop screen as it lands */
+.reel-hud { position: absolute; inset: 0; opacity: calc(var(--k) * var(--k)); pointer-events: none; font-family: inherit; color: #fff; }
+.reel-hud .lap { position: absolute; right: 2.4cqw; top: 2.2cqw; width: 19cqw; background: rgba(12, 14, 18, .72); border-radius: .6cqw; overflow: hidden; font-size: 1.25cqw; }
+.reel-hud .lap div { display: flex; justify-content: space-between; padding: .55cqw 1.1cqw; }
+.reel-hud .lap div:first-child { background: #c8151d; font-weight: 900; letter-spacing: .14em; font-size: 1.05cqw; }
+.reel-hud .speed { position: absolute; right: 2.6cqw; bottom: 2.4cqw; display: flex; align-items: flex-end; gap: 1.4cqw; }
+.reel-hud .num { font-size: 6cqw; font-weight: 900; line-height: .85; text-align: right; text-shadow: 0 .2cqw 1.2cqw rgba(0, 0, 0, .6); }
+.reel-hud .unit { font-size: 1cqw; letter-spacing: .3em; color: #b9b5ad; text-align: right; margin-top: .6cqw; }
+.reel-hud .gear { width: 6cqw; height: 6cqw; border-radius: 50%; border: .3cqw solid rgba(255, 255, 255, .2); display: grid; place-items: center; font-size: 3.2cqw; font-weight: 900; background: rgba(10, 12, 16, .55); }
+.reel-hud .mini { position: absolute; left: 2.2cqw; bottom: 2.2cqw; width: 15cqw; height: 15cqw; border-radius: 50%; background: radial-gradient(circle at 50% 50%, #3a3d42 0 7%, transparent 8%), conic-gradient(from 200deg, #1c2c36 0 38%, #2c2f33 38% 100%); box-shadow: 0 0 0 .25cqw rgba(255, 255, 255, .15) inset; }
+.reel-hud .mini::after { content: ''; position: absolute; left: 50%; top: 50%; width: 0; height: 0; border-left: .9cqw solid transparent; border-right: .9cqw solid transparent; border-bottom: 2cqw solid #fff; transform: translate(-50%, -60%); }
+
+.reel-caption { position: relative; z-index: 2; text-align: center; padding: 0 24px; }
+.reel-caption p { font-size: 15px; color: #a9a59d; }
+.reel-caption .acts { margin-top: 14px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.reel-js:not(.reel-static) [data-reel-fade] { opacity: 0; }
+
+/* reduced motion / no script: no pinning, the finished frame in its device */
+.reel-static .reel-track, .reel:not(.reel-js) .reel-track { height: auto; }
+.reel-static .reel-sticky, .reel:not(.reel-js) .reel-sticky { position: relative; height: auto; padding: 10px 0 70px; }
+.reel-static .reel-backdrop, .reel:not(.reel-js) .reel-backdrop { display: none; }
+.reel-static .reel-glass canvas { display: none; }
+
+/* short variant (portfolio page): a rounded screen on the light page, the black backdrop fades away as it lands */
+.reel--short { color: #23202b; }
+.reel--short .reel-track { height: 300vh; }
+.reel--short .reel-device { width: min(760px, 88vw, 118vh); }
+.reel--short .reel-screen { padding: 0; border-radius: 16px; background: #000; box-shadow: 0 24px 70px rgba(35, 32, 43, calc(.28 * var(--k))); }
+.reel--short .reel-glass { border-radius: 16px; }
+.reel--short .reel-base, .reel--short .reel-device::after { display: none; }
+.reel--short .reel-caption p { color: #6c6577; }
+.reel--short .reel-caption b { display: block; color: #23202b; font-size: 18px; margin-bottom: 2px; }
+.reel--short .reel-caption a { display: inline-block; background: #c8151d; color: #fff; text-decoration: none; padding: 11px 20px; border-radius: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; font-size: 13px; }
+.reel--short .reel-caption a.alt { background: #fff; color: #23202b; border: 1px solid #e6e1d9; }
+.reel--short.reel-static .reel-sticky, .reel--short:not(.reel-js) .reel-sticky { padding: 34px 0 60px; }
+
+@media (max-width: 760px) {
+  .reel-track { height: 380vh; }
+  .reel--short .reel-track { height: 260vh; }
+  .reel-copy { padding: 64px 20px 36px; }
+  .reel-copy p { font-size: 15.5px; }
+  .reel-hud .lap, .reel-hud .mini { display: none; }
+}
+@media print { .reel { display: none; } }

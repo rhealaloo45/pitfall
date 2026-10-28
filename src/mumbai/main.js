@@ -121,7 +121,7 @@ async function boot() {
   wireUI();
   wirePlay();
   state.mode = 'ready';
-  window.__game = { sim, world, state, rig, camera, input, nav, atmo, startDrive, recover, renderer, scene, advanceSim, openPanel, closePanel, fastTravel, bigmapPick: (x, y, r) => bigmap.pick(x, y, r), pipeline, render };   // debugging / automated tests
+  window.__game = { sim, world, state, rig, camera, input, nav, atmo, car, carPose, startDrive, recover, renderer, scene, advanceSim, openPanel, closePanel, fastTravel, bigmapPick: (x, y, r) => bigmap.pick(x, y, r), pipeline, render };   // debugging / automated tests
   requestAnimationFrame(loop);
 }
 
