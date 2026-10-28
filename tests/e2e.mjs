@@ -15,39 +15,39 @@ try {
   const links = await p.$$eval('a', as => as.map(a => a.getAttribute('href')));
   check('menu links to both worlds and the portfolio', ['mumbai.html', 'circuit.html', 'portfolio.html'].every(h => links.includes(h)));
   check('landing: résumé and contact on the first screen', await p.$('#hello a[href="assets/rhea-laloo-resume.pdf"]') && await p.$('#hello a[href^="mailto:"]'));
-  const land = await p.evaluate(() => ({ stories: document.querySelectorAll('#stories .story').length, roles: document.querySelectorAll('#roles .role').length, stops: document.querySelectorAll('#route .stop').length, tools: document.querySelectorAll('#tools dd span').length }));
+  const land = await p.evaluate(() => ({ stories: document.querySelectorAll('#beats .story').length, roles: document.querySelectorAll('#roles .role').length, stops: document.querySelectorAll('#route .stop').length, tools: document.querySelectorAll('#tools dd span').length }));
   check('landing: stories, experience, education and toolkit render from the shared data', land.stories === 5 && land.roles === 3 && land.stops === 4 && land.tools > 10, JSON.stringify(land));
-  // the backdrop: Mumbai GP's flight down Marine Drive, advanced by scroll; the chapter rail follows
-  const at = (page, sel, dy = 0) => page.evaluate(async ([sel, dy]) => {
-    const el = document.querySelector(sel);
-    scrollTo({ top: el.getBoundingClientRect().top + scrollY + dy, behavior: 'instant' });
-    await new Promise(r => setTimeout(r, 150)); window.__backdrop.update();
-    return { want: window.__backdrop.want(), veil: +document.getElementById('veil').style.opacity, ch: (document.querySelector('.rail a.on') || {}).textContent, wide: document.documentElement.scrollWidth > innerWidth };
-  }, [sel, dy]);
-  await p.waitForFunction(() => window.__backdrop, null, { timeout: 10000 });
-  await p.waitForFunction(() => performance.getEntriesByType('resource').filter(e => e.name.includes('/assets/reel/')).length >= 120, null, { timeout: 30000 });
-  const b0 = await at(p, '#hello'), b1 = await at(p, '.story:nth-of-type(3)'), bA = await at(p, '.say'), bB = await at(p, '.say.two'), bE = await at(p, '#experience', 200), bC = await at(p, '#contact');
-  check('backdrop: line art behind the work, the city renders between the two lines', b0.want === 0 && b1.want > 8 && b1.want < 34 && bA.want <= 40 && bB.want >= 80 && bC.want >= 115, [b0, b1, bA, bB, bC].map(x => x.want).join(' → '));
-  check('backdrop: veil darkens behind dense chapters, clears for the turn', b0.veil < 0.3 && b1.veil < 0.7 && bA.veil < 0.3 && bB.veil < 0.3 && bE.veil > 0.8, [b0, b1, bA, bB, bE].map(x => x.veil).join(' · '));
-  check('rail: follows the chapter', /Hello/.test(b0.ch) && /Work/.test(b1.ch) && /Experience/.test(bE.ch) && /Contact/.test(bC.ch), [b0.ch, b1.ch, bE.ch, bC.ch].join(' · '));
-  await p.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, 0); });
+  // the drive: a scroll-driven 3D scene; line art at the top, then each project's "noticing" drawn as boxes
+  const at = (page, p) => page.evaluate(async p => {
+    const t = document.getElementById('story'), span = t.offsetHeight - innerHeight;
+    scrollTo({ top: t.offsetTop + span * p, behavior: 'instant' });
+    await new Promise(r => setTimeout(r, 80)); window.__story.snap();
+    return { ink: +window.__story.ink().toFixed(2), boxes: window.__story.boxes(), alert: +(getComputedStyle(document.querySelector('.stage')).getPropertyValue('--alert') || 0), ch: (document.querySelector('.rail a.on') || {}).textContent, wide: document.documentElement.scrollWidth > innerWidth };
+  }, p);
+  await p.waitForFunction(() => window.__story, null, { timeout: 60000 });
+  const d0 = await at(p, 0), dH = await at(p, 0.2), dC = await at(p, 0.4), dP = await at(p, 0.56), dR = await at(p, 0.82), dA = await at(p, 0.97);
+  check('drive: opens as black-and-white line art, colour by the first project', d0.ink === 1 && dH.ink === 0, `ink ${d0.ink} → ${dH.ink}`);
+  check('drive: potholes, cows and people get detection boxes', dH.boxes.includes('pothole') && dC.boxes.some(b => b.startsWith('cow')) && dP.boxes.includes('person'), [dH, dC, dP].map(x => x.boxes.length).join(' · '));
+  check('drive: the room has no boxes; the attack turns it red', dR.boxes.length === 0 && dR.alert === 0 && dA.alert > 0.2, `alert ${dR.alert} → ${dA.alert}`);
+  check('rail: follows the chapter', /Hello/.test(d0.ch) && /Work/.test(dH.ch), [d0.ch, dH.ch].join(' · '));
+  await p.evaluate(async () => { await document.fonts.ready; document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, 0); });
+  await p.waitForTimeout(300);
   await p.click('.rail a[href="#contact"]');
-  await p.waitForTimeout(400);
-  const jumped = await p.evaluate(() => { window.__backdrop.update(); return { top: Math.round(document.getElementById('contact').getBoundingClientRect().top), ch: document.querySelector('.rail a.on').textContent }; });
-  check('rail: jumps straight to a chapter', jumped.top < 140 && /Contact/.test(jumped.ch), JSON.stringify(jumped));
-  const om = await at(p, '#onemore', 100);
-  check('landing: "One more thing." lifts the veil off the car and links to Mumbai GP', om.want === 119 && om.veil < 0.2 && await p.$('#onemore a[href="mumbai.html"]'), `frame ${om.want} · veil ${om.veil}`);
-  check('landing: no sideways scroll', !b0.wide && !bC.wide);
+  await p.waitForTimeout(700);
+  const jumped = await p.evaluate(() => ({ top: Math.round(document.getElementById('contact').getBoundingClientRect().top), hash: location.hash, h: innerHeight }));
+  check('rail: jumps straight to a chapter', jumped.hash === '#contact' && jumped.top >= 0 && jumped.top < jumped.h * 0.8, JSON.stringify(jumped));
+  check('landing: "One more thing." links to Mumbai GP', await p.$('#onemore a[href="mumbai.html"]'));
+  check('landing: no sideways scroll', !d0.wide && !dA.wide);
   check('menu has no errors', errs.length === 0, errs.join('; '));
   await p.close();
 
-  // reduced motion: one still per chapter, no scrubbing
+  // reduced motion: the scene still follows the scroll, but jumps between shots instead of gliding
   p = await ctx.newPage(); errs = pageErrors(p);
   await p.emulateMedia({ reducedMotion: 'reduce' });
   await p.goto(url + '/index.html');
-  await p.waitForFunction(() => window.__backdrop, null, { timeout: 10000 });
-  const rm = [await at(p, '#hello', 100), await at(p, '#experience', 200), await at(p, '#contact')].map(x => x.want);
-  check('backdrop: reduced motion holds one still per chapter', rm[0] === 0 && rm[1] === 96 && rm[2] === 119, rm.join(' · '));
+  await p.waitForFunction(() => window.__story, null, { timeout: 60000 });
+  const rm = await at(p, 0.4);
+  check('drive: works with reduced motion', rm.boxes.some(b => b.startsWith('cow')), rm.boxes.join(','));
   await p.close();
 
   /* ---------- portfolio ---------- */

@@ -33,7 +33,8 @@ The MIT licence requires keeping the copyright notice. It ships inside the files
 
 * **Textures:** every texture is generated at runtime — painted on an HTML canvas or computed from tileable noise in JavaScript (facade and ground texture arrays, foliage atlas, carbon weave, wave normals, livery, signs, tyre sidewalls) — and uploaded with mipmaps. The sky is computed in a shader. None are image files.
 * **Menu previews (`assets/previews/*.webp`):** screenshots of this project's own renderer, captured by `tests/make-previews.mjs`.
-* **Scroll-reel frames (`assets/reel/{d,m}/*.webp`):** frames of this project's own renderer plus a line-art pass computed from its geometry, rendered by `tools/reel/capture.mjs`.
+* **`assets/stills/mumbai-gp-car.webp`:** a frame from this project's own renderer (Mumbai GP), used behind "One more thing" and as the framed picture in the landing page's room.
+* **The landing-page drive (`src/story/`):** street, cows, people, room and laptop are generated in code; the car is this project's procedural car. The laptop is generic, with no logo.
 
 ## Audio
 

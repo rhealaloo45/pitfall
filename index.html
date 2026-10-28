@@ -4,19 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rhea Laloo — AI Engineer</title>
-<meta name="description" content="Rhea Laloo, AI Engineer at Tata Consultancy Services in Mumbai. I build AI that notices what's wrong — in logs, in code, on roads — so everything else just works.">
+<meta name="description" content="Rhea Laloo, AI Engineer at Tata Consultancy Services. I build AI that notices what's wrong — in logs, in code, on roads — so everything else just works.">
 <meta name="theme-color" content="#0b0c0f">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Rhea Laloo — AI Engineer">
 <meta property="og:description" content="I build AI that notices what's wrong — in logs, in code, on roads — so everything else just works.">
-<meta property="og:image" content="https://rhealaloo45.github.io/pitfall/assets/reel/d/030.webp">
+<meta property="og:image" content="https://rhealaloo45.github.io/pitfall/assets/stills/mumbai-gp-car.webp">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/reel/d/000.webp">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
 <style>
-  :root { --ink: #f1efea; --body: #d2cec6; --dim: #a6a29a; --mute: #7a766f; --red: #d81f26; --cyan: #39d4ff; --pink: #ff5fa8; --bg: #0b0c0f; --line: rgba(255,255,255,.1); --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif; }
+  :root { --ink: #f1efea; --body: #d2cec6; --dim: #a6a29a; --mute: #7a766f; --red: #d81f26; --cyan: #39d4ff; --pink: #ff5fa8; --amber: #ffcc33; --bg: #0b0c0f; --line: rgba(255,255,255,.1);
+    --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif; --mono: 'SF Mono', ui-monospace, Menlo, Consolas, monospace; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; scroll-padding-top: 64px; }
   body { font-family: var(--font); color: var(--ink); background: var(--bg); -webkit-font-smoothing: antialiased; line-height: 1.5; }
@@ -26,82 +32,77 @@
   .skip:focus { left: 12px; }
   .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
-  /* the city behind everything (src/ui/backdrop.js), and a veil whose darkness follows the chapter */
-  /* the first frame as a plain background shows until the canvas draws (and is all you get without script) */
-  #city { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -2; background: var(--bg) url(assets/reel/d/000.webp) 62% 50% / cover no-repeat; }
-  #veil { position: fixed; inset: 0; z-index: -1; background: var(--bg); opacity: .82; pointer-events: none; transition: opacity .7s ease; will-change: opacity; }
-
-  /* top bar */
-  .bar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: linear-gradient(rgba(11,12,15,.92), rgba(11,12,15,.6) 60%, rgba(11,12,15,0)); }
+  /* top bar + chapter rail */
+  .bar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: linear-gradient(rgba(11,12,15,.9), rgba(11,12,15,.55) 60%, rgba(11,12,15,0)); }
   .bar .wrap { height: 64px; display: flex; align-items: center; gap: 16px; }
-  .brand { font-weight: 700; font-size: 17px; text-decoration: none; letter-spacing: .01em; }
+  .brand { font-weight: 700; font-size: 17px; text-decoration: none; letter-spacing: -.01em; }
   .brand span { color: var(--red); }
-  .open { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: rgba(11,12,15,.78); color: var(--body); }
+  .open { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: rgba(11,12,15,.8); color: var(--body); }
   .open i { width: 7px; height: 7px; border-radius: 50%; background: #4fdc8a; box-shadow: 0 0 8px #4fdc8a; }
   .bar .btn { margin-left: auto; }
-
-  /* chapter rail */
   .rail { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 50; display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 999px; background: rgba(11,12,15,.9); border: 1px solid var(--line); }
-  .rail a { display: flex; align-items: center; gap: 7px; text-decoration: none; font-size: 13px; font-weight: 700; color: var(--dim); padding: 7px 12px; border-radius: 999px; transition: background .25s, color .25s; white-space: nowrap; }
-  .rail a b { font-size: 11px; color: var(--mute); font-weight: 700; }
+  .rail a { display: flex; align-items: center; gap: 7px; text-decoration: none; font-size: 13px; font-weight: 600; color: var(--dim); padding: 7px 12px; border-radius: 999px; transition: background .25s, color .25s; white-space: nowrap; }
+  .rail a b { font-size: 11px; color: var(--mute); font-weight: 600; }
   .rail a:hover { color: var(--ink); }
   .rail a.on { background: rgba(255,255,255,.1); color: var(--ink); }
   .rail a.on b { color: var(--red); }
   .rail .track { position: absolute; left: 22px; right: 22px; bottom: 2px; height: 2px; border-radius: 2px; overflow: hidden; background: rgba(255,255,255,.06); }
   .rail .fill { display: block; height: 100%; background: linear-gradient(90deg, var(--cyan), var(--pink), var(--red)); transform-origin: 0 50%; transform: scaleX(0); }
 
-  /* buttons */
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 22px; border-radius: 999px; background: var(--red); color: #fff; text-decoration: none; font-weight: 600; letter-spacing: -.01em; font-size: 15px; border: 1px solid var(--red); transition: background .2s, transform .2s, border-color .2s; }
   .btn:hover { background: #e8333a; border-color: #e8333a; transform: translateY(-1px); }
   .btn.ghost { background: rgba(18,20,24,.86); border-color: var(--line); color: var(--ink); }
-  .btn.ghost:hover { background: rgba(40,42,48,.7); border-color: rgba(255,255,255,.22); }
+  .btn.ghost:hover { background: rgba(40,42,48,.9); border-color: rgba(255,255,255,.22); }
   .btn.sm { padding: 8px 14px; font-size: 13.5px; }
-
-  .hello, .story, .say, .ch { position: relative; }
   .k { font-size: 17px; font-weight: 600; letter-spacing: -.01em; color: var(--red); }
   .k em { font-style: normal; color: var(--mute); margin-right: 10px; font-size: 14px; font-variant-numeric: tabular-nums; }
   .grad { background: linear-gradient(90deg, var(--cyan), var(--pink) 55%, #ff8a5c); -webkit-background-clip: text; background-clip: text; color: transparent; }
   h2 { font-size: clamp(32px, 4vw, 48px); font-weight: 700; line-height: 1.06; letter-spacing: -.03em; margin-top: 8px; }
-  .sub { color: var(--dim); font-size: 16px; max-width: 540px; margin-top: 12px; }
-  .shadow { text-shadow: 0 2px 24px rgba(0,0,0,.75), 0 0 2px rgba(0,0,0,.6); }
 
-  /* hello: Mumbai as a machine sees it */
-  .hello { min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: center; padding: 110px 0 110px; }
-  .hello::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(11,12,15,.94), rgba(11,12,15,.8) 38%, rgba(11,12,15,.25) 66%, rgba(11,12,15,0) 84%); pointer-events: none; }
+  /* ---------- the drive: a pinned 3D stage, story beats scrolling over it ---------- */
+  #story { position: relative; height: 1100vh; }
+  .stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: #030405; }
+  #scene { display: block; width: 100%; height: 100%; }
+  /* the attack: a red alarm pulse around the edges */
+  .stage::after { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: var(--alert, 0); background: radial-gradient(ellipse at 50% 55%, rgba(255,30,45,0) 40%, rgba(255,30,45,.55) 100%); }
+  #det { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  #det .box { position: absolute; left: 0; top: 0; border: 1.5px solid var(--cyan); border-radius: 4px; opacity: 0; transition: opacity .3s; box-shadow: inset 0 0 18px rgba(57,212,255,.18); will-change: transform; }
+  #det .box.on { opacity: 1; }
+  #det .box span { position: absolute; left: -1.5px; bottom: 100%; margin-bottom: 4px; font: 600 11px/1 var(--mono); letter-spacing: .02em; padding: 4px 6px; border-radius: 3px; background: var(--cyan); color: #04131a; white-space: nowrap; }
+  #det .box.warn { border-color: var(--amber); box-shadow: inset 0 0 18px rgba(255,204,51,.2); } #det .box.warn span { background: var(--amber); color: #1d1500; }
+  #det .box.person { border-color: var(--pink); box-shadow: inset 0 0 18px rgba(255,95,168,.18); } #det .box.person span { background: var(--pink); color: #23030f; bottom: auto; top: 100%; margin: 4px 0 0; }
+  #det .box.cow { border-color: #7fe0a0; box-shadow: inset 0 0 18px rgba(127,224,160,.18); } #det .box.cow span { background: #7fe0a0; color: #041a0c; }
+  .beats { position: absolute; inset: 0; pointer-events: none; }
+  .beat { position: absolute; left: 0; right: 0; top: calc(var(--at) * 1000vh + 34vh); pointer-events: auto; }
+  .card { max-width: 470px; padding: 26px 28px 28px; border-radius: 20px; background: rgba(11,12,15,.8); border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+  .card .n { display: flex; align-items: center; gap: 10px; font-size: 14.5px; font-weight: 600; color: var(--dim); }
+  .card .n b { font-variant-numeric: tabular-nums; color: var(--cyan); }
+  .card h3 { margin-top: 10px; font-size: clamp(30px, 3.4vw, 42px); font-weight: 700; line-height: 1.05; letter-spacing: -.03em; }
+  .card p { margin-top: 12px; font-size: 16px; line-height: 1.6; color: var(--body); }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; }
+  .chips span { font-size: 13px; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--line); }
+  .chips span:first-child { border-color: rgba(57,212,255,.5); color: #fff; }
+  .card.right { margin-left: auto; }
+
+  /* 01 hello, over the line-art street */
+  .hello { top: 0; min-height: 100vh; min-height: 100svh; display: flex; align-items: center; padding: 110px 0 120px; }
+  .hello::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,4,5,.92), rgba(3,4,5,.7) 38%, rgba(3,4,5,.1) 70%, rgba(3,4,5,0) 85%); pointer-events: none; }
   .hello .wrap { position: relative; width: 100%; }
   .hello h1 { font-size: clamp(56px, 8.6vw, 112px); font-weight: 800; line-height: .94; letter-spacing: -.04em; margin-top: 14px; }
   .hello h1 span { color: var(--red); }
   .lead { margin-top: 22px; font-size: clamp(18px, 1.8vw, 22px); line-height: 1.5; color: var(--body); max-width: 600px; }
   .lead b { color: var(--ink); }
   .ctas { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 10px; }
-  .stats { margin-top: 56px; display: grid; grid-template-columns: repeat(4, 1fr); max-width: 900px; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-  .stat { background: rgba(11,12,15,.86); padding: 18px 20px; }
+  .stats { margin-top: 48px; display: grid; grid-template-columns: repeat(4, 1fr); max-width: 900px; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .stat { background: rgba(8,9,11,.88); padding: 18px 20px; }
   .stat b { display: block; font-size: clamp(22px, 2.4vw, 30px); font-weight: 700; line-height: 1.1; letter-spacing: -.02em; }
   .stat span { display: block; margin-top: 6px; font-size: 13.5px; color: var(--dim); line-height: 1.4; }
+  .skipdrive { display: inline-block; margin-top: 22px; font-size: 14px; color: var(--dim); text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.2); }
+  .skipdrive:hover { color: var(--ink); }
+  .bridge h2 { font-size: clamp(30px, 3.6vw, 44px); }
 
-  /* act one: what I've taught machines to notice — one idea per screen, over the line art */
-  .intro { padding-top: 120px; padding-bottom: 10px; }
-  .story { min-height: 78vh; display: flex; align-items: center; padding: 60px 0; }
-  .story::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(11,12,15,.82), rgba(11,12,15,.55) 45%, rgba(11,12,15,0) 80%); pointer-events: none; }
-  .story .wrap { position: relative; width: 100%; }
-  .story .n { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: var(--dim); }
-  .story .n b { color: var(--cyan); font-size: 14px; }
-  .story:nth-of-type(odd) .n b { color: var(--pink); }
-  .story h3 { margin-top: 14px; font-size: clamp(36px, 5.4vw, 72px); font-weight: 700; line-height: 1.02; letter-spacing: -.035em; max-width: 920px; }
-  .story p { margin-top: 20px; max-width: 600px; font-size: 17px; line-height: 1.6; color: var(--body); }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
-  .chips span { font-size: 13px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: rgba(11,12,15,.86); border: 1px solid var(--line); color: var(--ink); }
-  .chips span:first-child { border-color: rgba(57,212,255,.45); }
-
-  /* the turn: the city renders in between these two lines */
-  .say { min-height: 100vh; min-height: 100svh; display: flex; align-items: center; }
-  .say p { font-size: clamp(42px, 6.4vw, 88px); font-weight: 700; line-height: 1.02; letter-spacing: -.04em; }
-  .say p span { color: var(--cyan); }
-  .say.two p span { color: var(--red); }
-  .say small { display: block; margin-top: 18px; font-size: 16px; font-weight: 600; letter-spacing: 0; color: var(--body); }
-
-  /* act two: the person */
-  .ch { padding-top: 120px; padding-bottom: 30px; }
+  /* ---------- after the drive: the person ---------- */
+  .ch { position: relative; padding-top: 120px; padding-bottom: 30px; }
   .head { margin-bottom: 34px; }
   .role { display: grid; grid-template-columns: 280px 1fr; gap: 32px; padding: 26px 0; border-top: 1px solid var(--line); }
   .role:last-child { border-bottom: 1px solid var(--line); }
@@ -112,7 +113,6 @@
   .role ul { list-style: none; display: grid; gap: 10px; }
   .role li { position: relative; padding-left: 20px; color: var(--body); line-height: 1.6; font-size: 15.5px; }
   .role li::before { content: ''; position: absolute; left: 0; top: .72em; width: 8px; height: 2px; background: var(--red); }
-
   .route { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; position: relative; padding-top: 34px; }
   .route::before { content: ''; position: absolute; left: 7px; right: 7px; top: 6px; height: 2px; background: linear-gradient(90deg, var(--cyan), var(--pink) 60%, var(--red)); opacity: .8; }
   .stop { position: relative; }
@@ -129,37 +129,38 @@
   .awards { margin-top: 44px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 32px; list-style: none; }
   .awards li { padding: 13px 0 13px 30px; border-top: 1px solid var(--line); color: var(--body); position: relative; font-size: 15px; }
   .awards li::before { content: '★'; position: absolute; left: 4px; top: 12px; color: #e8b33c; font-size: 14px; }
-  .tools { margin-top: 0; }
-  .tools > div { padding: 18px 0 !important; }
-  .tools dt { font-size: 15px !important; color: var(--ink) !important; font-weight: 600 !important; letter-spacing: -.01em !important; }
-  .tools > div { display: grid; grid-template-columns: 200px 1fr; gap: 24px; padding: 14px 0; border-top: 1px solid var(--line); align-items: baseline; }
+  .tools > div { display: grid; grid-template-columns: 200px 1fr; gap: 24px; padding: 18px 0; border-top: 1px solid var(--line); align-items: baseline; }
   .tools > div:last-child { border-bottom: 1px solid var(--line); }
-  .tools dt { font-weight: 700; color: var(--dim); font-size: 13.5px; letter-spacing: .04em; }
+  .tools dt { font-weight: 600; color: var(--ink); font-size: 15px; letter-spacing: -.01em; }
   .tools dd { display: flex; flex-wrap: wrap; gap: 7px; }
   .tools dd span { padding: 4px 11px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--line); font-size: 13.5px; font-weight: 600; }
-
-  .contact { padding: 56px 48px; border-radius: 20px; background: radial-gradient(700px 300px at 100% 0%, rgba(216,31,38,.22), transparent 70%), rgba(18,20,24,.92); border: 1px solid var(--line); display: grid; grid-template-columns: 1.2fr .8fr; gap: 40px; align-items: center; }
+  .contact { padding: 56px 48px; border-radius: 20px; background: radial-gradient(700px 300px at 100% 0%, rgba(216,31,38,.22), transparent 70%), #121418; border: 1px solid var(--line); display: grid; grid-template-columns: 1.2fr .8fr; gap: 40px; align-items: center; }
   .contact h2 { font-size: clamp(32px, 4.4vw, 52px); }
   .contact p { margin-top: 14px; color: var(--body); font-size: 17px; }
   .contact dl { display: grid; grid-template-columns: auto 1fr; gap: 10px 18px; font-size: 15px; }
-  .contact dt { color: var(--mute); font-weight: 700; }
+  .contact dt { color: var(--mute); font-weight: 600; }
   .contact dd a { text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.25); }
   .contact dd a:hover { border-bottom-color: #fff; }
-  .more { position: relative; min-height: 100vh; min-height: 100svh; display: flex; align-items: flex-end; padding: 120px 0 140px; }
-  .more::before { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(11,12,15,.95), rgba(11,12,15,.7) 34%, rgba(11,12,15,.1) 62%, rgba(11,12,15,0) 80%); pointer-events: none; }
+  /* one more thing: the car from the drive has a whole city */
+  .more { position: relative; margin-top: 110px; min-height: 100vh; min-height: 100svh; display: flex; align-items: flex-end; padding: 120px 0 140px; background: #0b0c0f url(assets/stills/mumbai-gp-car.webp) 50% 50% / cover no-repeat; }
+  .more::before { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(11,12,15,.96), rgba(11,12,15,.72) 36%, rgba(11,12,15,.15) 64%, rgba(11,12,15,.85)); pointer-events: none; }
   .more .wrap { position: relative; width: 100%; }
-  .more .om { font-size: clamp(48px, 7.4vw, 104px); font-weight: 700; letter-spacing: -.045em; line-height: 1; }
+  .more h2 { font-size: clamp(48px, 7.4vw, 104px); letter-spacing: -.045em; line-height: 1; }
   .more p { margin-top: 18px; max-width: 620px; color: var(--body); font-size: 18px; line-height: 1.55; }
   .more p b { color: var(--ink); }
-  footer { position: relative; background: rgba(11,12,15,.94); padding: 28px 0 110px; font-size: 13.5px; color: var(--mute); border-top: 1px solid var(--line); }
+  footer { background: var(--bg); padding: 28px 0 110px; font-size: 13.5px; color: var(--mute); border-top: 1px solid var(--line); }
   footer .fin { display: grid; gap: 8px; }
   footer a { color: var(--dim); }
   footer .sig { color: var(--body); font-weight: 600; font-size: 15px; }
 
-  /* gentle reveal (only with script, not with reduced motion) */
   .js .rv { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
   .js .rv.in { opacity: 1; transform: none; }
   @media (prefers-reduced-motion: reduce) { .js .rv { opacity: 1; transform: none; transition: none; } html { scroll-behavior: auto; } }
+  /* no WebGL: the beats read as a plain list on the dark page */
+  .no-3d .stage { display: none; }
+  .no-3d #story { height: auto; }
+  .no-3d .beats { position: static; }
+  .no-3d .beat { position: relative; top: 0; margin: 40px 0; }
 
   @media (max-width: 980px) {
     .route { grid-template-columns: 1fr 1fr; row-gap: 40px; }
@@ -172,14 +173,14 @@
   @media (max-width: 760px) {
     .open { display: none; }
     .hello { padding: 96px 0 120px; }
-    .hello::before { background: linear-gradient(180deg, rgba(11,12,15,.88), rgba(11,12,15,.6) 60%, rgba(11,12,15,.3)); }
-    .stats { grid-template-columns: 1fr 1fr; margin-top: 40px; }
+    .hello::before { background: linear-gradient(180deg, rgba(3,4,5,.9), rgba(3,4,5,.62) 60%, rgba(3,4,5,.3)); }
+    .stats { grid-template-columns: 1fr 1fr; margin-top: 36px; }
     .stat { padding: 15px 15px 17px; }
     .stat b { font-size: 19px; white-space: nowrap; }
-    .intro, .ch { padding-top: 96px; }
-    .story { min-height: 70vh; }
-    .story::before { background: rgba(11,12,15,.45); }
-    .story p { font-size: 16px; }
+    .beat { top: calc(var(--at) * 1000vh + 52vh); }
+    .card { padding: 20px 20px 22px; }
+    .card p { font-size: 15px; }
+    .ch { padding-top: 96px; }
     .role, .tools > div { grid-template-columns: 1fr; gap: 10px; }
     .awards { grid-template-columns: 1fr; }
     .route { grid-template-columns: 1fr; row-gap: 30px; padding: 0 0 0 30px; }
@@ -192,9 +193,7 @@
 </head>
 <body>
 <script>document.documentElement.classList.add('js');</script>
-<a class="skip" href="#work">Skip to work</a>
-<canvas id="city" aria-hidden="true"></canvas>
-<div id="veil" aria-hidden="true"></div>
+<a class="skip" href="#experience">Skip to experience</a>
 
 <header class="bar">
   <div class="wrap">
@@ -214,54 +213,55 @@
 </nav>
 
 <main id="main">
-  <section class="hello" id="hello" data-frame="0" data-veil="0.12" aria-labelledby="h-hello">
-    <div class="wrap">
-      <div class="k grad">Mumbai, as a machine sees it</div>
-      <h1 id="h-hello">Rhea<br>Laloo<span>.</span></h1>
-      <p class="lead">AI Engineer at Tata Consultancy Services. I build <b>AI that notices what's wrong</b> (in logs, in code, on roads) so everything else just works.</p>
-      <div class="ctas">
-        <a class="btn" href="assets/rhea-laloo-resume.pdf" download="Rhea-Laloo-Resume.pdf">Download résumé</a>
-        <a class="btn ghost" href="mailto:rhea.laloo@tcs.com">Email me</a>
-        <a class="btn ghost" href="https://github.com/rhealaloo45" target="_blank" rel="noopener">GitHub</a>
-        <a class="btn ghost" href="https://linkedin.com/in/rhealaloo" target="_blank" rel="noopener">LinkedIn</a>
-      </div>
-      <div class="stats" aria-label="Highlights">
-        <div class="stat"><b>9.95 CGPA</b><span>1st rank in college · B.Tech IT, KJSIT</span></div>
-        <div class="stat"><b>chub-guard</b><span>AI linter shipped on PyPI, npm &amp; VS Code</span></div>
-        <div class="stat"><b>100+</b><span>students mentored across 5 states · Yuvai Hackathon</span></div>
-        <div class="stat"><b>Top 80 / 695</b><span>CiiA, twice · RoadHawk pothole detector</span></div>
-      </div>
+  <section id="story" aria-label="A drive past the problems I've taught machines to notice">
+    <div class="stage" aria-hidden="true"><canvas id="scene"></canvas><div id="det"></div></div>
+    <div class="beats">
+      <header class="beat hello" id="hello">
+        <div class="wrap">
+          <div class="k grad">How a machine sees a street</div>
+          <h1>Rhea<br>Laloo<span>.</span></h1>
+          <p class="lead">AI Engineer at Tata Consultancy Services. I build <b>AI that notices what's wrong</b> (in logs, in code, on roads) so everything else just works.</p>
+          <div class="ctas">
+            <a class="btn" href="assets/rhea-laloo-resume.pdf" download="Rhea-Laloo-Resume.pdf">Download résumé</a>
+            <a class="btn ghost" href="mailto:rhea.laloo@tcs.com">Email me</a>
+            <a class="btn ghost" href="https://github.com/rhealaloo45" target="_blank" rel="noopener">GitHub</a>
+            <a class="btn ghost" href="https://linkedin.com/in/rhealaloo" target="_blank" rel="noopener">LinkedIn</a>
+          </div>
+          <div class="stats" aria-label="Highlights">
+            <div class="stat"><b>9.95 CGPA</b><span>1st rank in college · B.Tech IT, KJSIT</span></div>
+            <div class="stat"><b>chub-guard</b><span>AI linter shipped on PyPI, npm &amp; VS Code</span></div>
+            <div class="stat"><b>100+</b><span>students mentored across 5 states · Yuvai Hackathon</span></div>
+            <div class="stat"><b>Top 80 / 695</b><span>CiiA, twice · RoadHawk pothole detector</span></div>
+          </div>
+          <a class="skipdrive" href="#experience">Skip the drive, straight to experience ↓</a>
+        </div>
+      </header>
+      <div class="beat bridge" id="work" style="--at:.115"><div class="wrap"><div class="card">
+        <div class="k"><em>02</em>Work</div>
+        <h2>What I've taught machines to notice</h2>
+        <p>A machine sees edges. Teaching it what matters is the job. Ride along.</p>
+      </div></div></div>
+      <div id="beats"></div>
     </div>
   </section>
 
-  <section id="work" aria-labelledby="h-work">
-    <div class="intro wrap" data-frame="6" data-veil="0.55">
-      <div class="k shadow"><em>02</em>Work</div>
-      <h2 id="h-work" class="shadow">What I've taught machines to notice</h2>
-    </div>
-    <div id="stories"></div>
-  </section>
-
-  <div class="say wrap" data-frame="36" data-veil="0.1"><p class="rv shadow">A machine sees<br><span>edges.</span></p></div>
-  <div class="say two wrap" data-frame="84" data-veil="0.16"><p class="rv shadow">I see<br><span>home.</span><small>Mumbai, where all of this started.</small></p></div>
-
-  <section class="ch wrap" id="experience" data-frame="96" data-veil="0.88" aria-labelledby="h-exp">
+  <section class="ch wrap" id="experience" aria-labelledby="h-exp">
     <div class="head rv"><div class="k"><em>03</em>Experience</div><h2 id="h-exp">Where I build it</h2></div>
     <div id="roles"></div>
   </section>
 
-  <section class="ch wrap" id="education" data-frame="108" data-veil="0.86" aria-labelledby="h-edu">
+  <section class="ch wrap" id="education" aria-labelledby="h-edu">
     <div class="head rv"><div class="k"><em>04</em>Education</div><h2 id="h-edu">Where I learned to look</h2></div>
     <ol class="route rv" id="route"></ol>
     <ul class="awards rv" id="awards"></ul>
   </section>
 
-  <section class="ch wrap" id="specs" data-frame="113" data-veil="0.88" aria-labelledby="h-specs">
+  <section class="ch wrap" id="specs" aria-labelledby="h-specs">
     <div class="head rv"><div class="k">Toolkit</div><h2 id="h-specs">Tech specs</h2></div>
     <dl class="tools rv" id="tools"></dl>
   </section>
 
-  <div class="ch wrap" data-frame="119" data-veil="0.86">
+  <div class="ch wrap">
     <section class="contact rv" id="contact" aria-labelledby="h-contact">
       <div>
         <div class="k"><em>05</em>Contact</div>
@@ -279,13 +279,12 @@
         <dt>Based in</dt><dd>Mumbai, India</dd>
       </dl>
     </section>
-
   </div>
 
-  <section class="more" id="onemore" data-frame="119" data-veil="0.05" aria-labelledby="h-more">
+  <section class="more" id="onemore" aria-labelledby="h-more">
     <div class="wrap rv">
-      <h2 id="h-more" class="om shadow">One more thing.</h2>
-      <p class="shadow">The Mumbai behind this page comes from <b>Mumbai GP</b>, a game I built from scratch in three.js: procedurally generated streets and buildings, 120 Hz car physics and a custom render pipeline. You can drive it.</p>
+      <h2 id="h-more">One more thing.</h2>
+      <p>The car from the drive has a whole city to itself. <b>Mumbai GP</b> is a drivable Mumbai I built from scratch in three.js: procedurally generated streets and buildings, 120 Hz car physics and a custom render pipeline.</p>
       <div class="ctas"><a class="btn" href="mumbai.html">Drive Mumbai GP</a><a class="btn ghost" href="circuit.html">Original F1 circuit</a></div>
     </div>
   </section>
@@ -293,12 +292,12 @@
   <footer>
     <div class="wrap fin">
       <span class="sig">Designed and built by Rhea in Mumbai.</span>
-      <span>Scroll effect inspired by Apple's product pages · <a href="portfolio.html">Printable one-page version</a> · <a href="ASSETS.md">Assets &amp; licences</a></span>
+      <span>The drive above is real-time three.js · <a href="portfolio.html">Printable one-page version</a> · <a href="ASSETS.md">Assets &amp; licences</a></span>
     </div>
   </footer>
 </main>
 
-<script src="src/shared/portfolio-data.js?v=5"></script>
+<script src="src/shared/portfolio-data.js?v=6"></script>
 <script>
 (function () {
   var R = window.PORTFOLIO && window.PORTFOLIO.RESUME; if (!R) return;
@@ -306,13 +305,13 @@
   var $ = function (id) { return document.getElementById(id); };
   var years = function (w) { var y = String(w).match(/\d{4}/g) || []; return y.length > 1 ? y[0] + ' — ' + y[1] : (y[0] || '') + (/present/i.test(w) ? ' — now' : ''); };
 
-  // act one: one thing taught to a machine per screen; the line art drifts behind them
-  var S = R.stories || [];
-  $('stories').innerHTML = S.map(function (s, i) {
-    return '<article class="story" data-frame="' + Math.round(8 + i * 5.5) + '" data-veil="0.55"><div class="wrap rv">' +
-      '<div class="n shadow"><b>' + String(i + 1).padStart(2, '0') + '</b>' + esc(s.tag) + '</div>' +
-      '<h3 class="shadow">' + esc(s.title) + '</h3><p class="shadow">' + esc(s.text) + '</p>' +
-      '<div class="chips">' + s.chips.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') + '</div></div></article>';
+  // the drive's beats, each placed where the scene reaches it (fraction of the drive)
+  var AT = [0.215, 0.385, 0.56, 0.8, 0.935];
+  $('beats').innerHTML = (R.stories || []).map(function (s, i) {
+    return '<article class="beat story" style="--at:' + AT[i] + '"><div class="wrap"><div class="card' + (i === 1 ? ' right' : '') + '">' +
+      '<div class="n"><b>' + String(i + 1).padStart(2, '0') + '</b>' + esc(s.tag) + '</div>' +
+      '<h3>' + esc(s.title) + '</h3><p>' + esc(s.text) + '</p>' +
+      '<div class="chips">' + s.chips.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') + '</div></div></div></article>';
   }).join('');
 
   $('roles').innerHTML = R.experience.map(function (x, i) {
@@ -338,6 +337,6 @@
   } else document.querySelectorAll('.rv').forEach(function (el) { el.classList.add('in'); });
 })();
 </script>
-<script type="module" src="src/ui/backdrop.js?v=2"></script>
+<script type="module" src="src/story/main.js?v=11"></script>
 </body>
 </html>

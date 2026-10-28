@@ -4,7 +4,7 @@ A static site with no build step, deployed by GitHub Pages:
 
 | Page | What it is |
 |---|---|
-| `index.html` | The portfolio as a story: "I build AI that notices what's wrong". It opens on Mumbai as a machine sees it (neon line art), gives one screen to each thing taught to a machine (attacks in logs, outdated code, potholes, disease in a herd, patterns in people), turns on "A machine sees edges. I see home." as the city renders in, then experience, education, tech specs and contact. Résumé, contact and highlights are on the first screen; a chapter rail jumps anywhere. It ends the way Apple keynotes do: after Contact, "One more thing." lifts the veil off the car and reveals the backdrop is Mumbai GP. Type is San Francisco on Apple devices and Inter elsewhere. Content comes from `src/shared/portfolio-data.js` |
+| `index.html` | The portfolio as a drive: a real-time 3D street that opens as black-and-white line art and comes into colour as the car rolls past the problems each project solves — potholes (RoadHawk), cows (the cattle app), people at a crossing (ADHD / mental-fitness models) — then rises into my room: the laptop (chub-guard) and the attack on it (log anomaly detection). Experience, education, tech specs and contact follow; "One more thing" links the car to Mumbai GP. Résumé, contact and highlights are on the first screen; a chapter rail jumps anywhere. Content comes from `src/shared/portfolio-data.js` |
 | `mumbai.html` | **Mumbai GP**: a compact, stylised-real Mumbai to drive — Marine Drive, the Sea Link, Fort, Bandra, BKC — with portfolio chapters at the Pit Wall (career, shown on the grid before the race), K. C. College and KJSIT (the finish). The timed route is ~4 km; the map (M) and Pause → Progress jump straight to any chapter. |
 | `circuit.html` | The original F1 Track Day circuit (preserved) |
 | `portfolio.html` | Printable one-page résumé |
@@ -20,9 +20,8 @@ python3 -m http.server 4173      # then open http://localhost:4173
 ```bash
 npm install                      # dev-only: three.js for Node tests
 npm test                         # vehicle-dynamics + world-generation unit tests (21)
-npm run test:e2e                 # headless Chromium: all pages, the backdrop and chapter rail, gameplay, circuit regression, phone
+npm run test:e2e                 # headless Chromium: all pages, the drive and chapter rail, gameplay, circuit regression, phone
 npm run previews                 # re-capture the menu / title-screen previews (needs ffmpeg)
-npm run reel                     # re-render the backdrop frames into assets/reel (needs a GPU, ~1 min)
 npm run perf                     # scroll the landing page with the CPU slowed 4× and report frame times
 ```
 
@@ -45,24 +44,23 @@ For testing, `mumbai.html?quality=low|medium|high` forces a preset.
   landmark and car parts are merged by material, terrain tiles swap to a coarse LOD beyond ~380 m.
   High ≈ 650 draw calls / 3.4 M triangles per frame including shadows and AO; Medium ≈ 300 / 1.8 M.
 
-## The backdrop
+## The drive (landing page)
 
-`tools/reel/capture.mjs` loads `mumbai.html` in headless Chromium on the real GPU and, for each of 120 frames,
-renders the golden-hour city plus depth, normal and layer passes (`tools/reel/page.js`). Edges of those passes
-become the neon line art (buildings white, roads cyan, palms pink, the car red, the sea as faint glints), and a
-wipe that sweeps from the camera outwards blends line art into the render. Frames are saved as WebP at 1280 px
-(`assets/reel/d`, ~7.5 MB) and 640 px for phones (`assets/reel/m`, ~2.7 MB).
+`src/story/` is a small, separate three.js scene, not the game: `world.js` builds the street, potholes, cows,
+crossing and people, my building and room; `screen.js` draws the laptop's screen (an editor where chub-guard
+flags an outdated API, then a log stream where the anomaly model catches an attack); `main.js` maps scroll
+position to a timeline (car position, camera shots, line art → colour, dusk → night, the signal, the attack)
+and draws the model's detection boxes over the scene. The car is the same procedural car as Mumbai GP.
 
-`src/ui/backdrop.js` keeps a canvas fixed behind the landing page and draws the frame for the scroll position:
-each chapter has a keyframe (`data-frame`) and a veil darkness (`data-veil`), frames interpolate between chapter
-middles, and the veil fades per chapter so text always sits on a dark enough background. Frames load coarse-to-fine;
-phones and slow connections get the 640 px set. Reduced motion holds one still per chapter; without script the page
-shows a still line-art backdrop. The same script drives the chapter rail.
+Everything goes through one `INK` uniform, which blends the whole scene to black so only the white outlines
+show: that is the black-and-white opening. Text cards scroll over the pinned canvas, so the page still reads
+as a page; with reduced motion the camera cuts between shots, and without WebGL the cards stand alone.
 
-Keeping it smooth on 60 Hz screens: only the frames near the scroll position are decoded, off the main thread
-(`createImageBitmap`); the canvas is sized to the frames rather than the screen; the DOM is only written when a
-value changes; and nothing on the page uses `backdrop-filter` or a `fixed` background, both of which force
-repaints over a picture that changes every frame. `npm run perf` went from ~30% of frames over 25 ms to under 1%.
+Kept smooth on ordinary 60 Hz laptops: outlines are baked into one object per group, static objects are
+frozen (no per-frame matrix work), cows and trees are merged / instanced, window textures are shared, all
+materials and textures are compiled and uploaded before the first scroll, shadows are small and only cast by
+things that move, the laptop screen only redraws once the room is in view, and the resolution steps down if
+frames run slow. `npm run perf` (CPU slowed 4×) holds 60 fps with under 2% of frames over 25 ms.
 
 ## Code map
 
@@ -86,8 +84,7 @@ src/mumbai/landmarks.js        Gateway, Taj, Sea Link, Bandra Fort, school, coll
 src/mumbai/props.js            leaf-card trees and palms, lamps, cars, taxis, autos, BEST buses, pedestrians, boats
 src/mumbai/play.js             knockable props, chai collectibles, ramps, pigeons, traffic
 src/mumbai/main.js             game loop, states, HUD, panels, settings, secrets
-src/ui/backdrop.js             the scroll-driven Mumbai backdrop and chapter rail on the landing page
-tools/reel/                    renders the reel frames from the live game
+src/story/                     the landing page's scroll-driven drive (scene, laptop screen, timeline, rail)
 ```
 
 Assets and licences: see [ASSETS.md](ASSETS.md). Everything visual and audible is generated in code.
