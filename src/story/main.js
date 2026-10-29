@@ -10,10 +10,10 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { buildCar } from '../vehicle/car-model.js';
 import { CAR_SPEC } from '../vehicle/sim.js';
-import { INK, LINES, NIGHT, ink, outline, freeze, mergeByMaterial, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildSky } from './world.js?v=33';
-import { buildRoom } from './room.js?v=33';
-import { buildMarineDrive, along, LENGTH } from './marine.js?v=33';
-import { screenTex, drawScreen, setWallpaper } from './screen.js?v=33';
+import { INK, LINES, NIGHT, ink, outline, freeze, mergeByMaterial, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildSky } from './world.js?v=39';
+import { buildRoom } from './room.js?v=39';
+import { buildMarineDrive, along, LENGTH } from './marine.js?v=39';
+import { screenTex, drawScreen, setWallpaper } from './screen.js?v=39';
 
 const $ = id => document.getElementById(id);
 const track = $('story'), canvas = $('scene'), detLayer = $('det'), stage = canvas.parentElement, veil = $('veil');
@@ -158,7 +158,7 @@ const CAM = [
   { t: 0.52, pos: at(-8.6, 2.6, 233), look: at(0.4, 1.4, 249.5), fov: 44 },
   { t: 0.62, pos: at(-8.0, 2.4, 237), look: at(0, 1.5, 249), fov: 42 },
   // up to one lit window in the block, through it, and into a small room: the camera stays close, like you're in it
-  { t: 0.69, pos: at(4.2, 11.6, 329), look: at(9.6, 11.6, 329), fov: 34 },
+  { t: 0.69, pos: at(4.2, 11.6, 329), look: at(9.6, 11.6, 329), fov: 34, tall: { pos: at(3.2, 11.7, 329), look: at(9.6, 11.85, 329), fov: 58 } },
   { t: 0.745, pos: at(9.25, 11.6, 329), look: at(13.1, 11.25, 329), fov: 52 },
   { t: 0.775, pos: at(10.35, 11.52, 328.55), look: at(13.1, 11.12, 329.05), fov: 60, tall: { pos: at(9.95, 11.5, 329), look: at(13.1, 11.78, 329), fov: 72 } },
   { t: 0.81, pos: at(11.88, 11.3, 328.42), look: at(12.98, 11.06, 328.76), fov: 48, tall: { pos: at(11.7, 11.25, 329), look: at(12.98, 11.02, 329), fov: 64 } },

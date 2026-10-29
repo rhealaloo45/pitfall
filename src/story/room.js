@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
-import { ink, facadeMat } from './world.js?v=33';
+import { ink, facadeMat } from './world.js?v=39';
 import { buildCar } from '../vehicle/car-model.js';
 import { CAR_SPEC } from '../vehicle/sim.js';
 
@@ -191,8 +191,28 @@ export function buildRoom(scene, { screenTex, stillUrl }) {
   G.add(box(14.5, 3.2, 9, solid, 16.75, 11.4, 322.5), box(14.5, 3.2, 9, solid, 16.75, 11.4, 335.5), box(10.7, 3.2, 4, solid, 18.65, 11.4, 329));
   G.add(box(0.4, W.y0 - 9.8, 4, facade, fx, (9.8 + W.y0) / 2, dz), box(0.4, 13.0 - W.y1, 4, facade, fx, (W.y1 + 13.0) / 2, dz));
   G.add(box(0.4, W.y1 - W.y0, W.z0 - 327, facade, fx, (W.y0 + W.y1) / 2, (327 + W.z0) / 2), box(0.4, W.y1 - W.y0, 331 - W.z1, facade, fx, (W.y0 + W.y1) / 2, (W.z1 + 331) / 2));
-  const frame = mat(0x2b2e33, { roughness: 0.4, metalness: 0.3 });
-  G.add(box(0.12, 0.08, W.z1 - W.z0, frame, 9.52, W.y0, dz), box(0.12, 0.08, W.z1 - W.z0, frame, 9.52, W.y1, dz));
+  /* ---- the street window we fly in through: a slim painted frame, its casements swung open, a plant on the sill ---- */
+  const ox = 9.5, wz0 = W.z0, wz1 = W.z1, wcy = (W.y0 + W.y1) / 2, wh = W.y1 - W.y0;
+  const winPaint = mat(0x2c6e6a, { roughness: 0.55 }), trimM = mat(0xf3eee4, { roughness: 0.7 });
+  const glass = mat(0x5a7487, { roughness: 0.12, metalness: 0.45, envMapIntensity: 2 });
+  G.add(box(0.12, 0.08, wz1 - wz0, winPaint, ox + 0.06, W.y1 - 0.04, dz), box(0.12, 0.08, wz1 - wz0, winPaint, ox + 0.06, W.y0 + 0.04, dz));
+  for (const z of [wz0 + 0.04, wz1 - 0.04]) G.add(box(0.12, wh, 0.08, winPaint, ox + 0.06, wcy, z));
+  const sw = (wz1 - wz0) / 2 - 0.04, sh = wh - 0.1;
+  for (const s of [1, -1]) {
+    const sash = new THREE.Group();
+    sash.add(box(0.05, sh, 0.06, winPaint, 0, 0, s * 0.03), box(0.05, sh, 0.06, winPaint, 0, 0, s * (sw - 0.03)));
+    sash.add(box(0.05, 0.07, sw, winPaint, 0, sh / 2 - 0.035, s * sw / 2), box(0.05, 0.07, sw, winPaint, 0, -sh / 2 + 0.035, s * sw / 2));
+    sash.add(box(0.012, sh - 0.1, sw - 0.1, glass, 0, 0, s * sw / 2));
+    sash.position.set(ox - 0.04, wcy, s > 0 ? wz0 + 0.04 : wz1 - 0.04); sash.rotation.y = -s * 2.0;
+    G.add(sash);
+  }
+  G.add(box(0.3, 0.06, wz1 - wz0 + 0.24, trimM, ox - 0.11, W.y0 - 0.03, dz));
+  const clay = mat(0xa65a3a, { roughness: 0.85 }), leafA = mat(0x3f7f45, { flatShading: true }), leafB = mat(0x5c9a4e, { flatShading: true });
+  const potZ = wz1 - 0.3;
+  G.add(put(new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.075, 0.16, 12), clay), ox - 0.12, W.y0 + 0.08, potZ));
+  for (const [x, y, z, r, m] of [[0, 0.24, 0, 0.1, leafB], [-0.04, 0.3, -0.05, 0.07, leafA], [0.03, 0.29, 0.06, 0.075, leafA]]) {
+    G.add(put(new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0).scale(1.1, 1.2, 1.1), m), ox - 0.12 + x, W.y0 + y, potZ + z));
+  }
 
   /* ---- walls, floor, skirting ---- */
   const plaster = plasterTex(); plaster.wrapS = plaster.wrapT = THREE.RepeatWrapping; plaster.repeat.set(3, 3);
