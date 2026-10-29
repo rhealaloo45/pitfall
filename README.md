@@ -23,6 +23,7 @@ npm test                         # vehicle-dynamics + world-generation unit test
 npm run test:e2e                 # headless Chromium: all pages, the drive and chapter rail, gameplay, circuit regression, phone
 npm run previews                 # re-capture the menu / title-screen previews (needs ffmpeg)
 npm run perf                     # scroll the landing page with the CPU slowed 4× and report frame times
+node tests/opening-stills.mjs     # re-render the opening stills shown while the 3D starts up
 ```
 
 Graphics quality is detected from the GPU (Low / Medium / High) and can be changed in Pause → Settings.

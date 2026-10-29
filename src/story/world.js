@@ -290,6 +290,17 @@ function windowLines(sx, z0, w, h, style, pts) {
   }
 }
 
+/** The 12 edges of an axis-aligned box (centre, size), appended to a line-art buffer: far cheaper than
+    finding them with EdgesGeometry when we already know the shape. */
+function boxEdges(pts, cx, cy, cz, w, h, d) {
+  const x = [cx - w / 2, cx + w / 2], y = [cy - h / 2, cy + h / 2], z = [cz - d / 2, cz + d / 2];
+  for (const [a, b, c, e] of [[0, 0, 0, 0], [0, 0, 1, 1], [1, 1, 0, 0], [1, 1, 1, 1]]) {   // the four edges along x, at each y/z corner
+    pts.push(x[0], y[a], z[c], x[1], y[b], z[e]);
+  }
+  for (const [i, k] of [[0, 0], [0, 1], [1, 0], [1, 1]]) pts.push(x[i], y[0], z[k], x[i], y[1], z[k]);   // along y
+  for (const [i, j] of [[0, 0], [0, 1], [1, 0], [1, 1]]) pts.push(x[i], y[j], z[0], x[i], y[j], z[1]);   // along z
+}
+
 /* ---------------- the street ---------------- */
 export function buildStreet(scene) {
   const G = new THREE.Group(); G.name = 'street'; scene.add(G);
@@ -313,6 +324,7 @@ export function buildStreet(scene) {
   // roofs; a row of taller towers behind gives the street a skyline
   const tints = [0xe9e3d8, 0xd7dde4, 0xe6d3c3, 0xcfd6cc, 0xded7e6];
   const byTint = tints.map(() => []), winPts = [], trim = [], tanks = [], shops = [];
+  const trimBox = (w, h, d, x, y, z) => { trim.push(new THREE.BoxGeometry(w, h, d).translate(x, y, z)); boxEdges(winPts, x, y, z, w, h, d); };
   const awnC = [0xa63a32, 0x2f6b4f, 0x2c5b8a, 0xc9962f], awn = awnC.map(() => []);
   // a box whose UVs repeat one facade tile every 6 m across and 9 m up, so one material fits every size
   const tiled = (d, h, w) => {
@@ -321,9 +333,9 @@ export function buildStreet(scene) {
     return g;
   };
   const roof = (cx, cz, d, w, h, k) => {
-    trim.push(new THREE.BoxGeometry(d + 0.2, 0.7, w + 0.2).translate(cx, h + 0.35, cz));   // parapet
+    trimBox(d + 0.2, 0.7, w + 0.2, cx, h + 0.35, cz);   // parapet
     for (let i = 0; i < 1 + (k % 3); i++) { const rr = 0.55 + ((k + i) % 3) * 0.1; tanks.push(new THREE.CylinderGeometry(rr, rr, 1.15, 14).translate(cx + d * (0.2 * i - 0.2), h + 1.28, cz + w * (((k + i) % 3) * 0.25 - 0.25))); }
-    if (k % 2 === 0) trim.push(new THREE.BoxGeometry(2.6, 2.4, 3).translate(cx + d * 0.15, h + 1.9, cz + w * 0.2));   // stair room
+    if (k % 2 === 0) trimBox(2.6, 2.4, 3, cx + d * 0.15, h + 1.9, cz + w * 0.2);   // stair room
   };
   let k = 0;
   const units = [];
@@ -333,11 +345,11 @@ export function buildStreet(scene) {
       if (sx > 0 && z + w > 312) break;   // my building, then Marine Drive
       if (z + w > 340) break;
       const ti = k % tints.length, style = (11 + ti) % 5, fx = sx * 9.6, cx = sx * (9.6 + d / 2), cz = z + w / 2;
-      byTint[ti].push(tiled(d, h, w).translate(cx, h / 2, cz));
+      byTint[ti].push(tiled(d, h, w).translate(cx, h / 2, cz)); boxEdges(winPts, cx, h / 2, cz, d, h, w);
       windowLines(sx, z, w, h, style, winPts);
       // a concrete ledge at every floor of the street face, and a canopy over the shops
-      for (let y = 6; y < h - 1; y += 3) trim.push(new THREE.BoxGeometry(0.3, 0.14, w).translate(fx - sx * 0.15, y, cz));
-      trim.push(new THREE.BoxGeometry(0.7, 0.16, w).translate(fx - sx * 0.35, 3.5, cz));
+      for (let y = 6; y < h - 1; y += 3) trimBox(0.3, 0.14, w, fx - sx * 0.15, y, cz);
+      trimBox(0.7, 0.16, w, fx - sx * 0.35, 3.5, cz);
       roof(cx, cz, d, w, h, k);
       // shopfronts on the ground floor (which shop goes where is decided once every unit is known)
       const n = Math.max(1, Math.round(w / 4.6)), uw = w / n;
@@ -358,19 +370,21 @@ export function buildStreet(scene) {
     const col = c % SHOP_COLS, row = Math.floor(c / SHOP_COLS), q = new THREE.PlaneGeometry(uw - 0.3, 3.2), uv = q.attributes.uv;
     for (let j = 0; j < uv.count; j++) uv.setXY(j, (col + uv.getX(j)) / SHOP_COLS, 1 - (row + 1 - uv.getY(j)) / SHOP_ROWS);
     shops.push(q.rotateY(-sx * Math.PI / 2).translate(fx - sx * 0.03, 1.76, zc));
+    { const x = fx - sx * 0.04, a = zc - (uw - 0.3) / 2, b = zc + (uw - 0.3) / 2; winPts.push(x, 0.16, a, x, 0.16, b, x, 3.36, a, x, 3.36, b, x, 0.16, a, x, 3.36, a, x, 0.16, b, x, 3.36, b, x, 2.6, a, x, 2.6, b); }
     if (SHOPS[c].open && !odd) awn[((Math.floor(zc) % 4) + 4) % 4].push(new THREE.BoxGeometry(1.0, 0.05, uw - 0.5).rotateZ(sx * 0.35).translate(fx - sx * 0.5, 2.38, zc));
   }
   for (const sx of [-1, 1]) for (let z = -30, i = 0; z < 296; i++) {
     const w = 14 + ((i * 5) % 8), d = 14, h = 3 * (9 + ((i * 7) % 8)), cx = sx * (27 + ((i * 3) % 6) + d / 2), cz = z + w / 2;
-    byTint[(i + 2) % tints.length].push(tiled(d, h, w).translate(cx, h / 2, cz));
+    byTint[(i + 2) % tints.length].push(tiled(d, h, w).translate(cx, h / 2, cz)); boxEdges(winPts, cx, h / 2, cz, d, h, w);
     roof(cx, cz, d, w, h, i + 1);
     z += w + 6 + ((i * 11) % 14);
   }
-  byTint.forEach((geos, i) => { if (!geos.length) return; const b = new THREE.Mesh(mergeGeometries(geos), facadeMat(tints[i], 11 + i, 6, 9)); b.receiveShadow = true; G.add(b); });
-  G.add(new THREE.Mesh(mergeGeometries(trim), mat(0xe6e1d7, { roughness: 0.9 })), new THREE.Mesh(mergeGeometries(tanks), mat(0x232527, { roughness: 0.55 })));
+  const noEdges = m => { m.userData.noEdges = true; return m; };
+  byTint.forEach((geos, i) => { if (!geos.length) return; const b = noEdges(new THREE.Mesh(mergeGeometries(geos), facadeMat(tints[i], 11 + i, 6, 9))); b.receiveShadow = true; G.add(b); });
+  G.add(noEdges(new THREE.Mesh(mergeGeometries(trim), mat(0xe6e1d7, { roughness: 0.9 }))), noEdges(new THREE.Mesh(mergeGeometries(tanks), mat(0x232527, { roughness: 0.55 }))));
   const atlas = shopAtlas(), shopMat = mat(0xffffff, { map: atlas.map, emissiveMap: atlas.glow, emissive: 0xffffff, emissiveIntensity: 0, roughness: 0.8 });
-  NIGHT.mats.push(shopMat); G.add(new THREE.Mesh(mergeGeometries(shops), shopMat));
-  awn.forEach((geos, i) => { if (geos.length) G.add(new THREE.Mesh(mergeGeometries(geos), mat(awnC[i], { roughness: 0.8 }))); });
+  NIGHT.mats.push(shopMat); G.add(noEdges(new THREE.Mesh(mergeGeometries(shops), shopMat)));
+  awn.forEach((geos, i) => { if (geos.length) G.add(noEdges(new THREE.Mesh(mergeGeometries(geos), mat(awnC[i], { roughness: 0.8 })))); });
   const wl = new THREE.BufferGeometry(); wl.setAttribute('position', new THREE.Float32BufferAttribute(winPts, 3));
   const winLines = new THREE.LineSegments(wl, LINES); winLines.userData.edge = true; G.add(winLines);
   // trees on the pavement
