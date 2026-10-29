@@ -6,13 +6,13 @@
    BOX BOX!); a navy felt pinboard (photos, a cat, a badge, my K. C. College lanyard, the weekly timetable) under
    a soft/medium/hard tyre print; LIGHTS OUT and 127.0.0.1 prints either side of the window and a cursive
    "hello" neon over it; a racing seat, a circuit rug, two race tyres as a side table; fairy lights, shelves with
-   books, a race helmet, a trophy and the 1st-rank certificate. Original stand-ins only: no real team, brand or device logos. Coordinates match the facade window in
+   books, a race helmet, my childhood Wii, a trophy and the 1st-rank certificate. Original stand-ins only: no real team, brand or device logos. Coordinates match the facade window in
    world.js (the room spans x 9.9–13.1, z 327.2–330.8, y 10–12.8). */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
-import { ink, facadeMat } from './world.js?v=47';
+import { ink, facadeMat } from './world.js?v=49';
 import { buildCar } from '../vehicle/car-model.js';
 import { CAR_SPEC } from '../vehicle/sim.js';
 
@@ -364,7 +364,16 @@ export function buildRoom(scene, { screenTex, stillUrl }) {
   for (const y of [11.45, 11.95]) G.add(box(0.85, 0.03, 0.22, oak, 12.62, y, sz));
   const bookC = [0x3f6fb5, 0xd9a23c, 0x9b4d6a, 0x4c8c74, 0xe6e0d4, 0xc8553d, 0x2d3e5a, 0x7a5a9e, 0xe2b35a];
   let bx2 = 12.25; bookC.forEach((c, i) => { const h = 0.17 + (i % 3) * 0.03, t = 0.03 + (i % 2) * 0.012; G.add(box(t, h, 0.15, mat(c), bx2, 11.465 + h / 2, sz)); bx2 += t + 0.004; });
-  G.add(box(0.15, 0.04, 0.12, mat(0x3f6fb5), 12.7, 11.485, sz), box(0.14, 0.035, 0.11, mat(0xe6e0d4), 12.7, 11.52, sz));   // a lying stack
+  // the Wii I grew up with: the console upright on its stand, the blue light in its disc slot, the remote beside it
+  const wiiWhite = mat(0xf3f3f1, { roughness: 0.3 }), wiiGrey = mat(0xc9cacd, { roughness: 0.4 }), wiiBlue = glowMat(0x4cc3ff);
+  const shelfTop = 11.465, wx = 12.715;
+  G.add(box(0.08, 0.012, 0.12, wiiGrey, wx, shelfTop + 0.006, sz - 0.02), box(0.044, 0.157, 0.215, wiiWhite, wx, shelfTop + 0.012 + 0.0785, sz - 0.02));
+  G.add(box(0.008, 0.11, 0.002, wiiBlue, wx, shelfTop + 0.1, sz - 0.1285), box(0.012, 0.012, 0.002, wiiGrey, wx, shelfTop + 0.03, sz - 0.1285));
+  const remote = new THREE.Group(); remote.position.set(12.82, shelfTop, sz - 0.05); remote.rotation.y = 0.12;
+  remote.add(box(0.148, 0.03, 0.036, wiiWhite, 0, 0.015, 0), put(new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.004, 14), wiiGrey), 0.025, 0.031, 0));
+  remote.add(box(0.022, 0.004, 0.007, mat(0x55585e), 0.05, 0.031, 0), box(0.007, 0.004, 0.022, mat(0x55585e), 0.05, 0.031, 0));
+  for (let i = 0; i < 4; i++) remote.add(box(0.003, 0.002, 0.003, wiiBlue, -0.062 + i * 0.006, 0.0305, 0));
+  G.add(remote);
   const cup = new THREE.Mesh(new THREE.LatheGeometry([[0, 0], [0.03, 0], [0.03, 0.012], [0.009, 0.024], [0.009, 0.055], [0.042, 0.072], [0.048, 0.12], [0.045, 0.12], [0.036, 0.075], [0, 0.072]].map(([x, y]) => new THREE.Vector2(x, y)), 18), mat(0xd9ab3b, { metalness: 0.9, roughness: 0.25 }));
   G.add(put(cup, 12.95, 11.465, sz));
   const cert = canvasTex(256, 192, (g, w, h) => { g.fillStyle = '#faf6ec'; g.fillRect(0, 0, w, h); g.strokeStyle = '#c9a24a'; g.lineWidth = 6; g.strokeRect(10, 10, w - 20, h - 20); g.fillStyle = '#2a2420'; g.font = '700 26px Georgia, serif'; g.textAlign = 'center'; g.fillText('1st Rank', w / 2, 86); g.font = '400 16px Georgia, serif'; g.fillText('B.Tech IT', w / 2, 116); g.fillText('CGPA 9.95', w / 2, 140); });
@@ -512,7 +521,13 @@ export function buildRoom(scene, { screenTex, stillUrl }) {
     const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.215, 0.095, 16, 40).rotateX(-Math.PI / 2).scale(1, 1.42, 1), mat(0xffffff, { map: side, roughness: 0.85 }));
     G.add(put(tyre, tx, R.y0 + y, tz), put(new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.2, 20), rim), tx, R.y0 + y, tz));
   });
-  G.add(put(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.012, 12), mat(0xc8151d, { roughness: 0.4 })), tx, R.y0 + 0.51, tz));   // the wheel nut
+  G.add(put(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.01, 32), glass), tx, R.y0 + 0.545, tz));   // a small glass top
+  // and a Wii Remote left on it, like I just stopped playing
+  const wiiW = mat(0xf3f3f1, { roughness: 0.3 }), wiiG = mat(0xc9cacd, { roughness: 0.4 }), padM = mat(0x55585e);
+  const remote2 = new THREE.Group(); remote2.position.set(tx + 0.02, R.y0 + 0.55, tz + 0.02); remote2.rotation.y = 0.7;
+  remote2.add(box(0.148, 0.03, 0.036, wiiW, 0, 0.015, 0), put(new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.004, 14), wiiG), 0.025, 0.031, 0));
+  remote2.add(box(0.022, 0.004, 0.007, padM, 0.05, 0.031, 0), box(0.007, 0.004, 0.022, padM, 0.05, 0.031, 0), box(0.06, 0.008, 0.01, mat(0xd5d7da), -0.09, 0.006, 0));   // and its strap
+  G.add(remote2);
   G.add(put(new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.3, 14, 1, true), mat(0x9aa0a6, { side: THREE.DoubleSide })), dX + 0.05, R.y0 + 0.15, dz + 0.55));
   const bigPot = put(new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.13, 0.32, 16), mat(0xc97b52)), R.x1 - 0.3, R.y0 + 0.16, R.z1 - 0.3);
   const leaf = mergeGeometries([...Array(9)].map((_, i) => new THREE.CircleGeometry(0.16, 10).scale(1, 1.3, 1).translate(0, 0.2, 0).rotateX(-0.5 - (i % 3) * 0.25).rotateY(i * 0.9).translate(0, 0.25 + (i % 4) * 0.13, 0)));
