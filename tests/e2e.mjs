@@ -15,8 +15,8 @@ try {
   const links = await p.$$eval('a', as => as.map(a => a.getAttribute('href')));
   check('menu links to both worlds and the portfolio', ['mumbai.html', 'circuit.html', 'portfolio.html'].every(h => links.includes(h)));
   check('landing: résumé and contact on the first screen', await p.$('#hello a[href="assets/rhea-laloo-resume.pdf"]') && await p.$('#hello a[href^="mailto:"]'));
-  const land = await p.evaluate(() => ({ stories: document.querySelectorAll('#beats .story').length, roles: document.querySelectorAll('#roles .role').length, stops: document.querySelectorAll('#route .stop').length, tools: document.querySelectorAll('#tools dd span').length }));
-  check('landing: stories, experience, education and toolkit render from the shared data', land.stories === 5 && land.roles === 3 && land.stops === 4 && land.tools > 10, JSON.stringify(land));
+  const land = await p.evaluate(() => ({ stories: document.querySelectorAll('#beats .story:not(.desk)').length, desk: !!document.querySelector('#beats .desk'), roles: document.querySelectorAll('#roles .role').length, stops: document.querySelectorAll('#route .stop').length, tools: document.querySelectorAll('#tools dd span').length }));
+  check('landing: stories, the desk card, experience, education and toolkit render from the shared data', land.stories === 5 && land.desk && land.roles === 3 && land.stops === 4 && land.tools > 10, JSON.stringify(land));
   // the drive: a scroll-driven 3D scene; line art at the top, then each project's "noticing" drawn as boxes
   const at = (page, p) => page.evaluate(async p => {
     const t = document.getElementById('story'), span = t.offsetHeight - innerHeight;

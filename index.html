@@ -304,7 +304,7 @@
   </footer>
 </main>
 
-<script src="src/shared/portfolio-data.js?v=6"></script>
+<script src="src/shared/portfolio-data.js?v=7"></script>
 <script>
 (function () {
   var R = window.PORTFOLIO && window.PORTFOLIO.RESUME; if (!R) return;
@@ -313,17 +313,20 @@
   var years = function (w) { var y = String(w).match(/\d{4}/g) || []; return y.length > 1 ? y[0] + ' — ' + y[1] : (y[0] || '') + (/present/i.test(w) ? ' — now' : ''); };
 
   // the drive's beats, each placed where the scene reaches it (fraction of the drive)
-  var AT = [0.215, 0.385, 0.56, 0.8, 0.935];
+  var AT = [0.215, 0.385, 0.56, 0.822, 0.94];
   $('beats').innerHTML = (R.stories || []).map(function (s, i) {
     return '<article class="beat story" style="--at:' + AT[i] + '"><div class="wrap"><div class="card' + (i === 1 ? ' right' : '') + '">' +
       '<div class="n"><b>' + String(i + 1).padStart(2, '0') + '</b>' + esc(s.tag) + '</div>' +
       '<h3>' + esc(s.title) + '</h3><p>' + esc(s.text) + '</p>' +
       '<div class="chips">' + s.chips.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') + '</div></div></div></article>';
   }).join('');
+  // the room: a card about the person, as the drive reaches my desk
+  var D = R.desk;
+  if (D) $('beats').insertAdjacentHTML('beforeend', '<article class="beat story desk" style="--at:0.732"><div class="wrap"><div class="card right"><div class="n"><b>☕</b>' + esc(D.tag) + '</div><h3>' + esc(D.title) + '</h3><p>' + esc(D.text) + '</p><div class="chips">' + D.chips.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') + '</div></div></div></article>');
 
   $('roles').innerHTML = R.experience.map(function (x, i) {
     return '<article class="role rv"><div><div class="when">' + esc(x.when) + '</div><h3>' + esc(x.org) + '</h3><div class="r">' + esc(x.role) + '</div>' +
-      (i === 0 ? '<span class="now">Current</span>' : '') + '</div><ul>' + x.points.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul></article>';
+      (i === 0 ? '<span class="now">Current</span>' : '') + '</div><ul>' + (x.short || x.points).map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul></article>';
   }).join('');
 
   var E = R.education, job = R.experience[0];
@@ -344,6 +347,6 @@
   } else document.querySelectorAll('.rv').forEach(function (el) { el.classList.add('in'); });
 })();
 </script>
-<script type="module" src="src/story/main.js?v=20"></script>
+<script type="module" src="src/story/main.js?v=24"></script>
 </body>
 </html>

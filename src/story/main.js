@@ -10,10 +10,10 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { buildCar } from '../vehicle/car-model.js';
 import { CAR_SPEC } from '../vehicle/sim.js';
-import { INK, LINES, NIGHT, ink, outline, freeze, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildSky } from './world.js';
+import { INK, LINES, NIGHT, ink, outline, freeze, mergeByMaterial, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildSky } from './world.js';
 import { buildRoom } from './room.js';
 import { buildMarineDrive, along, LENGTH } from './marine.js';
-import { screenTex, drawScreen } from './screen.js';
+import { screenTex, drawScreen, setWallpaper } from './screen.js';
 
 const $ = id => document.getElementById(id);
 const track = $('story'), canvas = $('scene'), detLayer = $('det'), stage = canvas.parentElement, veil = $('veil');
@@ -56,6 +56,8 @@ const herd = buildCows(scene);
 const crossing = buildCrossing(scene);
 const STILL = 'assets/stills/mumbai-gp-car.webp';
 const room = buildRoom(scene, { screenTex, stillUrl: STILL });
+mergeByMaterial(room.group);   // the room's static furniture (and the model car) as a few meshes
+setWallpaper(STILL);
 const marine = buildMarineDrive(scene, facadeMat);
 const car = buildCar();
 car.root.traverse(o => { if (o.isMesh) { o.castShadow = true; for (const m of [].concat(o.material)) ink(m); } });
@@ -119,10 +121,10 @@ const CAM = [
   { t: 0.62, pos: at(-8.0, 2.4, 237), look: at(0, 1.5, 249), fov: 42 },
   { t: 0.69, pos: at(0.6, 12.3, 329), look: at(9.6, 12.15, 329), fov: 40 },
   { t: 0.745, pos: at(9.4, 12.0, 329), look: at(16.4, 11.6, 329), fov: 50 },
-  { t: 0.775, pos: at(12.2, 11.85, 329.4), look: at(17.7, 11.85, 329), fov: 54, tall: { pos: at(11.4, 11.9, 329), look: at(17.7, 11.6, 329), fov: 64 } },
-  { t: 0.81, pos: at(15.36, 11.0, 328.28), look: at(16.5, 10.94, 328.56), fov: 38, tall: { pos: at(15.0, 11.02, 329), look: at(16.5, 10.78, 329), fov: 52 } },
-  { t: 0.88, pos: at(15.4, 10.99, 328.3), look: at(16.5, 10.94, 328.56), fov: 38, tall: { pos: at(15.02, 11.01, 329), look: at(16.5, 10.78, 329), fov: 52 } },
-  { t: 1.0, pos: at(14.9, 11.12, 328.1), look: at(16.5, 10.96, 328.5), fov: 44, tall: { pos: at(14.75, 11.1, 329), look: at(16.5, 10.8, 329), fov: 56 } },
+  { t: 0.775, pos: at(12.6, 11.75, 329), look: at(17.7, 11.75, 329), fov: 56, tall: { pos: at(11.6, 11.8, 329), look: at(17.7, 11.55, 329), fov: 66 } },
+  { t: 0.81, pos: at(15.92, 11.33, 328.36), look: at(17.3, 11.13, 328.7), fov: 42, tall: { pos: at(15.75, 11.22, 329), look: at(17.3, 10.98, 329), fov: 60 } },
+  { t: 0.88, pos: at(15.96, 11.32, 328.38), look: at(17.3, 11.13, 328.7), fov: 42, tall: { pos: at(15.78, 11.21, 329), look: at(17.3, 10.98, 329), fov: 60 } },
+  { t: 1.0, pos: at(15.75, 11.34, 328.5), look: at(17.3, 11.08, 328.85), fov: 48, tall: { pos: at(15.5, 11.3, 329), look: at(17.3, 11.0, 329), fov: 64 } },
   // act two: turn round, out of the window, down to the car, and along Marine Drive
   { t: 1.06, pos: at(13.6, 12.0, 329), look: at(3, 11, 329), fov: 50 },
   { t: 1.12, pos: at(5.5, 13.2, 327), look: rel(0, 0.5, 6), fov: 50 },
@@ -242,7 +244,7 @@ function frame() {
   // my room: warm lamps, fairy lights; then the attack turns it red and packets stream into the laptop
   const RL = room.lights, attack = sstep(clamp((p - 0.885) / 0.05)) * (1 - sstep(clamp((a - 0.02) / 0.05)));
   const glowOn = night * (inRoom ? 1 : 0.6);
-  RL.lampLight.intensity = 4.5 * glowOn * (1 - attack * 0.6); RL.floorLight.intensity = 3.2 * glowOn * (1 - attack * 0.7);
+  RL.lampLight.intensity = 7 * glowOn * (1 - attack * 0.6); RL.floorLight.intensity = 3.2 * glowOn * (1 - attack * 0.7);
   RL.moon.intensity = 1.6 * glowOn;
   RL.alarm.intensity = attack * (9 + Math.sin(time * 6) * 4);
   room.fairy.glow.material.size = 0.42 * (0.92 + Math.sin(time * 2.3) * 0.08);
@@ -260,7 +262,8 @@ function frame() {
     }
     room.packets.instanceMatrix.needsUpdate = true;
   }
-  if (p > 0.66 && T < 1.12) drawScreen(p > 0.875 ? 'logs' : 'code', time, p > 0.875 ? clamp((p - 0.875) / 0.1) : clamp((p - 0.74) / 0.12));
+  // the ultrawide: lock screen as we come in, the editor for chub-guard, then the logs during the attack
+  if (p > 0.66 && T < 1.12) drawScreen(p > 0.875 ? 'logs' : p > 0.79 ? 'code' : 'lock', time, p > 0.875 ? clamp((p - 0.875) / 0.1) : clamp((p - 0.79) / 0.08));
   // only draw what this part of the page can see
   marine.visible = T > 0.6;
   const onStreet = T < 1.16;
@@ -308,6 +311,12 @@ resize(); onScroll(); tNow = tTarget;
 room.packets.visible = true;
 scene.traverse(o => { for (const m of [].concat(o.material || [])) for (const k of ['map', 'emissiveMap', 'normalMap']) if (m[k]) renderer.initTexture(m[k]); });
 renderer.compile(scene, camera);
+// one warm-up render with nothing culled uploads every mesh to the GPU now, not mid-scroll when it first appears
+const culled = [];
+scene.traverse(o => { if (o.isMesh || o.isPoints || o.isLine) { culled.push([o, o.frustumCulled]); o.frustumCulled = false; } });
+const warm = new THREE.WebGLRenderTarget(64, 64);
+renderer.setRenderTarget(warm); renderer.render(scene, camera); renderer.setRenderTarget(null); warm.dispose();
+for (const [o, f] of culled) o.frustumCulled = f;
 room.packets.visible = false;
 frame();
 raf = requestAnimationFrame(loop);

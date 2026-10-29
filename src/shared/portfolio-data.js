@@ -105,16 +105,19 @@ const RESUME = {
       'Built an end-to-end log anomaly detection pipeline using Autoencoders and Isolation Forest; applied SHAP for interpretability and root-cause analysis of abnormal patterns in large-scale system logs.',
       'Clustered anomalous log patterns and integrated LLM-based analysis to classify potential attack types, generate actionable insights and support intelligent security monitoring.',
       'Built chub-guard, an AI-powered linting tool that detects deprecated and outdated code patterns against documentation indexed in Context Hub (chub); published on PyPI, npm and as a VS Code extension.',
-      'Mentored 100+ students across 5 states at Yuvai Hackathon (India AI Impact Summit), enabling non-technical students to build apps via no-code/low-code methodologies.']},
+      'Mentored 100+ students across 5 states at Yuvai Hackathon (India AI Impact Summit), enabling non-technical students to build apps via no-code/low-code methodologies.'],
+      short:['Log anomaly detection over large-scale system logs: Autoencoders and Isolation Forest, explained with SHAP', 'LLM-based classification of likely attack types for security monitoring', 'chub-guard, an AI linter for outdated code, on PyPI, npm and VS Code', 'Mentored 100+ students across 5 states at Yuvai Hackathon (India AI Impact Summit)']},
     { org:'Nareshwadi Learning Centre', role:'Lead Software Development Intern', when:'Jun 2024 — Jun 2025', points:[
       'Developed and deployed a full-stack React Native cattle management app to manage 50+ cattle, including lifecycle tracking, offline milk entry and alert systems.',
       'Implemented analysis and report generation, including milk production analysis over the last 7 days.',
       'Built a module to predict cattle diseases and milk-yield trends using Random Forest with 94% accuracy.',
-      'Ran multiple rounds of user testing with farm staff to gather requirements and improve usability.']},
+      'Ran multiple rounds of user testing with farm staff to gather requirements and improve usability.'],
+      short:['Shipped a React Native app managing 50+ cattle: lifecycle tracking, offline milk entry, alerts', 'Disease and milk-yield prediction with Random Forest, 94% accuracy', 'Seven-day milk production analysis and reports', 'Requirements and usability from rounds of testing with farm staff']},
     { org:'AICTE — IBM SkillBuild', role:'Artificial Intelligence Intern', when:'May 2023 — Jul 2023', points:[
       'Built an AI model to monitor mental fitness trends across 15+ countries.',
       'Trained on 20+ years of historical data to forecast future mental fitness rates.',
-      'Achieved 98% accuracy using regression algorithms.']},
+      'Achieved 98% accuracy using regression algorithms.'],
+      short:['Forecast mental-fitness trends across 15+ countries', 'Trained on 20+ years of historical data', '98% accuracy with regression models']},
   ],
   projects:[
     { name:'ADHD Detection Model', tag:'ML', text:'ADHD detection using Naive Bayes, SVM and Random Forest on the ADHD-200 dataset. Random Forest achieved over 87.2% accuracy.' },
@@ -124,12 +127,14 @@ const RESUME = {
   // the landing page's story: what each project taught a machine to notice — condensed from the entries above;
   // in the order the landing page's drive reaches them: road, cows, crossing, my desk, the attack on it
   stories:[
-    { tag:'RoadHawk · IoT', title:'Potholes, spotted and mapped.', text:'A Raspberry Pi pothole detector using CNNs and sensors, with Google Maps integration and a Django backend.', chips:['CiiA Top 80 of 695 teams, twice', 'Raspberry Pi', 'CNNs'] },
-    { tag:'Nareshwadi Learning Centre · Mobile + ML', title:'Disease in a herd, predicted.', text:'A full-stack React Native app for 50+ cattle with lifecycle tracking, offline milk entry and alerts, plus a Random Forest model for disease and milk-yield trends, shaped by rounds of testing with farm staff.', chips:['94% accuracy', 'React Native', 'Random Forest'] },
-    { tag:'Research · ML', title:'Patterns in people.', text:'ADHD detection on the ADHD-200 dataset, comparing Naive Bayes, SVM and Random Forest. And at IBM SkillBuild, a regression model forecasting mental-fitness trends across 15+ countries from 20+ years of data.', chips:['87.2% · Random Forest', '98% · regression'] },
-    { tag:'TCS · LLM tooling', title:'Outdated code, before it ships.', text:'chub-guard is an AI-powered linter that checks code against documentation indexed in Context Hub and flags deprecated and outdated patterns.', chips:['Published on PyPI, npm & VS Code'] },
-    { tag:'TCS · Security', title:'Attacks hiding in system logs.', text:'An end-to-end pipeline over large-scale system logs: Autoencoders and Isolation Forest flag the anomalies, SHAP explains their root cause, and LLM-based analysis classifies the likely attack type.', chips:['Autoencoders', 'Isolation Forest', 'SHAP', 'LLMs'] },
+    { tag:'RoadHawk · IoT', title:'Potholes, spotted and mapped.', text:'A CNN spots potholes from a Raspberry Pi\'s camera and sensors, and a Django backend pins each one on Google Maps.', chips:['CiiA Top 80 of 695 teams, twice', 'Raspberry Pi · CNN · Django'] },
+    { tag:'Nareshwadi Learning Centre · Mobile + ML', title:'Disease in a herd, predicted.', text:'A React Native app, deployed for a farm managing 50+ cattle: lifecycle tracking, offline milk entry and alerts, plus a Random Forest that flags disease and milk-yield trends. Shaped by rounds of testing with the farm staff.', chips:['94% accuracy', 'React Native · Random Forest'] },
+    { tag:'Research · ML', title:'Patterns in people.', text:'ADHD detection on the ADHD-200 dataset, where Random Forest came out ahead of SVM and Naive Bayes. And at IBM SkillBuild, a regression model forecasting mental-fitness trends across 15+ countries from 20+ years of data.', chips:['87.2% · ADHD-200', '98% · 15+ countries'] },
+    { tag:'TCS · LLM tooling', title:'Outdated code, before it ships.', text:'chub-guard checks code against up-to-date documentation indexed in Context Hub and flags deprecated APIs and outdated patterns. Built at TCS; published on PyPI, npm and as a VS Code extension.', chips:['PyPI · npm · VS Code', 'LLM tooling'] },
+    { tag:'TCS · Security', title:'Attacks hiding in system logs.', text:'Autoencoders and Isolation Forest find what\'s abnormal in large-scale system logs, SHAP explains the root cause, and an LLM classifies the likely attack, turning anomalies into insights a security team can act on.', chips:['Autoencoders · Isolation Forest', 'SHAP', 'LLMs'] },
   ],
+  // the card when the drive reaches my room (from Rhea's own desk photo)
+  desk:{ tag:'Home · my desk', title:'Where the work happens.', text:'A curved ultrawide with a race car for a wallpaper, a smaller one parked under it, and a pinboard that\'s half timetable, half memories. The window is the one thing that isn\'t real yet: it\'s the view I want from my own place one day.', chips:['eat · sleep · code', 'Formula 1 fan', 'Mumbai'] },
   education:{
     school:{ name:'Villa Theresa High School', place:'Peddar Road, Mumbai', course:'ICSE Science (Class 10)', score:'91.83%', when:'Jun 2011 — May 2019' },
     junior:{ name:'K. C. College', place:'Churchgate, Mumbai', course:'HSC Science (Class 12)', score:'97.33% — among the top 1% of students across the board', when:'Aug 2019 — Jul 2021' },
