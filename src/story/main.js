@@ -10,11 +10,11 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { buildCar } from '../vehicle/car-model.js';
 import { CAR_SPEC } from '../vehicle/sim.js';
-import { INK, LINES, NIGHT, ink, outline, freeze, mergeByMaterial, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildSky } from './world.js?v=61';
-import { buildRoom } from './room.js?v=61';
-import { buildMarineDrive, along, LENGTH } from './marine.js?v=61';
-import { screenTex, drawScreen, setWallpaper } from './screen.js?v=61';
-import { loadKit, streetProps, marineProps } from './props.js?v=61';
+import { INK, LINES, NIGHT, ink, outline, freeze, mergeByMaterial, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildSky } from './world.js?v=67';
+import { buildRoom } from './room.js?v=67';
+import { buildMarineDrive, along, LENGTH } from './marine.js?v=67';
+import { screenTex, drawScreen, setWallpaper } from './screen.js?v=67';
+import { loadKit, streetProps, marineProps } from './props.js?v=67';
 
 const $ = id => document.getElementById(id);
 const track = $('story'), canvas = $('scene'), detLayer = $('det'), stage = canvas.parentElement, veil = $('veil');
@@ -36,6 +36,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = !small;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 
+performance.mark('story:modules');   // start-up timing marks, readable in the browser's performance panel
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0xf0d2b6, 90, 340);
 const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 1500);
@@ -84,13 +85,16 @@ function bakeFlat(root) {
 
 /* ---------- world ---------- */
 // the ready-made props (cars, street furniture, boats) come in one small file; the drive still builds without them
+performance.mark('story:kit-start');
 const kit = await loadKit('assets/models/street-kit.glb').catch(e => { console.warn('props unavailable', e); return null; });
+performance.mark('story:kit');
 const street = buildStreet(scene);
 const streetLife = kit ? streetProps(street, kit) : null;
 const holes = buildPotholes(scene);
 const herd = buildCows(scene);
 const crossing = buildCrossing(scene);
 const STILL = 'assets/stills/mumbai-gp-car.webp';
+performance.mark('story:street');
 const room = buildRoom(scene, { screenTex, stillUrl: STILL });
 standardize(room.group);
 // the room's lights live outside the room group and are dimmed to 0 instead of hidden: hiding a light changes
@@ -99,6 +103,7 @@ room.group.updateMatrixWorld(true);
 for (const l of [...Object.values(room.lights), room.lights.lampLight.target]) scene.attach(l);
 mergeByMaterial(room.group);   // the room's static furniture (and the model car) as a few meshes
 setWallpaper(STILL);
+performance.mark('story:room');
 const marine = buildMarineDrive(scene, facadeMat);
 if (kit) marineProps(marine, kit);
 const car = buildCar();
@@ -111,10 +116,15 @@ car.body.add(headlight, headlight.target);
 // a warm streetlight that rides with the car on Marine Drive, so it reads at night
 const carLight = new THREE.PointLight(0xffc98f, 0, 16, 1.6); carLight.position.set(-3, 5, 2); car.root.add(carLight);
 scene.add(car.root, car.contactShadow);
+performance.mark('story:built');
 bakeFlat(scene);
-for (const g of [street, crossing.group, room.group]) outline(g);
+performance.mark('story:flat');
+// line art only covers the opening (it has faded by the first project), so only what can be seen from the start
+// of the street gets outlines; the crossing and my room are only ever seen in colour
+outline(street);
 for (const h of holes) outline(h.obj, 20);
 for (const c of herd) outline(c.obj, 35);
+performance.mark('story:street-lines');
 outline(car.root, 40, { bake: false });   // the car moves: its outlines ride on each part
 car.root.traverse(o => { o.userData.moving = true; });
 for (const g of [street, crossing.group, room.group, marine, ...holes.map(h => h.obj), ...herd.map(c => c.obj)]) freeze(g);
@@ -361,6 +371,7 @@ scene.traverse(o => { for (const m of [].concat(o.material || [])) for (const k 
 let started = false;
 function start() {
   if (started) return; started = true;
+  performance.mark('story:shaders');
   // one warm-up render with nothing culled uploads every mesh to the GPU now, not mid-scroll when it first appears.
   // It draws to the screen (an offscreen target would build a second set of shaders) and the real first frame
   // replaces it in the same task, so it is never seen.
@@ -373,8 +384,11 @@ function start() {
   raf = requestAnimationFrame(loop);
   document.documentElement.classList.add('scene-ready');
   window.__story = hook;
+  performance.mark('story:ready');
 }
+performance.mark('story:outlined');
 renderer.compile(scene, camera);   // queues every shader build
+performance.mark('story:compile-queued');
 // wait for them, asking about each shader (not each material) a few times a second; three's compileAsync asks
 // about every material every 10 ms, and each question is a round trip to the GPU process
 const parallel = !!renderer.extensions.get('KHR_parallel_shader_compile'), giveUp = performance.now() + 8000;

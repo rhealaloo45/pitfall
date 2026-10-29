@@ -65,6 +65,9 @@
   /* the drive sits behind the whole page; everything else scrolls over it */
   .stage { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: #030405; }
   #scene { display: block; width: 100%; height: 100%; }
+  /* the opening frame as a still, shown at once and handed over to the live scene when its first frame is drawn */
+  .poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; transition: opacity .5s ease, visibility 0s .5s; }
+  .scene-ready .poster { opacity: 0; visibility: hidden; }
   #veil { position: absolute; inset: 0; background: #0b0c0f; opacity: 0; transition: opacity .6s ease; pointer-events: none; }
   /* my room: a little film grain and a warm vignette */
   .stage::before { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: calc(var(--cozy, 0) * 1); mix-blend-mode: overlay;
@@ -222,7 +225,7 @@
 
 <main id="main">
   <section id="story" aria-label="A drive past the problems I've taught machines to notice">
-    <div class="stage" aria-hidden="true"><canvas id="scene"></canvas><div id="veil"></div><div id="det"></div></div>
+    <div class="stage" aria-hidden="true"><canvas id="scene"></canvas><picture><source media="(max-aspect-ratio: 9/10)" srcset="assets/stills/opening-tall.webp"><img class="poster" src="assets/stills/opening-wide.webp" alt="" fetchpriority="high"></picture><div id="veil"></div><div id="det"></div></div>
     <div class="beats">
       <header class="beat hello" id="hello">
         <div class="wrap">
@@ -348,6 +351,6 @@
   } else document.querySelectorAll('.rv').forEach(function (el) { el.classList.add('in'); });
 })();
 </script>
-<script type="module" src="src/story/main.js?v=61"></script>
+<script type="module" src="src/story/main.js?v=67"></script>
 </body>
 </html>

@@ -6,8 +6,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { ink, mergeByMaterial, LINES } from './world.js?v=61';
-import { along, LENGTH } from './marine.js?v=61';
+import { ink, mergeByMaterial, LINES } from './world.js?v=67';
+import { along, LENGTH } from './marine.js?v=67';
 
 /* how big each model should be, and which way it faces (radians to turn it so its front points along +z) */
 const SPEC = {
