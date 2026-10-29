@@ -4,7 +4,7 @@
    Night-only, so nothing here needs line-art outlines. */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { ink } from './world.js?v=43';
+import { ink } from './world.js?v=47';
 
 const mat = (color, o = {}) => ink(new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0, ...o }));
 // the centre line, continuing the straight street from z = 345 and curving round the bay (towards −x)

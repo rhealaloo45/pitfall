@@ -67,10 +67,23 @@ function window_(title, body, t, k, tint) {
   g.translate(x, y + 50); g.scale(ww / 1024, (wh - 50) / 590);
   body(t, k);
   g.restore();
+  // the Dock
+  const icons = [['#1e1f24', '>_'], ['#2f6fed', '{ }'], ['#f2f2f2', '✎'], ['#34c759', '▶'], ['#ff9f0a', '♪'], ['#5e5ce6', '◐'], ['#ff375f', '♥'], ['#8e8e93', '⚙']];
+  const is = 58, gap = 12, dw = icons.length * is + (icons.length + 1) * gap, dx = (W - dw) / 2, dy = H - is - 22;
+  roundRect(dx, dy - gap, dw, is + gap * 2, 22); g.fillStyle = 'rgba(255,255,255,.2)'; g.fill();
+  icons.forEach(([c, glyph], i) => {
+    const ix = dx + gap + i * (is + gap); roundRect(ix, dy, is, is, 14); g.fillStyle = c; g.fill();
+    g.fillStyle = c === '#f2f2f2' ? '#333' : '#fff'; g.font = `700 24px ${SANS}`; g.textAlign = 'center'; g.fillText(glyph, ix + is / 2, dy + is / 2 + 8);
+  });
+  g.fillStyle = 'rgba(255,255,255,.8)'; [0, 1].forEach(i => { g.beginPath(); g.arc(dx + gap + i * (is + gap) + is / 2, dy + is + 7, 2.5, 0, Math.PI * 2); g.fill(); });
+  g.textAlign = 'left';
   // menu bar
   g.fillStyle = 'rgba(20,22,26,.55)'; g.fillRect(0, 0, W, 34);
-  g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `600 18px ${SANS}`; g.fillText('Rhea L', 24, 23);
-  const now = new Date(); g.textAlign = 'right'; g.fillText(now.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit' }), W - 24, 23); g.textAlign = 'left';
+  g.fillStyle = 'rgba(255,255,255,.9)'; g.font = `700 18px ${SANS}`; g.fillText('Rhea L', 24, 23);
+  g.font = `500 18px ${SANS}`; g.fillStyle = 'rgba(255,255,255,.78)'; ['File', 'Edit', 'View', 'Go', 'Window', 'Help'].reduce((x, m) => { g.fillText(m, x, 23); return x + g.measureText(m).width + 26; }, 104);
+  const now = new Date(); g.textAlign = 'right'; g.fillStyle = 'rgba(255,255,255,.9)'; g.fillText(now.toLocaleTimeString('en-GB', { weekday: 'short', hour: 'numeric', minute: '2-digit' }), W - 24, 23); g.textAlign = 'left';
+  g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 2; g.strokeRect(W - 190, 11, 30, 14); g.fillStyle = 'rgba(255,255,255,.85)'; g.fillRect(W - 187, 14, 20, 8); g.fillRect(W - 159, 15, 3, 6);
+  for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(W - 222, 26, 5 + i * 5, -Math.PI * 0.75, -Math.PI * 0.25); g.stroke(); }
   g.restore();
 }
 
