@@ -190,46 +190,80 @@ function facadeTex(style) {
   });
   return { map, glow };
 }
-/** Shopfronts for the ground floors: eight units in one atlas, each a signboard over an open shop or a
-    rolled-down shutter. The emissive map lights the signs and the open shops after dark. */
-const SHOPS = { names: ['BAKERY', 'CHEMIST', 'TAILORS', 'HARDWARE', 'STATIONERY', 'CAFÉ', 'OPTICIANS', 'FLOWERS'], open: [1, 1, 0, 1, 1, 1, 0, 1] };
+/** Shopfronts for the ground floors, in one atlas: a signboard over an open shop or a rolled-down shutter.
+    A few set up the project the drive is passing (placed where the camera looks at that beat: side of the road (+1 shows on screen-left) and z); the rest are everyday
+    shops with a few puns on the toolkit mixed in. The emissive map lights the signs and open shops after dark. */
+const SHOPS = [
+  { name: 'RASPBERRY PI', sub: 'BAKERY', board: '#b23a2e', open: 1, at: [1, 66] },       // potholes (RoadHawk ran on one)
+  { name: 'TO LET', toLet: 1, at: [1, 116] },                                             // the quiet stretch before the cows
+  { name: 'DOODH DAIRY', sub: 'FRESH MILK', board: '#1f6fa8', open: 1, at: [1, 198] },   // the herd
+  { name: 'CALM MIND', sub: 'CLINIC', board: '#3c8d7a', open: 1, at: [1, 254] },          // the crossing
+  { name: 'CODE CAFÉ', sub: 'OPEN LATE', board: '#2d2d2d', open: 1, at: [1, 272] },       // on the way to my building
+  { name: 'CHEMIST', sub: '24 HOURS', board: '#0f7a8a', open: 1 },
+  { name: 'PYTHON & SONS', sub: 'HARDWARE', board: '#d39b2a', dark: 1, open: 1 },
+  { name: 'TAILORS', board: '#2b4f8c', open: 0 },
+  { name: 'STATIONERY', board: '#5b3b7a', open: 1 },
+  { name: 'PANDAS', sub: 'GENERAL STORE', board: '#1f6f5c', open: 1 },
+  { name: 'OPTICIANS', board: '#6a6f78', open: 0 },
+  { name: 'FLASK CHAI', sub: 'TEA · SNACKS', board: '#c8553d', open: 1 },
+  { name: 'SWEET MART', board: '#a8326e', open: 1 },
+  { name: 'GIT REPAIRS', sub: 'WE FIX BRANCHES', board: '#3d3d46', open: 1 },
+];
+const SHOP_COLS = 4, SHOP_ROWS = 4;
 function shopAtlas() {
-  const boards = ['#b23a2e', '#1f6f5c', '#2b4f8c', '#d39b2a', '#5b3b7a', '#2d2d2d', '#0f7a8a', '#c8553d'], CW = 256, CH = 192;
+  const CW = 256, CH = 192, FONT = 'Helvetica, Arial, sans-serif';
   let s = 7; const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
   const shutter = (g, x, y, w, h) => {
     const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, '#b0b3b5'); gr.addColorStop(1, '#8b8e91'); g.fillStyle = gr; g.fillRect(x, y, w, h);
     g.fillStyle = 'rgba(0,0,0,0.13)'; for (let c = y + 3; c < y + h; c += 5) g.fillRect(x, c, w, 1.5);
     const gg = g.createLinearGradient(0, y + h - 30, 0, y + h); gg.addColorStop(0, 'rgba(60,50,40,0)'); gg.addColorStop(1, 'rgba(60,50,40,0.3)'); g.fillStyle = gg; g.fillRect(x, y + h - 30, w, 30);
   };
-  const map = canvasTex(CW * 4, CH * 2, g => {
-    for (let i = 0; i < 8; i++) {
-      const x = (i % 4) * CW, y = Math.floor(i / 4) * CH;
+  const text = (g, t, x, y, px, maxW) => { g.font = `bold ${px}px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(t, x, y, maxW); };
+  const map = canvasTex(CW * SHOP_COLS, CH * SHOP_ROWS, g => {
+    SHOPS.forEach((sh, i) => {
+      const x = (i % SHOP_COLS) * CW, y = Math.floor(i / SHOP_COLS) * CH;
       g.fillStyle = '#d9d4ca'; g.fillRect(x, y, CW, CH);
-      g.fillStyle = boards[i]; g.fillRect(x + 6, y + 6, CW - 12, 40);
-      g.fillStyle = i === 3 ? '#1d1d1d' : '#fff8ec'; g.font = 'bold 25px Helvetica, Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText(SHOPS.names[i], x + CW / 2, y + 27, CW - 34);
-      const ox = x + 10, oy = y + 54, ow = CW - 20, oh = CH - 54;
-      if (SHOPS.open[i]) {
-        g.fillStyle = '#2b2722'; g.fillRect(ox, oy, ow, oh);
-        for (let sy = oy + 22; sy < oy + oh - 44; sy += 24) {
-          g.fillStyle = '#5a5045'; g.fillRect(ox + 8, sy + 16, ow - 16, 3);
-          for (let c = ox + 10; c < ox + ow - 14; c += 8 + Math.floor(r() * 5)) { g.fillStyle = ['#d9534f', '#f0ad4e', '#5bc0de', '#e8e2d0', '#5cb85c', '#9b7fd1'][Math.floor(r() * 6)]; g.fillRect(c, sy + 4 + Math.floor(r() * 4), 6, 12); }
-        }
-        g.fillStyle = '#7d6449'; g.fillRect(ox + 14, oy + oh - 36, ow * 0.55, 36);
-        g.fillStyle = 'rgba(255,255,255,0.08)'; g.fillRect(ox, oy, ow, oh);
-        shutter(g, ox, oy, ow, 20);
-      } else shutter(g, ox, oy, ow, oh);
-      g.fillStyle = '#c9c3b8'; g.fillRect(x, y + 50, 6, CH - 50); g.fillRect(x + CW - 6, y + 50, 6, CH - 50);
-    }
+      const ox = x + 10, oy = y + 60, ow = CW - 20, oh = CH - 60;
+      if (sh.toLet) {
+        // an empty shop: the old board painted over, the shutter down, and a notice on it
+        g.fillStyle = '#c4baa7'; g.fillRect(x + 6, y + 6, CW - 12, 48);
+        g.fillStyle = 'rgba(255,255,255,0.18)'; for (let c = 0; c < 6; c++) g.fillRect(x + 20 + r() * (CW - 60), y + 12 + r() * 30, 20 + r() * 40, 3);
+        shutter(g, ox, oy, ow, oh);
+        const bw = 168, bh = 74, bx = x + (CW - bw) / 2, by = oy + 22;
+        g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(bx + 3, by + 4, bw, bh);
+        g.fillStyle = '#fbfaf6'; g.fillRect(bx, by, bw, bh);
+        g.fillStyle = '#c62828'; text(g, 'TO LET', bx + bw / 2, by + 26, 30, bw - 16);
+        g.fillStyle = '#1f1f1f'; text(g, 'OPEN TO AI/ML ROLES', bx + bw / 2, by + 56, 13, bw - 14);
+      } else {
+        g.fillStyle = sh.board; g.fillRect(x + 6, y + 6, CW - 12, 48);
+        g.fillStyle = sh.dark ? '#1d1d1d' : '#fff8ec';
+        if (sh.sub) { text(g, sh.name, x + CW / 2, y + 25, 24, CW - 30); text(g, sh.sub, x + CW / 2, y + 45, 11, CW - 40); }
+        else text(g, sh.name, x + CW / 2, y + 30, 27, CW - 30);
+        if (sh.open) {
+          g.fillStyle = '#2b2722'; g.fillRect(ox, oy, ow, oh);
+          for (let sy = oy + 20; sy < oy + oh - 44; sy += 24) {
+            g.fillStyle = '#5a5045'; g.fillRect(ox + 8, sy + 16, ow - 16, 3);
+            for (let c = ox + 10; c < ox + ow - 14; c += 8 + Math.floor(r() * 5)) { g.fillStyle = ['#d9534f', '#f0ad4e', '#5bc0de', '#e8e2d0', '#5cb85c', '#9b7fd1'][Math.floor(r() * 6)]; g.fillRect(c, sy + 4 + Math.floor(r() * 4), 6, 12); }
+          }
+          g.fillStyle = '#7d6449'; g.fillRect(ox + 14, oy + oh - 34, ow * 0.55, 34);
+          g.fillStyle = 'rgba(255,255,255,0.08)'; g.fillRect(ox, oy, ow, oh);
+          shutter(g, ox, oy, ow, 18);
+        } else shutter(g, ox, oy, ow, oh);
+      }
+      g.fillStyle = '#c9c3b8'; g.fillRect(x, y + 56, 6, CH - 56); g.fillRect(x + CW - 6, y + 56, 6, CH - 56);
+    });
   });
-  const glow = canvasTex(CW * 2, CH, g => {
-    g.fillStyle = '#000'; g.fillRect(0, 0, CW * 2, CH);
-    for (let i = 0; i < 8; i++) {
-      const x = (i % 4) * CW / 2, y = Math.floor(i / 4) * CH / 2;
-      g.globalAlpha = 0.7; g.fillStyle = boards[i]; g.fillRect(x + 3, y + 3, CW / 2 - 6, 20); g.globalAlpha = 1;
-      g.fillStyle = '#fff6e0'; g.font = 'bold 12.5px Helvetica, Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(SHOPS.names[i], x + CW / 4, y + 13.5, CW / 2 - 17);
-      if (SHOPS.open[i]) { g.fillStyle = 'rgba(255,214,150,0.55)'; g.fillRect(x + 5, y + 37, CW / 2 - 10, CH / 2 - 37); }
-    }
+  const glow = canvasTex(CW * SHOP_COLS / 2, CH * SHOP_ROWS / 2, g => {
+    g.fillStyle = '#000'; g.fillRect(0, 0, CW * SHOP_COLS / 2, CH * SHOP_ROWS / 2);
+    SHOPS.forEach((sh, i) => {
+      if (sh.toLet) return;
+      const x = (i % SHOP_COLS) * CW / 2, y = Math.floor(i / SHOP_COLS) * CH / 2;
+      g.globalAlpha = 0.7; g.fillStyle = sh.board; g.fillRect(x + 3, y + 3, CW / 2 - 6, 24); g.globalAlpha = 1;
+      g.fillStyle = '#fff6e0';
+      if (sh.sub) { text(g, sh.name, x + CW / 4, y + 12.5, 12, CW / 2 - 15); text(g, sh.sub, x + CW / 4, y + 22.5, 5.5, CW / 2 - 20); }
+      else text(g, sh.name, x + CW / 4, y + 15, 13.5, CW / 2 - 15);
+      if (sh.open) { g.fillStyle = 'rgba(255,214,150,0.55)'; g.fillRect(x + 5, y + 39, CW / 2 - 10, CH / 2 - 39); }
+    });
   });
   return { map, glow };
 }
@@ -292,6 +326,7 @@ export function buildStreet(scene) {
     if (k % 2 === 0) trim.push(new THREE.BoxGeometry(2.6, 2.4, 3).translate(cx + d * 0.15, h + 1.9, cz + w * 0.2));   // stair room
   };
   let k = 0;
+  const units = [];
   for (const sx of [-1, 1]) {
     for (let z = -40; z < 336; ) {
       const w = 10 + ((k * 7) % 9), h = 3 * (3 + ((k * 13) % 5)), d = 9 + ((k * 5) % 6);
@@ -304,16 +339,26 @@ export function buildStreet(scene) {
       for (let y = 6; y < h - 1; y += 3) trim.push(new THREE.BoxGeometry(0.3, 0.14, w).translate(fx - sx * 0.15, y, cz));
       trim.push(new THREE.BoxGeometry(0.7, 0.16, w).translate(fx - sx * 0.35, 3.5, cz));
       roof(cx, cz, d, w, h, k);
-      // shopfronts on the ground floor, some with an awning
+      // shopfronts on the ground floor (which shop goes where is decided once every unit is known)
       const n = Math.max(1, Math.round(w / 4.6)), uw = w / n;
-      for (let i = 0; i < n; i++) {
-        const c = (k * 3 + i * 5) % 8, col = c % 4, row = Math.floor(c / 4), q = new THREE.PlaneGeometry(uw - 0.3, 3.2), uv = q.attributes.uv;
-        for (let j = 0; j < uv.count; j++) uv.setXY(j, (col + uv.getX(j)) / 4, 1 - (row + 1 - uv.getY(j)) / 2);
-        shops.push(q.rotateY(-sx * Math.PI / 2).translate(fx - sx * 0.03, 1.76, z + (i + 0.5) * uw));
-        if (SHOPS.open[c] && (k + i) % 2 === 0) awn[(k + i) % 4].push(new THREE.BoxGeometry(1.0, 0.05, uw - 0.5).rotateZ(sx * 0.35).translate(fx - sx * 0.5, 2.38, z + (i + 0.5) * uw));
-      }
+      for (let i = 0; i < n; i++) units.push({ sx, fx, uw, zc: z + (i + 0.5) * uw, odd: (k + i) % 2 });
       z += w + 1.5; k++;
     }
+  }
+  // the story's shops go to the unit nearest their spot; everyday ones fill the rest, never twice in a row
+  SHOPS.forEach((sh, c) => {
+    if (!sh.at) return;
+    const [side, z] = sh.at, u = units.filter(u => u.sx === side && u.c === undefined).sort((a, b) => Math.abs(a.zc - z) - Math.abs(b.zc - z))[0];
+    if (u) u.c = c;
+  });
+  const fill = SHOPS.map((sh, c) => c).filter(c => !SHOPS[c].at);
+  let f = 0;
+  for (const u of units) if (u.c === undefined) u.c = fill[(f++ * 4) % fill.length];
+  for (const { sx, fx, uw, zc, odd, c } of units) {
+    const col = c % SHOP_COLS, row = Math.floor(c / SHOP_COLS), q = new THREE.PlaneGeometry(uw - 0.3, 3.2), uv = q.attributes.uv;
+    for (let j = 0; j < uv.count; j++) uv.setXY(j, (col + uv.getX(j)) / SHOP_COLS, 1 - (row + 1 - uv.getY(j)) / SHOP_ROWS);
+    shops.push(q.rotateY(-sx * Math.PI / 2).translate(fx - sx * 0.03, 1.76, zc));
+    if (SHOPS[c].open && !odd) awn[((Math.floor(zc) % 4) + 4) % 4].push(new THREE.BoxGeometry(1.0, 0.05, uw - 0.5).rotateZ(sx * 0.35).translate(fx - sx * 0.5, 2.38, zc));
   }
   for (const sx of [-1, 1]) for (let z = -30, i = 0; z < 296; i++) {
     const w = 14 + ((i * 5) % 8), d = 14, h = 3 * (9 + ((i * 7) % 8)), cx = sx * (27 + ((i * 3) % 6) + d / 2), cz = z + w / 2;

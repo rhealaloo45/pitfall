@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
-import { ink, facadeMat } from './world.js?v=39';
+import { ink, facadeMat } from './world.js?v=41';
 import { buildCar } from '../vehicle/car-model.js';
 import { CAR_SPEC } from '../vehicle/sim.js';
 
