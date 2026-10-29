@@ -55,6 +55,8 @@ export function mergeByMaterial(root) {
     if (!o.isMesh || o.isInstancedMesh || o.userData.keep || Array.isArray(o.material)) return;
     const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
     for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(k)) g.deleteAttribute(k);
+    if (!g.attributes.normal) g.computeVertexNormals();
+    if (!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
     g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
     const b = buckets.get(o.material) || { geos: [], cast: false, recv: false, noEdges: o.userData.noEdges };
     b.geos.push(g); b.cast ||= o.castShadow; b.recv ||= o.receiveShadow; buckets.set(o.material, b); drop.push(o);

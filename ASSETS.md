@@ -34,7 +34,7 @@ The MIT licence requires keeping the copyright notice. It ships inside the files
 * **Textures:** every texture is generated at runtime — painted on an HTML canvas or computed from tileable noise in JavaScript (facade and ground texture arrays, foliage atlas, carbon weave, wave normals, livery, signs, tyre sidewalls) — and uploaded with mipmaps. The sky is computed in a shader. None are image files.
 * **Menu previews (`assets/previews/*.webp`):** screenshots of this project's own renderer, captured by `tests/make-previews.mjs`.
 * **`assets/stills/mumbai-gp-car.webp`:** a frame from this project's own renderer (Mumbai GP), used behind "One more thing" and as the framed picture in the landing page's room.
-* **The landing-page drive (`src/story/`):** street, cows, people, room and laptop are generated in code; the car is this project's procedural car. The laptop is generic, with no logo.
+* **The landing-page drive (`src/story/`):** street, cows, people, room and laptop are generated in code; the car is this project's procedural car. The room recreates Rhea's own desk with original stand-ins: a logo-free curved monitor and keyboard, a black-and-teal repaint of this project's car as the model car, a generic driver figurine, and "eat sleep code" set in the three.js Helvetiker font (helvetiker_bold.typeface.json, from the three.js examples, MIT).
 
 ## Audio
 
