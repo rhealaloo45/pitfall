@@ -6,8 +6,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { ink, mergeByMaterial, LINES } from './world.js?v=60';
-import { along, LENGTH } from './marine.js?v=60';
+import { ink, mergeByMaterial, LINES } from './world.js?v=61';
+import { along, LENGTH } from './marine.js?v=61';
 
 /* how big each model should be, and which way it faces (radians to turn it so its front points along +z) */
 const SPEC = {
@@ -97,8 +97,8 @@ export function streetProps(street, kit) {
   const cars = ['taxi', 'car_hatch', 'taxi', 'car_white', 'taxi', 'car_hatch', 'taxi', 'car_blue', 'taxi', 'car_suv'];
   let i = 0;
   for (const [sx, zones, from, to] of [[1, right, 18, 300], [-1, left, -24, 342]]) {
-    for (let z = from; z < to; z += 13 + ((i * 7) % 11)) {
-      if (!clear(z, zones) || (i * 5) % 7 === 3) { i++; continue; }   // gaps, so it doesn't read as a car park
+    for (let z = from; z < to; z += 34 + ((i * 7) % 17)) {   // a few, well spaced
+      if (!clear(z, zones)) { i++; continue; }
       const name = sx < 0 && i % 9 === 4 ? 'truck' : cars[i % cars.length];
       G.add(put(kit, name, sx * 4.7, z, sx > 0 ? 0 : Math.PI));
       i++;

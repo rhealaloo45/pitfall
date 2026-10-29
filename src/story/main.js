@@ -10,11 +10,11 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { buildCar } from '../vehicle/car-model.js';
 import { CAR_SPEC } from '../vehicle/sim.js';
-import { INK, LINES, NIGHT, ink, outline, freeze, mergeByMaterial, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildSky } from './world.js?v=60';
-import { buildRoom } from './room.js?v=60';
-import { buildMarineDrive, along, LENGTH } from './marine.js?v=60';
-import { screenTex, drawScreen, setWallpaper } from './screen.js?v=60';
-import { loadKit, streetProps, marineProps } from './props.js?v=60';
+import { INK, LINES, NIGHT, ink, outline, freeze, mergeByMaterial, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildSky } from './world.js?v=61';
+import { buildRoom } from './room.js?v=61';
+import { buildMarineDrive, along, LENGTH } from './marine.js?v=61';
+import { screenTex, drawScreen, setWallpaper } from './screen.js?v=61';
+import { loadKit, streetProps, marineProps } from './props.js?v=61';
 
 const $ = id => document.getElementById(id);
 const track = $('story'), canvas = $('scene'), detLayer = $('det'), stage = canvas.parentElement, veil = $('veil');
