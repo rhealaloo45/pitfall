@@ -205,7 +205,7 @@ const SHOPS = [
   { name: 'STATIONERY', board: '#5b3b7a', open: 1 },
   { name: 'PANDAS', sub: 'GENERAL STORE', board: '#1f6f5c', open: 1 },
   { name: 'OPTICIANS', board: '#6a6f78', open: 0 },
-  { name: 'FLASK CHAI', sub: 'TEA · SNACKS', board: '#c8553d', open: 1 },
+  { name: 'FLASK COFFEE', sub: 'ESPRESSO BAR', board: '#6b4430', open: 1 },
   { name: 'SWEET MART', board: '#a8326e', open: 1 },
   { name: 'GIT REPAIRS', sub: 'WE FIX BRANCHES', board: '#3d3d46', open: 1 },
 ];
