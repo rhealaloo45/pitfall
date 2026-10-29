@@ -1,16 +1,18 @@
 /* My room, behind the lit window at the end of the street — my real desk, with the view I'd like one day:
    a curved ultrawide in front of a window onto the Queen's Necklace at night; on the desk the "eat sleep
    code" sign, a black-and-teal model of the race car, a little driver figurine, a white keyboard on a Monza
-   desk mat, a succulent, a rubber duck for debugging, sticky notes (TODO: sleep, BOX BOX!); a navy felt pinboard
-   (photos, a cat, a badge, my K. C. College lanyard, the weekly timetable) under a soft/medium/hard tyre
-   print; a LIGHTS OUT start-lights poster; a "hello, world" neon over the window; fairy lights, shelves with
+   desk mat, a succulent, a rubber duck for debugging, a Raspberry Pi with its camera, a 200 OK mug, my Mac
+   (closed), a white mouse, an earbuds case, a round speaker, a phone at 9:41, an apple, sticky notes (TODO: sleep,
+   BOX BOX!); a navy felt pinboard (photos, a cat, a badge, my K. C. College lanyard, the weekly timetable) under
+   a soft/medium/hard tyre print; LIGHTS OUT and 127.0.0.1 prints either side of the window and a cursive
+   "hello" neon over it; a racing seat, a circuit rug, two race tyres as a side table; fairy lights, shelves with
    books, a race helmet, a trophy and the 1st-rank certificate. Original stand-ins only: no real team, brand or device logos. Coordinates match the facade window in
    world.js (the room spans x 9.9–13.1, z 327.2–330.8, y 10–12.8). */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
-import { ink, facadeMat } from './world.js?v=43';
+import { ink, facadeMat } from './world.js?v=47';
 import { buildCar } from '../vehicle/car-model.js';
 import { CAR_SPEC } from '../vehicle/sim.js';
 
@@ -151,10 +153,10 @@ function tyresTex() {
     });
   });
 }
-/** A pink neon sign: a glowing tube with a hot white core. */
+/** A pink neon sign: a glowing tube with a hot white core (the Mac's first-boot hello, and hello world). */
 function neonTex(text) {
   return canvasTex(1024, 256, (g, w, h) => {
-    g.font = `500 124px ${SANS}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+    g.font = `400 150px "Snell Roundhand", "Segoe Script", "Brush Script MT", cursive`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
     g.shadowColor = '#ff2d8f'; g.strokeStyle = '#ff6fb3'; g.lineWidth = 11;
     g.shadowBlur = 44; g.strokeText(text, w / 2, h / 2); g.strokeText(text, w / 2, h / 2); g.shadowBlur = 14; g.strokeText(text, w / 2, h / 2);
     g.shadowBlur = 0; g.strokeStyle = '#fff0f7'; g.lineWidth = 4; g.strokeText(text, w / 2, h / 2);
@@ -164,6 +166,43 @@ function stickyTex(bg, lines) {
   return canvasTex(128, 128, (g, w, h) => {
     g.fillStyle = bg; g.fillRect(0, 0, w, h); g.fillStyle = 'rgba(0,0,0,0.06)'; g.fillRect(0, 0, w, 14);
     g.fillStyle = '#2a2a2a'; g.font = `700 30px ${HAND}`; lines.forEach((t, i) => g.fillText(t, 12, 56 + i * 36));
+  });
+}
+/** A rug with a race circuit on it: kerbs all the way round and a chequered start line (an invented track). */
+function circuitRugTex() {
+  return canvasTex(512, 648, (g, w, h) => {
+    g.fillStyle = '#2b2d31'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = '#8d8f94'; g.lineWidth = 6; g.strokeRect(22, 22, w - 44, h - 44);
+    const track = () => {
+      g.beginPath(); g.moveTo(130, 540); g.lineTo(130, 230); g.quadraticCurveTo(130, 120, 240, 116); g.lineTo(330, 116);
+      g.quadraticCurveTo(430, 116, 418, 196); g.quadraticCurveTo(410, 240, 330, 236); g.lineTo(300, 300); g.lineTo(368, 350);
+      g.lineTo(392, 460); g.quadraticCurveTo(404, 560, 320, 562); g.lineTo(206, 562); g.quadraticCurveTo(130, 562, 130, 540); g.closePath();
+    };
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    track(); g.strokeStyle = '#f2efe8'; g.lineWidth = 52; g.stroke();
+    g.setLineDash([14, 14]); track(); g.strokeStyle = '#d12a22'; g.lineWidth = 52; g.stroke(); g.setLineDash([]);
+    track(); g.strokeStyle = '#4a4d53'; g.lineWidth = 40; g.stroke();
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 6; c++) { g.fillStyle = (r + c) % 2 ? '#111' : '#f4f4f4'; g.fillRect(110 + c * 6.7, 380 + r * 7, 6.7, 7); }
+    g.fillStyle = '#f2efe8'; g.font = `800 30px ${SANS}`; g.fillText('P1', 440, 610);
+  });
+}
+/** There's no place like home. */
+function localhostTex() {
+  return canvasTex(340, 480, (g, w, h) => {
+    g.fillStyle = '#0f1520'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = '#5ee0d0'; g.lineWidth = 6; g.lineJoin = 'round';
+    g.beginPath(); g.moveTo(110, 170); g.lineTo(170, 112); g.lineTo(230, 170); g.moveTo(126, 156); g.lineTo(126, 220); g.lineTo(214, 220); g.lineTo(214, 156); g.stroke();
+    g.strokeRect(156, 182, 28, 38);
+    g.fillStyle = '#e8edf2'; g.font = `700 22px ${SANS}`; g.textAlign = 'center'; g.fillText("THERE'S NO PLACE LIKE", w / 2, 296);
+    g.fillStyle = '#5ee0d0'; g.font = `700 46px Menlo, Consolas, monospace`; g.fillText('127.0.0.1', w / 2, 356);
+    g.fillStyle = '#6b7685'; g.font = `500 14px Menlo, Consolas, monospace`; g.fillText('// home', w / 2, 420);
+  });
+}
+function mugTex() {
+  return canvasTex(256, 128, (g, w, h) => {
+    g.fillStyle = '#f4efe8'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#1f2328'; g.font = `800 40px ${SANS}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('200 OK', w / 2, h / 2 - 6);
+    g.fillStyle = '#2e8b57'; g.fillRect(w / 2 - 34, h / 2 + 22, 68, 5);
   });
 }
 function rugTex() {
@@ -277,7 +316,7 @@ export function buildRoom(scene, { screenTex, stillUrl }) {
   plane(R.x1 - R.x0, R.z1 - R.z0, mat(0x7d5233, { roughness: 0.55 }), (R.x0 + R.x1) / 2, R.y0 + 0.005, dz, 0, -Math.PI / 2);
   const skirt = mat(0xf4f1ea, { roughness: 0.6 });
   G.add(box(0.02, 0.08, R.z1 - R.z0, skirt, R.x1 - 0.03, R.y0 + 0.04, dz), box(R.x1 - R.x0, 0.08, 0.02, skirt, (R.x0 + R.x1) / 2, R.y0 + 0.04, R.z0 + 0.03), box(R.x1 - R.x0, 0.08, 0.02, skirt, (R.x0 + R.x1) / 2, R.y0 + 0.04, R.z1 - 0.03));
-  const rug = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.9), mat(0xffffff, { map: rugTex(), roughness: 1 })); rug.rotation.set(-Math.PI / 2, 0, Math.PI / 2); rug.position.set(11.75, R.y0 + 0.012, dz); rug.receiveShadow = true; G.add(rug);
+  const rug = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.9), mat(0xffffff, { map: circuitRugTex(), roughness: 1 })); rug.rotation.set(-Math.PI / 2, 0, Math.PI / 2); rug.position.set(11.75, R.y0 + 0.012, dz); rug.receiveShadow = true; G.add(rug);
 
   /* ---- the dream: the window behind the desk, onto the Queen's Necklace, with curtains and fairy lights ---- */
   const wy = 11.58, wwid = 1.75, whgt = 1.18, bx = R.x1 - 0.03;
@@ -315,7 +354,9 @@ export function buildRoom(scene, { screenTex, stillUrl }) {
   G.add(box(0.88, 0.32, 0.015, black, 12.42, 12.4, R.z0 + 0.03), put(new THREE.Mesh(new THREE.PlaneGeometry(0.84, 0.28), printMat(tyresTex())), 12.42, 12.4, R.z0 + 0.04));
   const lights = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.48), printMat(lightsOutTex())); lights.rotation.y = -Math.PI / 2; lights.position.set(R.x1 - 0.042, 11.74, R.z0 + 0.25);
   G.add(box(0.015, 0.51, 0.37, black, R.x1 - 0.028, 11.74, R.z0 + 0.25), lights);
-  const neon = new THREE.Mesh(new THREE.PlaneGeometry(0.92, 0.23), ink(new THREE.MeshBasicMaterial({ map: neonTex('hello, world'), transparent: true, depthWrite: false, toneMapped: false })));
+  const home = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.48), printMat(localhostTex())); home.rotation.y = -Math.PI / 2; home.position.set(R.x1 - 0.042, 11.9, R.z1 - 0.25);
+  G.add(box(0.015, 0.51, 0.37, black, R.x1 - 0.028, 11.9, R.z1 - 0.25), home);
+  const neon = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.25), ink(new THREE.MeshBasicMaterial({ map: neonTex('hello'), transparent: true, depthWrite: false, toneMapped: false })));
   neon.rotation.y = -Math.PI / 2; neon.position.set(R.x1 - 0.04, 12.57, dz); neon.userData.noEdges = true; G.add(neon);
 
   /* ---- right wall: two floating shelves, books, a trailing plant, the trophy, the certificate, a speaker ---- */
@@ -347,7 +388,7 @@ export function buildRoom(scene, { screenTex, stillUrl }) {
   const deskMat = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.36), mat(0xffffff, { map: matTex(), roughness: 1 })); deskMat.rotation.set(-Math.PI / 2, 0, -Math.PI / 2); deskMat.position.set(dX - 0.14, top + 0.002, dz + 0.02); G.add(deskMat);
   G.add(box(0.11, 0.009, 0.27, mat(0xe6e7ea, { roughness: 0.4, metalness: 0.2 }), dX - 0.19, top + 0.008, dz - 0.04));
   const keys = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.1), mat(0xffffff, { map: keysTex(), roughness: 0.6 })); keys.rotation.set(-Math.PI / 2, 0, -Math.PI / 2); keys.position.set(dX - 0.19, top + 0.0128, dz - 0.04); keys.userData.noEdges = true; G.add(keys);
-  const mouse = put(new THREE.Mesh(new THREE.SphereGeometry(0.03, 14, 10), mat(0x1c1e22, { roughness: 0.35 })), dX - 0.18, top + 0.012, dz + 0.27); mouse.scale.set(1, 0.45, 1.7); G.add(mouse);
+  const mouse = put(new THREE.Mesh(new THREE.SphereGeometry(0.03, 14, 10), mat(0xf3f3f1, { roughness: 0.22 })), dX - 0.18, top + 0.01, dz + 0.27); mouse.scale.set(1, 0.38, 1.75); G.add(mouse);
   /* the curved ultrawide */
   const sR = 1.8, sArc = 0.86, sH = 0.37, sY = top + 0.44, sX = R.x1 - 0.12, cx = sX - sR;
   const screen = new THREE.Mesh(curvedPanel(cx, sY, dz, sR, sArc, sH), ink(new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false, side: THREE.DoubleSide })));
@@ -403,32 +444,75 @@ export function buildRoom(scene, { screenTex, stillUrl }) {
   const spikes = mergeGeometries([...Array(11)].map((_, i) => new THREE.ConeGeometry(0.011, 0.08, 5).translate(0, 0.04, 0).rotateZ(0.35 + (i % 3) * 0.15).rotateY(i * 2.3)));
   G.add(pot, put(new THREE.Mesh(spikes, mat(0x5f9a58, { flatShading: true })), sX - 0.02, top + 0.065, dz + 0.62));
   G.add(box(0.035, 0.16, 0.11, mat(0xffffff, { map: pouchTex(), roughness: 0.8 }), sX - 0.0, top + 0.08, dz - 0.66));
-  G.add(box(0.06, 0.09, 0.12, mat(0x1a1b1e, { roughness: 0.6 }), sX - 0.02, top + 0.045, dz + 0.45));
+  const speaker = put(new THREE.Mesh(new THREE.SphereGeometry(0.05, 20, 14), mat(0x8e9196, { roughness: 0.9 })), sX - 0.03, top + 0.04, dz + 0.45); speaker.scale.set(1, 0.82, 1);
+  const speakerTop = put(new THREE.Mesh(new THREE.CircleGeometry(0.03, 20), mat(0x1c1d20, { roughness: 0.2, metalness: 0.3 })), sX - 0.03, top + 0.081, dz + 0.45); speakerTop.rotation.x = -Math.PI / 2;
+  G.add(speaker, speakerTop);
   const mugM = mat(0xf4efe8, { roughness: 0.4 });
-  const mug = put(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.036, 0.095, 16), mugM), dX - 0.18, top + 0.048, dz + 0.5);
-  const handle = put(new THREE.Mesh(new THREE.TorusGeometry(0.026, 0.007, 6, 12, Math.PI), mugM), dX - 0.18, top + 0.05, dz + 0.54); handle.rotation.z = -Math.PI / 2;
-  const coffee = put(new THREE.Mesh(new THREE.CircleGeometry(0.034, 14), mat(0x3b2416, { roughness: 0.2 })), dX - 0.18, top + 0.088, dz + 0.5); coffee.rotation.x = -Math.PI / 2;
+  const mugX = dX - 0.03, mugZ = dz + 0.35;
+  const mug = put(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.036, 0.095, 24), mat(0xffffff, { map: mugTex(), roughness: 0.4 })), mugX, top + 0.048, mugZ); mug.rotation.y = 0.93;   // 200 OK, turned to the chair
+  const handle = put(new THREE.Mesh(new THREE.TorusGeometry(0.026, 0.007, 6, 12, Math.PI), mugM), mugX, top + 0.05, mugZ + 0.04); handle.rotation.z = -Math.PI / 2;
+  const coffee = put(new THREE.Mesh(new THREE.CircleGeometry(0.034, 14), mat(0x3b2416, { roughness: 0.2 })), mugX, top + 0.088, mugZ); coffee.rotation.x = -Math.PI / 2;
+  // a Raspberry Pi with its camera module, like the one in the pothole detector
+  const pcb = mat(0x1f7a3a, { roughness: 0.6 }), chipM = mat(0x16171a, { roughness: 0.4 }), portM = mat(0xb8bcc2, { metalness: 0.7, roughness: 0.35 });
+  const pi = new THREE.Group(); pi.position.set(dX - 0.01, top, dz + 0.12); pi.rotation.y = 0.35;
+  pi.add(box(0.056, 0.004, 0.085, pcb, 0, 0.004, 0), box(0.014, 0.003, 0.014, chipM, 0.004, 0.0075, -0.004), box(0.05, 0.016, 0.018, portM, 0.0, 0.014, 0.035), box(0.016, 0.014, 0.012, portM, -0.017, 0.013, 0.018));
+  pi.add(box(0.005, 0.006, 0.05, chipM, 0.024, 0.009, -0.012));   // the GPIO header
+  const cam = new THREE.Group(); cam.position.set(-0.05, 0, -0.02); cam.rotation.z = 0.35;
+  cam.add(box(0.004, 0.025, 0.025, pcb, 0, 0.0135, 0), put(new THREE.Mesh(new THREE.CylinderGeometry(0.0055, 0.0055, 0.006, 10).rotateZ(Math.PI / 2), chipM), -0.004, 0.0135, 0));
+  pi.add(cam, box(0.03, 0.001, 0.012, mat(0xe8d9a8), -0.032, 0.002, -0.014));   // and its ribbon
+  G.add(pi);
   G.add(mug, handle, coffee);
-  G.add(box(0.2, 0.012, 0.15, mat(0x2f4a7a), dX - 0.12, top + 0.006, dz - 0.52), box(0.19, 0.012, 0.145, mat(0xc8553d), dX - 0.12, top + 0.018, dz - 0.515), box(0.012, 0.012, 0.15, mat(0x222), dX - 0.08, top + 0.03, dz - 0.5));
+  const alu = mat(0xc9ccd1, { metalness: 0.75, roughness: 0.3 });
+  const mac = box(0.215, 0.014, 0.305, alu, dX - 0.1, top + 0.019, dz - 0.5); mac.rotation.y = 0.12;   // my Mac, closed
+  G.add(box(0.2, 0.012, 0.15, mat(0xc8553d), dX - 0.13, top + 0.006, dz - 0.6), mac, box(0.012, 0.003, 0.2, mat(0x2a2c30), dX - 0.205, top + 0.019, dz - 0.49));
+  // an earbuds case, an apple
+  const buds = new THREE.Mesh(new THREE.CapsuleGeometry(0.02, 0.02, 4, 12), mat(0xf6f6f4, { roughness: 0.25 })); buds.rotation.set(0, 0.4, Math.PI / 2); buds.scale.set(1, 1, 0.55);
+  G.add(put(buds, dX - 0.27, top + 0.011, dz + 0.16));
+  const fruit = new THREE.Group(); fruit.position.set(dX - 0.11, top, dz - 0.32);
+  fruit.add(put(new THREE.Mesh(new THREE.SphereGeometry(0.037, 18, 14).scale(1, 0.9, 1), mat(0xb8202a, { roughness: 0.35 })), 0, 0.034, 0));
+  fruit.add(put(new THREE.Mesh(new THREE.CylinderGeometry(0.0025, 0.003, 0.02, 5), mat(0x5a3b22)), 0.002, 0.072, 0));
+  const fleaf = put(new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 6).scale(1.6, 0.3, 0.8), mat(0x4f8f3a, { roughness: 0.6 })), 0.012, 0.075, 0.004); fleaf.rotation.z = 0.5; fruit.add(fleaf);
+  G.add(fruit);
   const holder = put(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.09, 12, 1, true), mat(0x3a3d42, { side: THREE.DoubleSide })), dX + 0.2, top + 0.045, dz - 0.62);
   G.add(holder); [[0.008, 0x2a4b8d], [-0.01, 0xd94848], [0.0, 0x222222], [0.012, 0xe2b53c]].forEach(([o, c], i) => { const p = box(0.008, 0.14, 0.008, mat(c), dX + 0.2 + o, top + 0.1, dz - 0.62 + (i - 1.5) * 0.01); p.rotation.x = (i - 1.5) * 0.12; G.add(p); });
   const phone = box(0.008, 0.15, 0.075, mat(0x111316, { roughness: 0.25 }), dX + 0.05, top + 0.08, dz + 0.68); phone.rotation.z = -0.25; G.add(phone, box(0.06, 0.012, 0.08, dark, dX + 0.08, top + 0.006, dz + 0.68));
+  const phoneTex = canvasTex(128, 256, (g, w, h) => {
+    const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#3b4a8a'); gr.addColorStop(1, '#c86b8e'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#000'; g.beginPath(); g.roundRect(w / 2 - 22, 10, 44, 13, 6.5); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.textAlign = 'center'; g.font = `600 11px ${SANS}`; g.fillText('Thursday 29 October', w / 2, 52); g.font = `700 50px ${SANS}`; g.fillText('9:41', w / 2, 100);
+  });
+  const phoneScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.068, 0.142), glowMat(0xffffff)); phoneScreen.material.map = phoneTex;
+  phoneScreen.position.set(dX + 0.05 - 0.0045, top + 0.08, dz + 0.68); phoneScreen.rotation.set(0, -Math.PI / 2, 0); phoneScreen.rotateX(-0.25); phoneScreen.userData.noEdges = true; G.add(phoneScreen);
   G.add(put(new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.21, 14), mat(0x3f8f86, { roughness: 0.6 })), dX - 0.24, top + 0.105, dz + 0.68));
   // headphones on a hook at the desk's edge
   const hook = box(0.04, 0.02, 0.02, dark, dX - dDepth / 2 + 0.02, top - 0.05, dz + dW / 2 - 0.08);
   const band = put(new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.01, 6, 18, Math.PI), mat(0x1d1f23)), dX - dDepth / 2 - 0.0, top - 0.13, dz + dW / 2 - 0.08); band.rotation.set(0, Math.PI / 2, Math.PI);
   G.add(hook, band, put(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.035, 14).rotateX(Math.PI / 2), mat(0x1d1f23)), dX - dDepth / 2, top - 0.2, dz + dW / 2 - 0.155), put(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.035, 14).rotateX(Math.PI / 2), mat(0x1d1f23)), dX - dDepth / 2, top - 0.2, dz + dW / 2 - 0.005));
   /* ---- on the floor: the chair, a backpack against the desk, a bin, a big plant in the corner ---- */
-  const fabric = mat(0x55606e, { roughness: 0.9 }), plastic = mat(0x2a2c30, { roughness: 0.5 });
+  const fabric = mat(0x1c1d21, { roughness: 0.8 }), plastic = mat(0x2a2c30, { roughness: 0.5 }), racing = mat(0xc8151d, { roughness: 0.6 });
   const chair = new THREE.Group(); chair.position.set(dX - 0.78, R.y0, dz + 0.78); chair.rotation.y = -1.05;
   for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2, leg = box(0.3, 0.025, 0.04, plastic, Math.cos(a) * 0.15, 0.07, Math.sin(a) * 0.15); leg.rotation.y = -a; chair.add(leg, put(new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), plastic), Math.cos(a) * 0.29, 0.025, Math.sin(a) * 0.29)); }
   chair.add(put(new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.36, 10), mat(0x8a8d93, { metalness: 0.7, roughness: 0.3 })), 0, 0.26, 0));
-  chair.add(box(0.48, 0.08, 0.48, fabric, 0, 0.47, 0));
-  const back = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.55, 18, 1, true, -0.55, 1.1), mat(0x55606e, { roughness: 0.9, side: THREE.DoubleSide })); back.position.set(-0.17, 0.86, 0); back.rotation.y = Math.PI / 2; chair.add(back);
+  // a racing-style seat: black with red bolsters, a tall reclined back with wings and a headrest
+  chair.add(box(0.48, 0.08, 0.46, fabric, 0, 0.47, 0));
+  for (const s of [-1, 1]) chair.add(box(0.46, 0.07, 0.06, racing, 0, 0.53, s * 0.23));
+  const seatBack = new THREE.Group(); seatBack.position.set(0.23, 0.5, 0); seatBack.rotation.z = -0.13;
+  seatBack.add(box(0.08, 0.8, 0.44, fabric, 0, 0.42, 0));
+  for (const s of [-1, 1]) seatBack.add(box(0.12, 0.56, 0.07, racing, -0.03, 0.34, s * 0.235), box(0.1, 0.2, 0.1, fabric, -0.02, 0.74, s * 0.22));
+  seatBack.add(box(0.05, 0.13, 0.24, racing, -0.06, 0.72, 0), box(0.02, 0.36, 0.12, racing, -0.045, 0.32, 0));
+  chair.add(seatBack);
   for (const s of [-1, 1]) chair.add(box(0.28, 0.03, 0.05, plastic, -0.02, 0.66, s * 0.24), box(0.03, 0.17, 0.03, plastic, 0.05, 0.57, s * 0.24));
   G.add(chair);
-  const pack = put(new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.2, 4, 10), mat(0x2c3e66, { roughness: 0.9 })), dX - 0.25, R.y0 + 0.21, dz - dW / 2 - 0.06); pack.scale.set(1, 1, 0.55); pack.rotation.z = 0.12;
-  G.add(pack, box(0.12, 0.14, 0.06, mat(0x24365a, { roughness: 0.9 }), dX - 0.37, R.y0 + 0.16, dz - dW / 2 - 0.06));
+  // two race tyres stacked as a side table, a soft and a medium, with a glass top
+  const rubber = mat(0x18191b, { roughness: 0.85 }), rim = mat(0x3a3c41, { metalness: 0.6, roughness: 0.35 });
+  const tx = dX - 0.28, tz = R.z0 + 0.45;
+  [[0.135, '#e10600'], [0.405, '#ffd400']].forEach(([y, c]) => {
+    // rounded rubber with the compound's stripe painted round the upper sidewall
+    const side = canvasTex(4, 256, (g, w, h) => { g.fillStyle = '#18191b'; g.fillRect(0, 0, w, h); g.fillStyle = c; g.fillRect(0, h * (1 - 0.2), w, h * 0.045); g.fillStyle = '#f4f4f4'; g.fillRect(0, h * (1 - 0.14), w, h * 0.012); });
+    const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.215, 0.095, 16, 40).rotateX(-Math.PI / 2).scale(1, 1.42, 1), mat(0xffffff, { map: side, roughness: 0.85 }));
+    G.add(put(tyre, tx, R.y0 + y, tz), put(new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.2, 20), rim), tx, R.y0 + y, tz));
+  });
+  G.add(put(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.012, 12), mat(0xc8151d, { roughness: 0.4 })), tx, R.y0 + 0.51, tz));   // the wheel nut
   G.add(put(new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.3, 14, 1, true), mat(0x9aa0a6, { side: THREE.DoubleSide })), dX + 0.05, R.y0 + 0.15, dz + 0.55));
   const bigPot = put(new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.13, 0.32, 16), mat(0xc97b52)), R.x1 - 0.3, R.y0 + 0.16, R.z1 - 0.3);
   const leaf = mergeGeometries([...Array(9)].map((_, i) => new THREE.CircleGeometry(0.16, 10).scale(1, 1.3, 1).translate(0, 0.2, 0).rotateX(-0.5 - (i % 3) * 0.25).rotateY(i * 0.9).translate(0, 0.25 + (i % 4) * 0.13, 0)));
