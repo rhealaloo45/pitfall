@@ -10,10 +10,11 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { buildCar } from '../vehicle/car-model.js';
 import { CAR_SPEC } from '../vehicle/sim.js';
-import { INK, LINES, NIGHT, ink, outline, freeze, mergeByMaterial, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildSky } from './world.js?v=49';
-import { buildRoom } from './room.js?v=49';
-import { buildMarineDrive, along, LENGTH } from './marine.js?v=49';
-import { screenTex, drawScreen, setWallpaper } from './screen.js?v=49';
+import { INK, LINES, NIGHT, ink, outline, freeze, mergeByMaterial, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildSky } from './world.js?v=60';
+import { buildRoom } from './room.js?v=60';
+import { buildMarineDrive, along, LENGTH } from './marine.js?v=60';
+import { screenTex, drawScreen, setWallpaper } from './screen.js?v=60';
+import { loadKit, streetProps, marineProps } from './props.js?v=60';
 
 const $ = id => document.getElementById(id);
 const track = $('story'), canvas = $('scene'), detLayer = $('det'), stage = canvas.parentElement, veil = $('veil');
@@ -40,6 +41,7 @@ scene.fog = new THREE.Fog(0xf0d2b6, 90, 340);
 const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 1500);
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
 
 const sky = buildSky(scene);
 const hemi = new THREE.HemisphereLight(0xdfe8ff, 0x6b5a48, 0.9);
@@ -81,7 +83,10 @@ function bakeFlat(root) {
 }
 
 /* ---------- world ---------- */
+// the ready-made props (cars, street furniture, boats) come in one small file; the drive still builds without them
+const kit = await loadKit('assets/models/street-kit.glb').catch(e => { console.warn('props unavailable', e); return null; });
 const street = buildStreet(scene);
+const streetLife = kit ? streetProps(street, kit) : null;
 const holes = buildPotholes(scene);
 const herd = buildCows(scene);
 const crossing = buildCrossing(scene);
@@ -95,6 +100,7 @@ for (const l of [...Object.values(room.lights), room.lights.lampLight.target]) s
 mergeByMaterial(room.group);   // the room's static furniture (and the model car) as a few meshes
 setWallpaper(STILL);
 const marine = buildMarineDrive(scene, facadeMat);
+if (kit) marineProps(marine, kit);
 const car = buildCar();
 standardize(car.root);
 car.root.traverse(o => { if (o.isMesh) { o.castShadow = true; for (const m of [].concat(o.material)) ink(m); } });
@@ -266,6 +272,7 @@ function frame() {
   sun.position.set(focus.x - 30, 40, focus.z - 22); sun.target.position.copy(focus);
   // the signal: red while people cross, then green
   const L = crossing.lights, go = p > 0.615, amber = p > 0.6 && !go;
+  if (streetLife) streetLife.update(Math.max(0, (p - 0.615) / 0.03));   // the waiting cars pull away on green
   L.red.emissiveIntensity = !go && !amber ? 4 : 0.05; L.amber.emissiveIntensity = amber ? 4 : 0.05; L.green.emissiveIntensity = go ? 4 : 0.05;
   // people cross while it's red; their "brains" light up as the model reads the patterns
   if (p > 0.4 && p < 0.7) crossing.people.forEach(({ obj }, i) => {
