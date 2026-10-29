@@ -10,10 +10,10 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { buildCar } from '../vehicle/car-model.js';
 import { CAR_SPEC } from '../vehicle/sim.js';
-import { INK, LINES, NIGHT, ink, outline, freeze, mergeByMaterial, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildSky } from './world.js';
-import { buildRoom } from './room.js';
-import { buildMarineDrive, along, LENGTH } from './marine.js';
-import { screenTex, drawScreen, setWallpaper } from './screen.js';
+import { INK, LINES, NIGHT, ink, outline, freeze, mergeByMaterial, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildSky } from './world.js?v=32';
+import { buildRoom } from './room.js?v=32';
+import { buildMarineDrive, along, LENGTH } from './marine.js?v=32';
+import { screenTex, drawScreen, setWallpaper } from './screen.js?v=32';
 
 const $ = id => document.getElementById(id);
 const track = $('story'), canvas = $('scene'), detLayer = $('det'), stage = canvas.parentElement, veil = $('veil');
@@ -347,8 +347,8 @@ addEventListener('scroll', onScroll, { passive: true });
 addEventListener('resize', () => { resize(); onScroll(); });
 new ResizeObserver(() => { measure(); onScroll(); }).observe(document.body);
 resize(); onScroll(); tNow = tTarget;
-// compile every material and upload every texture up front, so nothing stalls mid-scroll. compileAsync lets
-// browsers that can build shaders in the background do so while the page stays scrollable.
+// compile every material and upload every texture up front, so nothing stalls mid-scroll. Browsers that can
+// build shaders in the background do so while the page stays scrollable.
 room.packets.visible = true;
 scene.traverse(o => { for (const m of [].concat(o.material || [])) for (const k of ['map', 'emissiveMap', 'normalMap']) if (m[k]) renderer.initTexture(m[k]); });
 let started = false;
@@ -367,7 +367,15 @@ function start() {
   document.documentElement.classList.add('scene-ready');
   window.__story = hook;
 }
-renderer.compileAsync(scene, camera).then(start, start);
+renderer.compile(scene, camera);   // queues every shader build
+// wait for them, asking about each shader (not each material) a few times a second; three's compileAsync asks
+// about every material every 10 ms, and each question is a round trip to the GPU process
+const parallel = !!renderer.extensions.get('KHR_parallel_shader_compile'), giveUp = performance.now() + 8000;
+const whenBuilt = () => {
+  if (!parallel || performance.now() > giveUp || renderer.info.programs.every(pg => pg.isReady())) start();
+  else setTimeout(whenBuilt, 60);
+};
+setTimeout(whenBuilt, 0);
 
 /* ---------- chapter rail ---------- */
 const rail = document.querySelector('.rail');
