@@ -49,6 +49,37 @@ Object.assign(sun.shadow.camera, { left: -26, right: 26, top: 26, bottom: -26, n
 sun.shadow.bias = -0.0004;
 scene.add(hemi, sun, sun.target);
 
+/* ---------- shader budget ----------
+   Phones (iPhones especially) build every shader variant the first time they see it, and each one can take a
+   noticeable fraction of a second. So the scene sticks to as few variants as it can: */
+// the car's clear-coat paint needs the heaviest shader there is; plain standard paint looks nearly the same at this size
+const stdOf = new Map();
+function standardize(root) {
+  const conv = m => {
+    if (!m.isMeshPhysicalMaterial) return m;
+    if (!stdOf.has(m)) {
+      const s = THREE.MeshStandardMaterial.prototype.copy.call(new THREE.MeshStandardMaterial(), m);
+      if (m.clearcoat > 0.5) s.roughness = m.roughness * 0.7;   // a touch glossier, standing in for the clear coat
+      delete s.userData.inked; stdOf.set(m, ink(s));
+    }
+    return stdOf.get(m);
+  };
+  root.traverse(o => { if (o.material) o.material = Array.isArray(o.material) ? o.material.map(conv) : conv(o.material); });
+}
+// low-poly bits (trees, cows, tetrapods, plants) get their faceted look from face normals baked into the geometry,
+// so they share the regular shader instead of needing a flat-shaded one
+function bakeFlat(root) {
+  const geo = new Map(), flipped = new Set(), keep = new Set();
+  root.traverse(o => {
+    if (!o.isMesh) return;
+    const ms = [].concat(o.material);
+    if (!ms.every(m => m.flatShading)) { ms.forEach(m => keep.add(m)); return; }
+    if (!geo.has(o.geometry)) { const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone(); g.computeVertexNormals(); geo.set(o.geometry, g); }
+    o.geometry = geo.get(o.geometry); ms.forEach(m => flipped.add(m));
+  });
+  for (const m of flipped) if (!keep.has(m)) { m.flatShading = false; m.needsUpdate = true; }
+}
+
 /* ---------- world ---------- */
 const street = buildStreet(scene);
 const holes = buildPotholes(scene);
@@ -56,10 +87,16 @@ const herd = buildCows(scene);
 const crossing = buildCrossing(scene);
 const STILL = 'assets/stills/mumbai-gp-car.webp';
 const room = buildRoom(scene, { screenTex, stillUrl: STILL });
+standardize(room.group);
+// the room's lights live outside the room group and are dimmed to 0 instead of hidden: hiding a light changes
+// the light setup, and that makes the renderer rebuild every shader in the scene
+room.group.updateMatrixWorld(true);
+for (const l of [...Object.values(room.lights), room.lights.lampLight.target]) scene.attach(l);
 mergeByMaterial(room.group);   // the room's static furniture (and the model car) as a few meshes
 setWallpaper(STILL);
 const marine = buildMarineDrive(scene, facadeMat);
 const car = buildCar();
+standardize(car.root);
 car.root.traverse(o => { if (o.isMesh) { o.castShadow = true; for (const m of [].concat(o.material)) ink(m); } });
 ink(car.contactShadow.material);
 const headlight = new THREE.SpotLight(0xfff1dc, 0, 60, 0.55, 0.6, 1.4);
@@ -68,6 +105,7 @@ car.body.add(headlight, headlight.target);
 // a warm streetlight that rides with the car on Marine Drive, so it reads at night
 const carLight = new THREE.PointLight(0xffc98f, 0, 16, 1.6); carLight.position.set(-3, 5, 2); car.root.add(carLight);
 scene.add(car.root, car.contactShadow);
+bakeFlat(scene);
 for (const g of [street, crossing.group, room.group]) outline(g);
 for (const h of holes) outline(h.obj, 20);
 for (const c of herd) outline(c.obj, 35);
@@ -244,10 +282,11 @@ function frame() {
   });
   // my room: warm lamps, fairy lights; then the attack turns it red and packets stream into the laptop
   const RL = room.lights, attack = sstep(clamp((p - 0.885) / 0.05)) * (1 - sstep(clamp((a - 0.02) / 0.05)));
-  const glowOn = night * (inRoom ? 1 : 0.75);
+  const roomInView = T > 0.6 && T < 1.16;
+  const glowOn = roomInView ? night * (inRoom ? 1 : 0.75) : 0;
   RL.lampLight.intensity = 5 * glowOn * (1 - attack * 0.6); RL.floorLight.intensity = 2.2 * glowOn * (1 - attack * 0.7);
   RL.moon.intensity = 0.9 * glowOn;
-  RL.alarm.intensity = attack * (4 + Math.sin(time * 6) * 2);
+  RL.alarm.intensity = roomInView ? attack * (4 + Math.sin(time * 6) * 2) : 0;
   room.fairy.glow.material.size = 0.16 * (0.92 + Math.sin(time * 2.3) * 0.08);
   setVar('alert', (attack * (0.75 + Math.sin(time * 6) * 0.25)).toFixed(3));
   setVar('cozy', (sstep(clamp((T - 0.72) / 0.04)) * (1 - sstep(clamp((T - 1.05) / 0.05)))).toFixed(2));
@@ -271,7 +310,7 @@ function frame() {
   street.visible = onStreet; crossing.group.visible = T > 0.3 && T < 0.75;
   for (const h of holes) h.obj.visible = T < 0.4;
   for (const c of herd) c.obj.visible = T > 0.25 && T < 0.6;
-  room.group.visible = T > 0.6 && T < 1.16;
+  room.group.visible = roomInView;
   placeCamera(T);
   updateBoxes(p, canvas.clientWidth, canvas.clientHeight);
   renderer.render(scene, camera);
@@ -308,20 +347,27 @@ addEventListener('scroll', onScroll, { passive: true });
 addEventListener('resize', () => { resize(); onScroll(); });
 new ResizeObserver(() => { measure(); onScroll(); }).observe(document.body);
 resize(); onScroll(); tNow = tTarget;
-// compile every material and upload every texture up front, so nothing stalls mid-scroll
+// compile every material and upload every texture up front, so nothing stalls mid-scroll. compileAsync lets
+// browsers that can build shaders in the background do so while the page stays scrollable.
 room.packets.visible = true;
 scene.traverse(o => { for (const m of [].concat(o.material || [])) for (const k of ['map', 'emissiveMap', 'normalMap']) if (m[k]) renderer.initTexture(m[k]); });
-renderer.compile(scene, camera);
-// one warm-up render with nothing culled uploads every mesh to the GPU now, not mid-scroll when it first appears
-const culled = [];
-scene.traverse(o => { if (o.isMesh || o.isPoints || o.isLine) { culled.push([o, o.frustumCulled]); o.frustumCulled = false; } });
-const warm = new THREE.WebGLRenderTarget(64, 64);
-renderer.setRenderTarget(warm); renderer.render(scene, camera); renderer.setRenderTarget(null); warm.dispose();
-for (const [o, f] of culled) o.frustumCulled = f;
-room.packets.visible = false;
-frame();
-raf = requestAnimationFrame(loop);
-document.documentElement.classList.add('scene-ready');
+let started = false;
+function start() {
+  if (started) return; started = true;
+  // one warm-up render with nothing culled uploads every mesh to the GPU now, not mid-scroll when it first appears.
+  // It draws to the screen (an offscreen target would build a second set of shaders) and the real first frame
+  // replaces it in the same task, so it is never seen.
+  const culled = [];
+  scene.traverse(o => { if (o.isMesh || o.isPoints || o.isLine) { culled.push([o, o.frustumCulled]); o.frustumCulled = false; } });
+  renderer.render(scene, camera);
+  for (const [o, f] of culled) o.frustumCulled = f;
+  room.packets.visible = false;
+  frame();
+  raf = requestAnimationFrame(loop);
+  document.documentElement.classList.add('scene-ready');
+  window.__story = hook;
+}
+renderer.compileAsync(scene, camera).then(start, start);
 
 /* ---------- chapter rail ---------- */
 const rail = document.querySelector('.rail');
@@ -338,4 +384,4 @@ if (rail) {
   addEventListener('scroll', () => requestAnimationFrame(upd), { passive: true }); upd();
   railUpdate = upd;
 }
-window.__story = { renderer, p: () => Math.min(1, tNow), t: () => tNow, target: () => tTarget, ink: () => INK.value, camera, scene, frame, snap: () => { measure(); onScroll(); tNow = tTarget; frame(); railUpdate(); }, boxes: () => targets.filter(t => t.on).map(t => t.el.textContent), car: () => carPos.clone() };   // for tests
+const hook = { renderer, p: () => Math.min(1, tNow), t: () => tNow, target: () => tTarget, ink: () => INK.value, camera, scene, frame, snap: () => { measure(); onScroll(); tNow = tTarget; frame(); railUpdate(); }, boxes: () => targets.filter(t => t.on).map(t => t.el.textContent), car: () => carPos.clone() };   // for tests
