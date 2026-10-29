@@ -10,9 +10,10 @@
    world.js (the room spans x 9.9–13.1, z 327.2–330.8, y 10–12.8). */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
-import { ink, facadeMat } from './world.js?v=60';
+import { ink, facadeMat } from './world.js?v=61';
 import { buildCar } from '../vehicle/car-model.js';
 import { CAR_SPEC } from '../vehicle/sim.js';
 
@@ -498,19 +499,37 @@ export function buildRoom(scene, { screenTex, stillUrl }) {
   const band = put(new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.01, 6, 18, Math.PI), mat(0x1d1f23)), dX - dDepth / 2 - 0.0, top - 0.13, dz + dW / 2 - 0.08); band.rotation.set(0, Math.PI / 2, Math.PI);
   G.add(hook, band, put(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.035, 14).rotateX(Math.PI / 2), mat(0x1d1f23)), dX - dDepth / 2, top - 0.2, dz + dW / 2 - 0.155), put(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.035, 14).rotateX(Math.PI / 2), mat(0x1d1f23)), dX - dDepth / 2, top - 0.2, dz + dW / 2 - 0.005));
   /* ---- on the floor: the chair, a backpack against the desk, a bin, a big plant in the corner ---- */
-  const fabric = mat(0x1c1d21, { roughness: 0.8 }), plastic = mat(0x2a2c30, { roughness: 0.5 }), racing = mat(0xc8151d, { roughness: 0.6 });
+  // a racing-style seat: a contoured back with shoulder wings, harness slots and a headrest, a red centre panel and
+  // pillows; a cushioned seat with raised red bolsters; padded armrests; a five-star base on castors
+  const fabric = mat(0x1c1d21, { roughness: 0.85 }), plastic = mat(0x2a2c30, { roughness: 0.5 }), racing = mat(0xc8151d, { roughness: 0.6 });
+  const chrome = mat(0x9a9da3, { metalness: 0.8, roughness: 0.25 });
+  const rbox = (w, h, d, r, m, x, y, z) => put(new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, r), m), x, y, z);
   const chair = new THREE.Group(); chair.position.set(dX - 0.78, R.y0, dz + 0.78); chair.rotation.y = -1.05;
-  for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2, leg = box(0.3, 0.025, 0.04, plastic, Math.cos(a) * 0.15, 0.07, Math.sin(a) * 0.15); leg.rotation.y = -a; chair.add(leg, put(new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), plastic), Math.cos(a) * 0.29, 0.025, Math.sin(a) * 0.29)); }
-  chair.add(put(new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.36, 10), mat(0x8a8d93, { metalness: 0.7, roughness: 0.3 })), 0, 0.26, 0));
-  // a racing-style seat: black with red bolsters, a tall reclined back with wings and a headrest
-  chair.add(box(0.48, 0.08, 0.46, fabric, 0, 0.47, 0));
-  for (const s of [-1, 1]) chair.add(box(0.46, 0.07, 0.06, racing, 0, 0.53, s * 0.23));
-  const seatBack = new THREE.Group(); seatBack.position.set(0.23, 0.5, 0); seatBack.rotation.z = -0.13;
-  seatBack.add(box(0.08, 0.8, 0.44, fabric, 0, 0.42, 0));
-  for (const s of [-1, 1]) seatBack.add(box(0.12, 0.56, 0.07, racing, -0.03, 0.34, s * 0.235), box(0.1, 0.2, 0.1, fabric, -0.02, 0.74, s * 0.22));
-  seatBack.add(box(0.05, 0.13, 0.24, racing, -0.06, 0.72, 0), box(0.02, 0.36, 0.12, racing, -0.045, 0.32, 0));
+  for (let i = 0; i < 5; i++) {
+    const a = i / 5 * Math.PI * 2, leg = rbox(0.3, 0.032, 0.05, 0.014, plastic, Math.cos(a) * 0.15, 0.075, Math.sin(a) * 0.15); leg.rotation.y = -a;
+    const wheel = put(new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.022, 12).rotateX(Math.PI / 2), plastic), Math.cos(a) * 0.29, 0.027, Math.sin(a) * 0.29); wheel.rotation.y = -a;
+    chair.add(leg, wheel, put(new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.03, 6), chrome), Math.cos(a) * 0.29, 0.05, Math.sin(a) * 0.29));
+  }
+  chair.add(put(new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.04, 16), plastic), 0, 0.09, 0), put(new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.046, 0.13, 14), plastic), 0, 0.17, 0));
+  chair.add(put(new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.12, 12), chrome), 0, 0.27, 0), rbox(0.28, 0.035, 0.26, 0.01, plastic, 0, 0.33, 0));
+  chair.add(rbox(0.52, 0.09, 0.5, 0.035, fabric, -0.01, 0.395, 0));
+  for (const sd of [-1, 1]) chair.add(rbox(0.5, 0.075, 0.09, 0.032, racing, -0.01, 0.44, sd * 0.215));
+  // the back: an extruded racing-seat outline, bevelled so it reads soft
+  const outline = new THREE.Shape();
+  outline.moveTo(-0.2, 0); outline.lineTo(0.2, 0);
+  outline.quadraticCurveTo(0.235, 0.2, 0.22, 0.38); outline.quadraticCurveTo(0.29, 0.5, 0.27, 0.6); outline.quadraticCurveTo(0.24, 0.68, 0.16, 0.7);
+  outline.quadraticCurveTo(0.18, 0.86, 0.1, 0.88); outline.quadraticCurveTo(0, 0.905, -0.1, 0.88); outline.quadraticCurveTo(-0.18, 0.86, -0.16, 0.7);
+  outline.quadraticCurveTo(-0.24, 0.68, -0.27, 0.6); outline.quadraticCurveTo(-0.29, 0.5, -0.22, 0.38); outline.quadraticCurveTo(-0.235, 0.2, -0.2, 0);
+  for (const sd of [-1, 1]) { const slot = new THREE.Path(); slot.absellipse(sd * 0.075, 0.74, 0.022, 0.045, 0, Math.PI * 2, false, 0); outline.holes.push(slot); }
+  const backGeo = new THREE.ExtrudeGeometry(outline, { depth: 0.06, bevelEnabled: true, bevelThickness: 0.022, bevelSize: 0.02, bevelSegments: 3, curveSegments: 10 }).rotateY(-Math.PI / 2);
+  const panel = new THREE.Shape(); panel.moveTo(-0.07, 0.12); panel.lineTo(0.07, 0.12); panel.quadraticCurveTo(0.09, 0.12, 0.09, 0.15); panel.lineTo(0.09, 0.56); panel.quadraticCurveTo(0.09, 0.6, 0.06, 0.6);
+  panel.lineTo(-0.06, 0.6); panel.quadraticCurveTo(-0.09, 0.6, -0.09, 0.56); panel.lineTo(-0.09, 0.15); panel.quadraticCurveTo(-0.09, 0.12, -0.07, 0.12);
+  const panelGeo = new THREE.ExtrudeGeometry(panel, { depth: 0.012, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.006, bevelSegments: 2, curveSegments: 6 }).rotateY(-Math.PI / 2);
+  const seatBack = new THREE.Group(); seatBack.position.set(0.25, 0.4, 0); seatBack.rotation.z = -0.14;
+  seatBack.add(new THREE.Mesh(backGeo, fabric), put(new THREE.Mesh(panelGeo, racing), -0.08, 0, 0));
+  seatBack.add(rbox(0.07, 0.12, 0.27, 0.04, fabric, -0.115, 0.2, 0), rbox(0.06, 0.1, 0.2, 0.035, fabric, -0.105, 0.81, 0));   // lumbar and head pillows
   chair.add(seatBack);
-  for (const s of [-1, 1]) chair.add(box(0.28, 0.03, 0.05, plastic, -0.02, 0.66, s * 0.24), box(0.03, 0.17, 0.03, plastic, 0.05, 0.57, s * 0.24));
+  for (const sd of [-1, 1]) chair.add(rbox(0.05, 0.2, 0.035, 0.012, plastic, 0.03, 0.52, sd * 0.285), rbox(0.26, 0.035, 0.075, 0.016, plastic, -0.02, 0.63, sd * 0.285));
   G.add(chair);
   // two race tyres stacked as a side table, a soft and a medium, with a glass top
   const rubber = mat(0x18191b, { roughness: 0.85 }), rim = mat(0x3a3c41, { metalness: 0.6, roughness: 0.35 });
