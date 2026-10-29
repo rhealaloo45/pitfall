@@ -33,7 +33,8 @@ try {
   await p.evaluate(async () => { await document.fonts.ready; document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, 0); });
   await p.waitForTimeout(300);
   await p.click('.rail a[href="#contact"]');
-  await p.waitForTimeout(700);
+  // software WebGL can stall a frame mid-jump, so wait for it to land rather than a fixed delay
+  await p.waitForFunction(() => { const t = document.getElementById('contact').getBoundingClientRect().top; return t >= 0 && t < innerHeight * 0.8; }, null, { timeout: 15000 }).catch(() => {});
   const jumped = await p.evaluate(() => ({ top: Math.round(document.getElementById('contact').getBoundingClientRect().top), hash: location.hash, h: innerHeight }));
   check('rail: jumps straight to a chapter', jumped.hash === '#contact' && jumped.top >= 0 && jumped.top < jumped.h * 0.8, JSON.stringify(jumped));
   // act two: the car keeps driving behind the rest of the page (Marine Drive at night), under a readable veil
