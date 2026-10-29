@@ -119,14 +119,15 @@ const CAM = [
   { t: 0.44, pos: rel(-6.6, 2.4, 9), look: at(1.0, 1.1, 194), fov: 44 },
   { t: 0.52, pos: at(-8.6, 2.6, 233), look: at(0.4, 1.4, 249.5), fov: 44 },
   { t: 0.62, pos: at(-8.0, 2.4, 237), look: at(0, 1.5, 249), fov: 42 },
-  { t: 0.69, pos: at(0.6, 12.3, 329), look: at(9.6, 12.15, 329), fov: 40 },
-  { t: 0.745, pos: at(9.4, 12.0, 329), look: at(16.4, 11.6, 329), fov: 50 },
-  { t: 0.775, pos: at(12.6, 11.75, 329), look: at(17.7, 11.75, 329), fov: 56, tall: { pos: at(11.6, 11.8, 329), look: at(17.7, 11.55, 329), fov: 66 } },
-  { t: 0.81, pos: at(15.92, 11.33, 328.36), look: at(17.3, 11.13, 328.7), fov: 42, tall: { pos: at(15.75, 11.22, 329), look: at(17.3, 10.98, 329), fov: 60 } },
-  { t: 0.88, pos: at(15.96, 11.32, 328.38), look: at(17.3, 11.13, 328.7), fov: 42, tall: { pos: at(15.78, 11.21, 329), look: at(17.3, 10.98, 329), fov: 60 } },
-  { t: 1.0, pos: at(15.75, 11.34, 328.5), look: at(17.3, 11.08, 328.85), fov: 48, tall: { pos: at(15.5, 11.3, 329), look: at(17.3, 11.0, 329), fov: 64 } },
-  // act two: turn round, out of the window, down to the car, and along Marine Drive
-  { t: 1.06, pos: at(13.6, 12.0, 329), look: at(3, 11, 329), fov: 50 },
+  // up to one lit window in the block, through it, and into a small room: the camera stays close, like you're in it
+  { t: 0.69, pos: at(4.2, 11.6, 329), look: at(9.6, 11.6, 329), fov: 34 },
+  { t: 0.745, pos: at(9.25, 11.6, 329), look: at(13.1, 11.25, 329), fov: 52 },
+  { t: 0.775, pos: at(10.35, 11.52, 328.55), look: at(13.1, 11.12, 329.05), fov: 60, tall: { pos: at(9.95, 11.5, 329), look: at(13.1, 11.78, 329), fov: 72 } },
+  { t: 0.81, pos: at(11.88, 11.3, 328.42), look: at(12.98, 11.06, 328.76), fov: 48, tall: { pos: at(11.7, 11.25, 329), look: at(12.98, 11.02, 329), fov: 64 } },
+  { t: 0.88, pos: at(11.91, 11.29, 328.44), look: at(12.98, 11.06, 328.76), fov: 48, tall: { pos: at(11.72, 11.24, 329), look: at(12.98, 11.02, 329), fov: 64 } },
+  { t: 1.0, pos: at(11.55, 11.42, 328.52), look: at(12.98, 11.12, 328.92), fov: 54, tall: { pos: at(11.4, 11.35, 329), look: at(12.98, 11.0, 329), fov: 70 } },
+  // act two: turn round to the street window, out, down to the car, and along Marine Drive
+  { t: 1.06, pos: at(11.8, 11.6, 329), look: at(4, 11.3, 329), fov: 54 },
   { t: 1.12, pos: at(5.5, 13.2, 327), look: rel(0, 0.5, 6), fov: 50 },
   { t: 1.24, pos: rel(-5, 2.8, -10), look: rel(0, 0.6, 14), fov: 48 },
   { t: 1.42, pos: rel(-10.5, 2.6, 2), look: rel(0, 0.9, 3), fov: 44 },
@@ -214,7 +215,7 @@ function frame() {
   const night = sstep(clamp((p - 0.63) / 0.12)), inRoom = T > 0.72 && T < 1.1, outside = clamp((a - 0.08) / 0.06);
   sun.intensity = inRoom ? 0 : 2.4 * (1 - night) + 0.45 * night * (T > 1 ? outside : 1);
   sun.color.lerpColors(sunDay, moonC, night);
-  hemi.intensity = 0.9 * (1 - night) + (inRoom ? 0.26 : T > 1 ? 0.32 * outside : 0.07 * night);
+  hemi.intensity = 0.9 * (1 - night) + (inRoom ? 0.1 : T > 1 ? 0.32 * outside : 0.07 * night);
   // the studio reflections that make the car shine by day are dimmed after dark
   const env = 1 - night * 0.82;
   if (Math.abs(env - lastEnv) > 0.01) { lastEnv = env; for (const [m, base] of envMats) m.envMapIntensity = base * env; }
@@ -243,11 +244,11 @@ function frame() {
   });
   // my room: warm lamps, fairy lights; then the attack turns it red and packets stream into the laptop
   const RL = room.lights, attack = sstep(clamp((p - 0.885) / 0.05)) * (1 - sstep(clamp((a - 0.02) / 0.05)));
-  const glowOn = night * (inRoom ? 1 : 0.6);
-  RL.lampLight.intensity = 7 * glowOn * (1 - attack * 0.6); RL.floorLight.intensity = 3.2 * glowOn * (1 - attack * 0.7);
-  RL.moon.intensity = 1.6 * glowOn;
-  RL.alarm.intensity = attack * (9 + Math.sin(time * 6) * 4);
-  room.fairy.glow.material.size = 0.42 * (0.92 + Math.sin(time * 2.3) * 0.08);
+  const glowOn = night * (inRoom ? 1 : 0.75);
+  RL.lampLight.intensity = 5 * glowOn * (1 - attack * 0.6); RL.floorLight.intensity = 2.2 * glowOn * (1 - attack * 0.7);
+  RL.moon.intensity = 0.9 * glowOn;
+  RL.alarm.intensity = attack * (4 + Math.sin(time * 6) * 2);
+  room.fairy.glow.material.size = 0.16 * (0.92 + Math.sin(time * 2.3) * 0.08);
   setVar('alert', (attack * (0.75 + Math.sin(time * 6) * 0.25)).toFixed(3));
   setVar('cozy', (sstep(clamp((T - 0.72) / 0.04)) * (1 - sstep(clamp((T - 1.05) / 0.05)))).toFixed(2));
   room.packets.visible = attack > 0.02;
