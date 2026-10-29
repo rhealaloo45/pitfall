@@ -1,15 +1,16 @@
 /* My room, behind the lit window at the end of the street — my real desk, with the view I'd like one day:
    a curved ultrawide in front of a window onto the Queen's Necklace at night; on the desk the "eat sleep
    code" sign, a black-and-teal model of the race car, a little driver figurine, a white keyboard on a Monza
-   desk mat, a succulent; a navy felt pinboard (photos, a cat, a badge, my K. C. College lanyard, the weekly
-   timetable); fairy lights, a shelf with books, a trophy and the 1st-rank certificate, a floor lamp.
-   Original stand-ins only: no real team, brand or device logos. Coordinates match the facade window in
+   desk mat, a succulent, a rubber duck for debugging, sticky notes (TODO: sleep, BOX BOX!); a navy felt pinboard
+   (photos, a cat, a badge, my K. C. College lanyard, the weekly timetable) under a soft/medium/hard tyre
+   print; a LIGHTS OUT start-lights poster; a "hello, world" neon over the window; fairy lights, shelves with
+   books, a race helmet, a trophy and the 1st-rank certificate. Original stand-ins only: no real team, brand or device logos. Coordinates match the facade window in
    world.js (the room spans x 9.9–13.1, z 327.2–330.8, y 10–12.8). */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
-import { ink, facadeMat } from './world.js?v=41';
+import { ink, facadeMat } from './world.js?v=43';
 import { buildCar } from '../vehicle/car-model.js';
 import { CAR_SPEC } from '../vehicle/sim.js';
 
@@ -117,6 +118,52 @@ function poster(img) {
     if (img) { const s = Math.max((w - 56) / img.width, (h - 200) / img.height), iw = img.width * s, ih = img.height * s; g.save(); g.beginPath(); g.rect(28, 28, w - 56, h - 200); g.clip(); g.drawImage(img, 28 + (w - 56 - iw) * 0.7, 28 + (h - 200 - ih) / 2, iw, ih); g.restore(); }
     g.fillStyle = '#c8151d'; g.font = `800 64px ${SANS}`; g.fillText('MUMBAI GP', 30, h - 100);
     g.fillStyle = '#555'; g.font = `500 24px ${SANS}`; g.fillText('a city, drawn in code', 32, h - 58);
+  });
+}
+/** F1 start lights: five columns lit red, LIGHTS OUT. */
+function lightsOutTex() {
+  return canvasTex(340, 480, (g, w, h) => {
+    g.fillStyle = '#0d0e10'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#26282c'; g.fillRect(22, 58, w - 44, 18);
+    for (let i = 0; i < 5; i++) {
+      const x = 52 + i * ((w - 104) / 4);
+      g.fillStyle = '#1a1b1e'; g.fillRect(x - 24, 76, 48, 100);
+      for (const y of [104, 150]) {
+        const gr = g.createRadialGradient(x, y, 2, x, y, 24); gr.addColorStop(0, '#ff7a6e'); gr.addColorStop(0.45, '#e10600'); gr.addColorStop(1, 'rgba(225,6,0,0)');
+        g.fillStyle = gr; g.beginPath(); g.arc(x, y, 24, 0, Math.PI * 2); g.fill(); g.fillStyle = '#ff3b2f'; g.beginPath(); g.arc(x, y, 13, 0, Math.PI * 2); g.fill();
+      }
+    }
+    g.fillStyle = '#f4f1ea'; g.font = `800 64px ${SANS}`; g.fillText('LIGHTS', 24, 300); g.fillText('OUT.', 24, 366);
+    g.fillStyle = '#8b8e94'; g.font = `600 16px ${SANS}`; g.fillText('SUNDAYS ARE FOR RACING', 26, 428);
+  });
+}
+/** Soft, medium, hard: the three dry tyre compounds. */
+function tyresTex() {
+  return canvasTex(720, 240, (g, w, h) => {
+    g.fillStyle = '#f4f1ea'; g.fillRect(0, 0, w, h);
+    [['SOFT', '#e10600'], ['MEDIUM', '#ffd400'], ['HARD', '#f4f4f4']].forEach(([t, c], i) => {
+      const x = 130 + i * 230, y = 104;
+      g.fillStyle = '#1b1c1f'; g.beginPath(); g.arc(x, y, 80, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = c; g.lineWidth = 10; g.beginPath(); g.arc(x, y, 58, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = '#3a3c41'; g.beginPath(); g.arc(x, y, 40, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#9a9ca2'; g.beginPath(); g.arc(x, y, 12, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#1b1c1f'; g.font = `800 22px ${SANS}`; g.textAlign = 'center'; g.fillText(t, x, 222);
+    });
+  });
+}
+/** A pink neon sign: a glowing tube with a hot white core. */
+function neonTex(text) {
+  return canvasTex(1024, 256, (g, w, h) => {
+    g.font = `500 124px ${SANS}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+    g.shadowColor = '#ff2d8f'; g.strokeStyle = '#ff6fb3'; g.lineWidth = 11;
+    g.shadowBlur = 44; g.strokeText(text, w / 2, h / 2); g.strokeText(text, w / 2, h / 2); g.shadowBlur = 14; g.strokeText(text, w / 2, h / 2);
+    g.shadowBlur = 0; g.strokeStyle = '#fff0f7'; g.lineWidth = 4; g.strokeText(text, w / 2, h / 2);
+  });
+}
+function stickyTex(bg, lines) {
+  return canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = bg; g.fillRect(0, 0, w, h); g.fillStyle = 'rgba(0,0,0,0.06)'; g.fillRect(0, 0, w, 14);
+    g.fillStyle = '#2a2a2a'; g.font = `700 30px ${HAND}`; lines.forEach((t, i) => g.fillText(t, 12, 56 + i * 36));
   });
 }
 function rugTex() {
@@ -263,6 +310,13 @@ export function buildRoom(scene, { screenTex, stillUrl }) {
   const post = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.87), mat(0xffffff, { map: posterTex, emissiveMap: posterTex, emissive: 0xffffff, emissiveIntensity: 0.12, roughness: 0.7 }));
   post.position.set(10.85, 11.55, R.z0 + 0.03); G.add(post);
   new THREE.ImageLoader().load(stillUrl, img => { const t = poster(img); post.material.map = t; post.material.emissiveMap = t; post.material.needsUpdate = true; });
+  const printMat = tex => mat(0xffffff, { map: tex, emissiveMap: tex, emissive: 0xffffff, emissiveIntensity: 0.12, roughness: 0.7 });
+  const black = mat(0x141517, { roughness: 0.5 });
+  G.add(box(0.88, 0.32, 0.015, black, 12.42, 12.4, R.z0 + 0.03), put(new THREE.Mesh(new THREE.PlaneGeometry(0.84, 0.28), printMat(tyresTex())), 12.42, 12.4, R.z0 + 0.04));
+  const lights = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.48), printMat(lightsOutTex())); lights.rotation.y = -Math.PI / 2; lights.position.set(R.x1 - 0.042, 11.74, R.z0 + 0.25);
+  G.add(box(0.015, 0.51, 0.37, black, R.x1 - 0.028, 11.74, R.z0 + 0.25), lights);
+  const neon = new THREE.Mesh(new THREE.PlaneGeometry(0.92, 0.23), ink(new THREE.MeshBasicMaterial({ map: neonTex('hello, world'), transparent: true, depthWrite: false, toneMapped: false })));
+  neon.rotation.y = -Math.PI / 2; neon.position.set(R.x1 - 0.04, 12.57, dz); neon.userData.noEdges = true; G.add(neon);
 
   /* ---- right wall: two floating shelves, books, a trailing plant, the trophy, the certificate, a speaker ---- */
   const oak = mat(0xb98a5e, { roughness: 0.55 }), sz = R.z1 - 0.13;
@@ -276,7 +330,11 @@ export function buildRoom(scene, { screenTex, stillUrl }) {
   const certG = new THREE.Group(); certG.position.set(12.42, 11.965, sz + 0.03); certG.rotation.set(-0.16, Math.PI, 0);
   certG.add(box(0.22, 0.17, 0.012, wood, 0, 0.085, 0.004), put(new THREE.Mesh(new THREE.PlaneGeometry(0.19, 0.14), mat(0xffffff, { map: cert })), 0, 0.085, -0.003));
   certG.children[1].rotation.y = Math.PI; G.add(certG);
-  G.add(box(0.09, 0.14, 0.09, mat(0x1d1f23, { roughness: 0.5 }), 12.85, 12.035, sz));                                      // speaker
+  const helmet = new THREE.Group(); helmet.position.set(12.86, 11.965, sz); helmet.rotation.y = -1.05;   // visor towards the room
+  helmet.add(put(new THREE.Mesh(new THREE.SphereGeometry(0.075, 20, 14).scale(1.1, 0.95, 1), mat(0xc8151d, { roughness: 0.3 })), 0, 0.07, 0));
+  helmet.add(put(new THREE.Mesh(new THREE.SphereGeometry(0.0768, 20, 10, -0.85, 1.7, 1.0, 0.62).scale(1.1, 0.95, 1), mat(0x101317, { roughness: 0.08, metalness: 0.6 })), 0, 0.07, 0));
+  helmet.add(box(0.05, 0.012, 0.09, mat(0xf4f1ea, { roughness: 0.4 }), 0.05, 0.142, 0));
+  G.add(helmet);
   const pot2 = put(new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.08, 12), mat(0xc97b52)), 12.66, 12.005, sz);
   const vines = mergeGeometries([...Array(16)].map((_, i) => new THREE.SphereGeometry(0.028, 6, 4).scale(1, 0.55, 1.4).translate(Math.sin(i * 1.3) * 0.05, -0.02 - (i % 8) * 0.045, (i < 8 ? -1 : 1) * 0.04 + Math.cos(i) * 0.02)));
   G.add(pot2, put(new THREE.Mesh(vines, mat(0x4f8f4a, { flatShading: true })), 12.66, 12.03, sz - 0.12));
@@ -300,7 +358,10 @@ export function buildRoom(scene, { screenTex, stillUrl }) {
   G.add(box(0.05, sY - top - 0.05, 0.08, steel, sX + 0.06, (top + sY) / 2 - 0.02, dz));
   const base = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.012, 24, 1, false, -0.9, 1.8), steel); base.position.set(sX + 0.1, top + 0.006, dz); base.rotation.y = Math.PI / 2; G.add(base);
   G.add(box(0.06, 0.026, 0.42, dark, sX + 0.0, sY + sH / 2 + 0.028, dz));                                                   // light bar
-  [[-0.36, 0xffe773], [-0.31, 0xff9fc0]].forEach(([o, c]) => { const n = box(0.004, 0.045, 0.045, mat(c), sX - 0.03, sY - sH / 2 - 0.0, dz + o); n.rotation.x = o * 0.3; G.add(n); });   // sticky notes on the bezel
+  [[0.29, '#ffe773', ['TODO:', 'sleep'], -0.06], [0.375, '#ff9fc0', ['BOX', 'BOX!'], 0.07]].forEach(([o, c, t, tilt]) => {   // sticky notes on the screen's corner
+    const n = box(0.003, 0.074, 0.074, mat(0xffffff, { map: stickyTex(c, t), roughness: 0.9 }), cx + Math.sqrt(sR * sR - o * o) - 0.004, sY - sH / 2 + 0.04, dz + o);
+    n.rotation.set(tilt, -Math.asin(o / sR), 0); n.userData.noEdges = true; G.add(n);
+  });
   // a cable from the monitor down to a socket
   const cable = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(sX + 0.08, sY - 0.1, dz + 0.02), new THREE.Vector3(sX + 0.1, top - 0.02, dz + 0.1), new THREE.Vector3(R.x1 - 0.04, R.y0 + 0.4, dz + 0.32), new THREE.Vector3(R.x1 - 0.03, R.y0 + 0.28, dz + 0.42)]), 20, 0.006, 5), mat(0x18191c));
   G.add(cable, box(0.012, 0.08, 0.08, white, R.x1 - 0.025, R.y0 + 0.28, dz + 0.45));
@@ -332,6 +393,12 @@ export function buildRoom(scene, { screenTex, stillUrl }) {
   fig.add(put(new THREE.Mesh(new THREE.CapsuleGeometry(0.012, 0.026, 3, 8), suit), 0, 0.068, 0), put(new THREE.Mesh(new THREE.SphereGeometry(0.012, 12, 10), helm), 0, 0.1, 0));
   const visor = put(new THREE.Mesh(new THREE.SphereGeometry(0.0122, 12, 8, -0.9, 1.8, 1.2, 0.7), vis), 0, 0.1, 0); visor.rotation.y = -Math.PI / 2; fig.add(visor);
   G.add(fig);
+  const duck = new THREE.Group(), duckM = mat(0xffd23f, { roughness: 0.45 }), eyeM = mat(0x111111, { roughness: 0.3 });
+  duck.position.set(sX - 0.13, top, dz - 0.24); duck.rotation.y = Math.PI * 0.85;   // rubber duck debugging, facing whoever sits here
+  duck.add(put(new THREE.Mesh(new THREE.SphereGeometry(0.032, 14, 10).scale(1.25, 0.8, 1), duckM), 0, 0.026, 0), put(new THREE.Mesh(new THREE.SphereGeometry(0.021, 12, 10), duckM), 0.022, 0.062, 0));
+  duck.add(put(new THREE.Mesh(new THREE.ConeGeometry(0.009, 0.022, 8).rotateZ(-Math.PI / 2), mat(0xf08a24, { roughness: 0.5 })), 0.046, 0.058, 0), put(new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.025, 6).rotateZ(0.9), duckM), -0.04, 0.038, 0));
+  for (const s of [-1, 1]) duck.add(put(new THREE.Mesh(new THREE.SphereGeometry(0.0035, 6, 4), eyeM), 0.036, 0.07, s * 0.01));
+  G.add(duck);
   const pot = put(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.034, 0.065, 14), mat(0xf6f5f2)), sX - 0.02, top + 0.033, dz + 0.62);
   const spikes = mergeGeometries([...Array(11)].map((_, i) => new THREE.ConeGeometry(0.011, 0.08, 5).translate(0, 0.04, 0).rotateZ(0.35 + (i % 3) * 0.15).rotateY(i * 2.3)));
   G.add(pot, put(new THREE.Mesh(spikes, mat(0x5f9a58, { flatShading: true })), sX - 0.02, top + 0.065, dz + 0.62));
