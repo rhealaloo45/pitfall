@@ -116,6 +116,11 @@
   .chips span { font-size: 13px; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--line); }
   .chips span:first-child { border-color: rgba(57,212,255,.5); color: #fff; }
   .card.right { margin-left: auto; }
+  /* the stack: small chips, each with the tool's logo when it has one */
+  .stack { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .stack span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: var(--dim); background: rgba(255,255,255,.04); border: 1px solid var(--line); }
+  .stack svg, .tools dd svg { width: 13px; height: 13px; fill: var(--ink); flex: none; }
+  .card .stack { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
 
   /* 01 hello, over the line-art street */
   .hello { top: 0; min-height: 100vh; min-height: 100svh; display: flex; align-items: center; padding: 110px 0 120px; }
@@ -145,6 +150,13 @@
   .role .now { display: inline-block; margin-top: 10px; font-size: 12px; font-weight: 600; color: #7fe0a0; background: rgba(60,200,110,.12); border-radius: 999px; padding: 3px 10px; }
   .role ul { list-style: none; display: grid; gap: 10px; }
   .role li { position: relative; padding-left: 20px; color: var(--body); line-height: 1.6; font-size: 15.5px; }
+  .role .body { min-width: 0; }
+  .work { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .proj { display: flex; flex-direction: column; padding: 18px 20px 20px; border-radius: 16px; background: rgba(255,255,255,.035); border: 1px solid var(--line); }
+  .proj .tag { font-size: 12.5px; font-weight: 600; color: var(--mute); }
+  .proj h4 { margin-top: 4px; font-size: 18px; font-weight: 700; letter-spacing: -.01em; line-height: 1.25; }
+  .proj p { margin-top: 8px; font-size: 14.5px; line-height: 1.6; color: var(--body); }
+  .proj .stack { margin-top: auto; padding-top: 14px; }
   .role li::before { content: ''; position: absolute; left: 0; top: .72em; width: 8px; height: 2px; background: var(--red); }
   .route { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; position: relative; padding-top: 34px; }
   .route::before { content: ''; position: absolute; left: 7px; right: 7px; top: 6px; height: 2px; background: linear-gradient(90deg, var(--cyan), var(--pink) 60%, var(--red)); opacity: .8; }
@@ -166,7 +178,7 @@
   .tools > div:last-child { border-bottom: 1px solid var(--line); }
   .tools dt { font-weight: 600; color: var(--ink); font-size: 15px; letter-spacing: -.01em; }
   .tools dd { display: flex; flex-wrap: wrap; gap: 7px; }
-  .tools dd span { padding: 4px 11px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--line); font-size: 13.5px; font-weight: 600; }
+  .tools dd span { display: inline-flex; align-items: center; gap: 7px; padding: 4px 11px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--line); font-size: 13.5px; font-weight: 600; }
   .contact { padding: 56px 48px; border-radius: 20px; background: radial-gradient(700px 300px at 100% 0%, rgba(216,31,38,.22), transparent 70%), #121418; border: 1px solid var(--line); display: grid; grid-template-columns: 1.2fr .8fr; gap: 40px; align-items: center; }
   .contact h2 { font-size: clamp(32px, 4.4vw, 52px); }
   .contact p { margin-top: 14px; color: var(--body); font-size: 17px; }
@@ -191,6 +203,7 @@
 
   @media (max-width: 980px) {
     .route { grid-template-columns: 1fr 1fr; row-gap: 40px; }
+    .work { grid-template-columns: 1fr; }
     .route::before { display: none; }
     .contact { grid-template-columns: 1fr; padding: 40px 28px; }
     .rail a { padding: 7px 9px; }
@@ -250,14 +263,14 @@
           <p class="lead">AI Engineer at Tata Consultancy Services. I build <b>AI that notices what's wrong</b> (in logs, in code, on roads) so everything else just works.</p>
           <div class="ctas">
             <a class="btn" href="assets/rhea-laloo-resume.pdf" download="Rhea-Laloo-Resume.pdf">Download résumé</a>
-            <a class="btn ghost" href="mailto:rhea.laloo@tcs.com">Email me</a>
+            <a class="btn ghost" href="mailto:rhealaloo@gmail.com">Email me</a>
             <a class="btn ghost" href="https://github.com/rhealaloo45" target="_blank" rel="noopener">GitHub</a>
             <a class="btn ghost" href="https://linkedin.com/in/rhealaloo" target="_blank" rel="noopener">LinkedIn</a>
           </div>
           <div class="stats" aria-label="Highlights">
             <div class="stat"><b>9.95 CGPA</b><span>1st rank in college · B.Tech IT, KJSIT</span></div>
             <div class="stat"><b>chub-guard</b><span>AI linter shipped on PyPI, npm &amp; VS Code</span></div>
-            <div class="stat"><b>100+</b><span>students mentored across 5 states · Yuvai Hackathon</span></div>
+            <div class="stat"><b>150+</b><span>students mentored across India · IndiaAI Impact Summit</span></div>
             <div class="stat"><b>Top 80 / 695</b><span>CiiA, twice · RoadHawk pothole detector</span></div>
           </div>
           <a class="skipdrive" href="#experience">Skip the drive, straight to experience ↓</a>
@@ -295,7 +308,7 @@
         <h2 id="h-contact">Let's build something.</h2>
         <p>Open to AI/ML engineering roles and interesting collaborations.</p>
         <div class="ctas">
-          <a class="btn" href="mailto:rhea.laloo@tcs.com">rhea.laloo@tcs.com</a>
+          <a class="btn" href="mailto:rhealaloo@gmail.com">rhealaloo@gmail.com</a>
           <a class="btn ghost" href="assets/rhea-laloo-resume.pdf" download="Rhea-Laloo-Resume.pdf">Résumé PDF</a>
         </div>
       </div>
@@ -316,12 +329,15 @@
   </footer>
 </main>
 
-<script src="src/shared/portfolio-data.js?v=7"></script>
+<script src="src/shared/portfolio-data.js?v=8"></script>
+<script src="src/shared/tech-icons.js?v=1"></script>
 <script>
 (function () {
   var R = window.PORTFOLIO && window.PORTFOLIO.RESUME; if (!R) return;
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   var $ = function (id) { return document.getElementById(id); };
+  var icon = window.TECH_ICON || function () { return ''; };
+  function stack(list) { return list && list.length ? '<div class="stack">' + list.map(function (n) { return '<span>' + icon(n) + esc(n) + '</span>'; }).join('') + '</div>' : ''; }
   var years = function (w) { var y = String(w).match(/\d{4}/g) || []; return y.length > 1 ? y[0] + ' — ' + y[1] : (y[0] || '') + (/present/i.test(w) ? ' — now' : ''); };
 
   // the drive's beats, each placed where the scene reaches it (fraction of the drive)
@@ -330,7 +346,7 @@
     return '<article class="beat story" style="--at:' + AT[i] + '"><div class="wrap"><div class="card' + (i === 1 ? ' right' : '') + '">' +
       '<div class="n"><b>' + String(i + 1).padStart(2, '0') + '</b>' + esc(s.tag) + '</div>' +
       '<h3>' + esc(s.title) + '</h3><p>' + esc(s.text) + '</p>' +
-      '<div class="chips">' + s.chips.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') + '</div></div></div></article>';
+      '<div class="chips">' + s.chips.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') + '</div>' + stack(s.stack) + '</div></div></article>';
   }).join('');
   // the room: a card about the person, as the drive reaches my desk
   var D = R.desk;
@@ -338,7 +354,9 @@
 
   $('roles').innerHTML = R.experience.map(function (x, i) {
     return '<article class="role rv"><div><div class="when">' + esc(x.when) + '</div><h3>' + esc(x.org) + '</h3><div class="r">' + esc(x.role) + '</div>' +
-      (i === 0 ? '<span class="now">Current</span>' : '') + '</div><ul>' + (x.short || x.points).map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul></article>';
+      (i === 0 ? '<span class="now">Current</span>' : '') + '</div><div class="body">' +
+      (x.work ? '<div class="work">' + x.work.map(function (w) { return '<div class="proj"><div class="tag">' + esc(w.tag) + '</div><h4>' + esc(w.name) + '</h4><p>' + esc(w.text) + '</p>' + stack(w.stack) + '</div>'; }).join('') + '</div>' : '') +
+      '<ul>' + (x.short || x.points).map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul>' + stack(x.stack) + '</div></article>';
   }).join('');
 
   var E = R.education, job = R.experience[0];
@@ -350,7 +368,7 @@
 
   $('awards').innerHTML = R.achievements.filter(function (a) { return !/^Secured 1st rank/.test(a); }).map(function (a) { return '<li>' + esc(a.replace(/\.$/, '')) + '</li>'; }).join('');
   $('tools').innerHTML = Object.keys(R.skills).map(function (k) {
-    return '<div><dt>' + esc(k) + '</dt><dd>' + R.skills[k].split(', ').map(function (s) { return '<span>' + esc(s) + '</span>'; }).join('') + '</dd></div>';
+    return '<div><dt>' + esc(k) + '</dt><dd>' + R.skills[k].split(', ').map(function (s) { return '<span>' + icon(s) + esc(s) + '</span>'; }).join('') + '</dd></div>';
   }).join('');
 
   if ('IntersectionObserver' in window) {
