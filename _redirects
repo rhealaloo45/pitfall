@@ -1,3 +1,6 @@
+# OFFLINE FOR NOW: every address shows the 'back soon' page. To bring the site back, delete the next line and push.
+/*  /back-soon.html  200
+
 # Mumbai GP and the original F1 circuit are off the live site for now; their code stays in the repo.
 # 302 (temporary), so browsers don't remember the redirect if they come back.
 /mumbai        /  302
