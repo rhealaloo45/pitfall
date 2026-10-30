@@ -373,6 +373,15 @@
   } else document.querySelectorAll('.rv').forEach(function (el) { el.classList.add('in'); });
 })();
 </script>
-<script type="module" src="src/story/main.js?v=67"></script>
+<script type="module">
+  // The drive needs a graphics chip. With software-only WebGL (search engines' page testers, some remote desktops)
+  // it would keep the page busy at a few frames a second, so those get the plain page instead.
+  const c = document.createElement('canvas'), gl = c.getContext('webgl2') || c.getContext('webgl');
+  let gpu = gl ? String(gl.getParameter(gl.RENDERER)) : '';
+  if (/^webkit webgl$/i.test(gpu)) { const i = gl.getExtension('WEBGL_debug_renderer_info'); if (i) gpu = String(gl.getParameter(i.UNMASKED_RENDERER_WEBGL)); }
+  gl?.getExtension('WEBGL_lose_context')?.loseContext();
+  if (gl && (window.__force3d || !/swiftshader|llvmpipe|softpipe|software|basic render/i.test(gpu))) import('./src/story/main.js?v=67');
+  else document.documentElement.classList.add('no-3d');
+</script>
 </body>
 </html>

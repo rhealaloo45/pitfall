@@ -60,6 +60,17 @@ try {
   check('drive: works with reduced motion', rm.boxes.some(b => b.startsWith('cow')), rm.boxes.join(','));
   await p.close();
 
+  // no graphics chip (software WebGL, as on search engines' page testers): the plain page, all its text, no 3D
+  const plain = await browser.newContext({ viewport: { width: 960, height: 540 } });
+  await plain.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());
+  p = await plain.newPage(); errs = pageErrors(p);
+  await p.goto(url + '/index.html');
+  await p.waitForFunction(() => document.documentElement.classList.contains('no-3d'), null, { timeout: 10000 });
+  const pl = await p.evaluate(() => ({ story: !!window.__story, roles: document.querySelectorAll('#roles .role').length, stage: getComputedStyle(document.querySelector('.stage')).display }));
+  check('no GPU: plain page with every section, no 3D', !pl.story && pl.roles >= 3 && pl.stage === 'none', JSON.stringify(pl));
+  check('no GPU: no errors', errs.length === 0, errs.join('; '));
+  await plain.close();
+
   /* ---------- portfolio ---------- */
   p = await ctx.newPage(); errs = pageErrors(p);
   await p.goto(url + '/portfolio.html');

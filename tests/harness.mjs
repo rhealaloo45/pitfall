@@ -30,6 +30,8 @@ export async function launch({ width = 1280, height = 720, gpu = false } = {}) {
   const args = gpu ? ['--use-angle=metal', '--ignore-gpu-blocklist', '--enable-gpu'] : ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
   const browser = await chromium.launch({ args });
   const ctx = await browser.newContext({ viewport: { width, height } });
+  // the landing page skips its 3D drive on software WebGL; the tests still want it
+  if (!gpu) await ctx.addInitScript(() => { window.__force3d = true; });
   await ctx.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());
   await ctx.route(/cdn\.jsdelivr\.net\/npm\/three@0\.160\.0\/(.*)/, r => {
     const rel = r.request().url().split('three@0.160.0/')[1].split('?')[0];
