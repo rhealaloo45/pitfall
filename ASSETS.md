@@ -58,3 +58,4 @@ All sound is synthesized live with the Web Audio API (`src/core/audio.js`): engi
 * Mood boards supplied by the site owner, used for art direction only and not included in the repository.
 * Bruno Simon's portfolio (bruno-simon.com), as general inspiration for playful driving portfolios. No code or assets used.
 * aarya.wtf, named by the site owner as a benchmark for craft and restraint. The site could not be reached from the build environment, so it was used only as a stated quality bar; nothing was copied.
+* Tech logos on the stack chips (`src/shared/tech-icons.js`): Simple Icons 16.34.0, CC0 (simpleicons.org). Each logo is its owner's trademark and is shown only to name the tech used. Brands that asked Simple Icons to remove their logos (Microsoft, OpenAI, Oracle) appear as text only.
