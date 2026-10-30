@@ -13,7 +13,7 @@ try {
   let p = await ctx.newPage(); let errs = pageErrors(p);
   await p.goto(url + '/index.html');
   const links = await p.$$eval('a', as => as.map(a => a.getAttribute('href')));
-  check('menu links to both worlds and the portfolio', ['mumbai.html', 'circuit.html', 'portfolio.html'].every(h => links.includes(h)));
+  check('landing links to the printable page, not the games', links.includes('portfolio.html') && !links.some(h => /mumbai|circuit/.test(h || '')));
   check('landing: résumé and contact on the first screen', await p.$('#hello a[href="assets/rhea-laloo-resume.pdf"]') && await p.$('#hello a[href^="mailto:"]'));
   const land = await p.evaluate(() => ({ stories: document.querySelectorAll('#beats .story:not(.desk)').length, desk: !!document.querySelector('#beats .desk'), roles: document.querySelectorAll('#roles .role').length, stops: document.querySelectorAll('#route .stop').length, tools: document.querySelectorAll('#tools dd span').length }));
   check('landing: stories, the desk card, experience, education and toolkit render from the shared data', land.stories === 5 && land.desk && land.roles === 3 && land.stops === 4 && land.tools > 10, JSON.stringify(land));
@@ -43,10 +43,9 @@ try {
     await new Promise(r => setTimeout(r, 80)); window.__story.snap();
     return { t: +window.__story.t().toFixed(2), z: Math.round(window.__story.car().z), veil: +document.getElementById('veil').style.opacity };
   }, sel);
-  const bE = await behind('#experience'), bM = await behind('#onemore');
+  const bE = await behind('#experience'), bC = await behind('#contact');
   check('drive: the car drives on behind Experience, under a veil', bE.t > 1 && bE.veil > 0.6, JSON.stringify(bE));
-  check('drive: "One more thing" clears the veil on Marine Drive', bM.t > 1.8 && bM.veil < 0.1 && bM.z > bE.z, JSON.stringify(bM));
-  check('landing: "One more thing." links to Mumbai GP', await p.$('#onemore a[href="mumbai.html"]'));
+  check('drive: still on Marine Drive behind Contact', bC.t > bE.t && bC.z > bE.z, JSON.stringify(bC));
   check('landing: no sideways scroll', !d0.wide && !dA.wide);
   check('menu has no errors', errs.length === 0, errs.join('; '));
   await p.close();
@@ -77,7 +76,7 @@ try {
   const items = await p.$$eval('.item', x => x.length);
   check('portfolio renders resume content', items >= 9, `${items} items`);
   check('portfolio résumé link', await p.$('a[href="assets/rhea-laloo-resume.pdf"]'));
-  check('portfolio: links to Mumbai GP', await p.$('.play a[href="mumbai.html"]'));
+  check('portfolio: links back to the drive, not the games', await p.$('nav a[href="index.html"]') && !(await p.$('a[href*="mumbai"], a[href*="circuit"]')));
   check('portfolio has no errors', errs.length === 0, errs.join('; '));
   await p.close();
 
