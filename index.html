@@ -175,12 +175,6 @@
   .contact dd a { text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.25); }
   .contact dd a:hover { border-bottom-color: #fff; }
   /* one more thing: the car from the drive has a whole city */
-  .more { position: relative; margin-top: 110px; min-height: 100vh; min-height: 100svh; display: flex; align-items: flex-end; padding: 120px 0 140px; }
-  .more::before { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(5,8,16,.9), rgba(5,8,16,.55) 34%, rgba(5,8,16,0) 62%); pointer-events: none; }
-  .more .wrap { position: relative; width: 100%; }
-  .more h2 { font-size: clamp(48px, 7.4vw, 104px); letter-spacing: -.045em; line-height: 1; }
-  .more p { margin-top: 18px; max-width: 620px; color: var(--body); font-size: 18px; line-height: 1.55; }
-  .more p b { color: var(--ink); }
   footer { background: rgba(11,12,15,.96); padding: 28px 0 110px; font-size: 13.5px; color: var(--mute); border-top: 1px solid var(--line); }
   footer .fin { display: grid; gap: 8px; }
   footer a { color: var(--dim); }
@@ -313,14 +307,6 @@
       </dl>
     </section>
   </div>
-
-  <section class="more" id="onemore" data-veil="0" aria-labelledby="h-more">
-    <div class="wrap rv">
-      <h2 id="h-more">One more thing.</h2>
-      <p>That's Marine Drive behind you, and the car from the drive. It has a whole city to itself: <b>Mumbai GP</b> is a drivable Mumbai I built from scratch in three.js, with procedurally generated streets and buildings, 120 Hz car physics and a custom render pipeline.</p>
-      <div class="ctas"><a class="btn" href="mumbai.html">Drive Mumbai GP</a><a class="btn ghost" href="circuit.html">Original F1 circuit</a></div>
-    </div>
-  </section>
 
   <footer>
     <div class="wrap fin">

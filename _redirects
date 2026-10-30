@@ -1,0 +1,6 @@
+# Mumbai GP and the original F1 circuit are off the live site for now; their code stays in the repo.
+# 302 (temporary), so browsers don't remember the redirect if they come back.
+/mumbai        /  302
+/mumbai.html   /  302
+/circuit       /  302
+/circuit.html  /  302
