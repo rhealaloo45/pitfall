@@ -14,12 +14,12 @@ const CONTENT = {
     <p><b>Rhea Laloo</b> — AI engineer building LLM tooling, anomaly-detection pipelines
     and full-stack apps. 1st rank in college, 9.95 CGPA.</p>
     <h3>Currently</h3>
-    <p>AI Engineer at Tata Consultancy Services — LLM Wiki (a legal knowledge system for Tata Sons), a Claude
-    computer-use agent for brand benchmarking, log anomaly detection, and chub-guard, an AI linter on PyPI, npm and VS Code.</p>
+    <p>AI Engineer at Tata Consultancy Services — log anomaly detection, LLM-based security analysis,
+    and chub-guard, an AI linting tool published on PyPI, npm and VS Code.</p>
     <h3>Based in</h3>
     <p>Mumbai, India.</p>`},
   experience: { title:'Experience', accent:ACCENTS.experience, html:`
-    <div class="row"><div><b>Tata Consultancy Services</b><br>AI Engineer — LLM Wiki legal knowledge system (hybrid BM25 + semantic search), Claude computer-use brand benchmarking, log anomaly detection, chub-guard; mentored 150+ students</div><span>Dec 2025 — now</span></div>
+    <div class="row"><div><b>Tata Consultancy Services</b><br>AI Engineer — log anomaly detection (Autoencoders + SHAP), LLM attack classification, chub-guard linting tool; mentored 150+ students</div><span>Dec 2025 — now</span></div>
     <div class="row"><div><b>Nareshwadi Learning Centre</b><br>Lead Software Development Intern — React Native cattle-management app (50+ cattle), disease &amp; milk-yield prediction at 94% accuracy</div><span>2024 — 2025</span></div>
     <div class="row"><div><b>AICTE — IBM SkillBuild</b><br>AI Intern — mental-fitness trend model across 15+ countries, 98% accuracy</div><span>2023</span></div>`},
   projects: { title:'Projects', accent:ACCENTS.projects, html:`
@@ -50,7 +50,7 @@ const MONITOR_TABS = {
     <table class="f1res">
       <thead><tr><th>Pos</th><th></th><th>Entry</th><th>Stint</th></tr></thead>
       <tbody>
-        <tr><td class="pos">1</td><td class="code" style="border-left-color:#d81f26">TCS</td><td><b>Tata Consultancy Services</b><em>AI Engineer — LLM Wiki, Claude computer use, chub-guard</em></td><td class="time">2025 — NOW</td></tr>
+        <tr><td class="pos">1</td><td class="code" style="border-left-color:#d81f26">TCS</td><td><b>Tata Consultancy Services</b><em>AI Engineer — LLM security analysis, chub-guard</em></td><td class="time">2025 — NOW</td></tr>
         <tr><td class="pos">2</td><td class="code" style="border-left-color:#1f3f8f">NLC</td><td><b>Nareshwadi Learning Centre</b><em>Lead Software Development Intern</em></td><td class="time">2024 — 2025</td></tr>
         <tr><td class="pos">3</td><td class="code" style="border-left-color:#d9a400">IBM</td><td><b>AICTE — IBM SkillBuild</b><em>Artificial Intelligence Intern</em></td><td class="time">2023</td></tr>
         <tr><td class="pos">4</td><td class="code" style="border-left-color:#1f9d55">KJS</td><td><b>K. J. Somaiya Institute of Technology</b><em>B.Tech IT — 9.95 CGPA, 1st rank</em></td><td class="time">2021 — 2025</td></tr>
@@ -60,7 +60,7 @@ const MONITOR_TABS = {
     <h4>Location</h4><p>Mumbai, India.</p>`},
   career:{ label:'Career', html:`
     <h2>Career History</h2>
-    <div class="mrow"><div><b>Tata Consultancy Services</b><em>AI Engineer — LLM Wiki legal knowledge system on Flask + Azure OpenAI; Claude computer-use brand benchmarking; log anomaly detection (Autoencoders, Isolation Forest, SHAP); chub-guard on PyPI/npm/VS Code; mentored 150+ students</em></div><span>2025 — now</span></div>
+    <div class="mrow"><div><b>Tata Consultancy Services</b><em>AI Engineer — log anomaly detection (Autoencoders, Isolation Forest, SHAP); LLM attack classification; chub-guard AI linting tool on PyPI/npm/VS Code; mentored 150+ students</em></div><span>2025 — now</span></div>
     <div class="mrow"><div><b>Nareshwadi Learning Centre</b><em>Lead SW Dev Intern — React Native cattle app for 50+ cattle; disease &amp; milk-yield prediction, 94% accuracy</em></div><span>2024 — 2025</span></div>
     <div class="mrow"><div><b>AICTE — IBM SkillBuild</b><em>AI Intern — mental-fitness model across 15+ countries, 98% accuracy</em></div><span>2023</span></div>`},
   projects:{ label:'Projects', html:`
@@ -104,20 +104,15 @@ const RESUME = {
     resume:'assets/rhea-laloo-resume.pdf' },
   experience:[
     { org:'Tata Consultancy Services', role:'AI Engineer', when:'Dec 2025 — Present', points:[
-      'Built and evaluated LLM Wiki, a legal knowledge-system proof of concept for Tata Sons on Flask + Azure OpenAI, with Ask, Review, Compare and Draft modes over interrelated legal documents.',
-      'Strong cross-document question answering with hybrid BM25 + semantic search (SentenceTransformer embeddings) and hallucination checks; BM25 shortlisting and page caps cut the cost per query.',
-      'Building a Claude computer-use automation that benchmarks Tata brands against competitors for Tata Sons marketing: a custom control loop on Anthropic\'s Python SDK with custom tools (open URL, save findings, record page, report blocked) and step and cost limits.',
       'Built an end-to-end log anomaly detection pipeline with Autoencoders and Isolation Forest, using SHAP for root-cause analysis; clustered anomalies and added LLM-based attack-type classification to generate actionable security insights.',
       'Built chub-guard, an AI-powered linter that flags deprecated and outdated code against documentation indexed in Context Hub; published on PyPI, npm and VS Code Marketplace.',
-      'Mentored 150+ students across Coimbatore, Lucknow, Chennai, Mumbai and more and at the IndiaAI Impact Summit, plus professionals: Company Secretaries from Tata Group companies and HR leaders at the Top Employer Summit.'],
+      'Mentored 150+ students across Coimbatore, Lucknow, Chennai, Mumbai and more and at the IndiaAI Impact Summit, plus professionals: company secretaries, and HR leaders at the Top Employer Summit.'],
       // the landing page shows the TCS work as small project cards, each with its stack
       work:[
-        { name:'LLM Wiki', tag:'Proof of concept · Tata Sons', text:'A legal knowledge system with Ask, Review, Compare and Draft modes over interrelated legal documents. Hybrid BM25 + semantic search answers across documents, with hallucination checks; BM25 shortlisting and page caps cut the cost per query.', stack:['Flask', 'Azure OpenAI', 'BM25', 'SentenceTransformers', 'RAG'] },
-        { name:'Brand benchmarking agent', tag:'In progress · Tata Sons marketing', text:'Claude computer use that benchmarks Tata brands against competitors: a custom control loop on Anthropic\'s Python SDK, with its own tools (open URL, save findings, record page, report blocked) and step and cost limits.', stack:['Claude', 'Anthropic SDK', 'Python', 'Computer Use'] },
         { name:'Log anomaly detection', tag:'Security', text:'An end-to-end pipeline: Autoencoders and Isolation Forest find what\'s abnormal, SHAP explains the root cause, and anomalies are clustered and classified by attack type with an LLM.', stack:['Autoencoders', 'Isolation Forest', 'SHAP', 'LLMs'] },
         { name:'chub-guard', tag:'Published', text:'An AI-powered linter that flags deprecated and outdated code against documentation indexed in Context Hub.', stack:['LLMs', 'Context Hub', 'PyPI', 'npm', 'VS Code'] },
       ],
-      short:['Mentored 150+ students across Coimbatore, Lucknow, Chennai, Mumbai and more and at the IndiaAI Impact Summit, plus Company Secretaries from Tata Group companies and HR leaders at the Top Employer Summit']},
+      short:['Mentored 150+ students across Coimbatore, Lucknow, Chennai, Mumbai and more and at the IndiaAI Impact Summit, plus company secretaries, and HR leaders at the Top Employer Summit']},
     { org:'Nareshwadi Learning Centre', role:'Lead Software Development Intern', when:'Jun 2024 — Jun 2025', points:[
       'Developed and deployed a full-stack React Native cattle management app to manage 50+ cattle, including lifecycle tracking, offline milk entry and alert systems.',
       'Implemented analysis and report generation, including milk production analysis over the last 7 days.',
