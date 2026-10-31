@@ -11,8 +11,19 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/ja
 
 export function serve(port = 0) {
   return new Promise(res => {
-    const srv = http.createServer((q, r) => {
+    const srv = http.createServer(async (q, r) => {
       let p = decodeURIComponent(q.url.split('?')[0]);
+      // /api/* runs the matching Cloudflare Pages Function from functions/, as Pages would
+      if (p.startsWith('/api/') && /^[\w/-]+$/.test(p)) {
+        try {
+          const mod = await import(path.join(ROOT, 'functions', p + '.js'));
+          const fn = q.method === 'GET' && mod.onRequestGet || mod.onRequest;
+          if (!fn) { r.writeHead(405); r.end(); return; }
+          const res = await fn({ request: new Request('http://localhost' + q.url, { method: q.method }), env: {}, waitUntil: () => {} });
+          r.writeHead(res.status, Object.fromEntries(res.headers)); r.end(Buffer.from(await res.arrayBuffer()));
+        } catch (e) { r.writeHead(e.code === 'ERR_MODULE_NOT_FOUND' ? 404 : 500); r.end(String(e.message || e)); }
+        return;
+      }
       if (p.endsWith('/')) p += 'index.html';
       const f = path.join(ROOT, p);
       if (!f.startsWith(ROOT)) { r.writeHead(403); r.end(); return; }

@@ -70,6 +70,46 @@ try {
   check('no GPU: no errors', errs.length === 0, errs.join('; '));
   await plain.close();
 
+  /* ---------- the extras: quick view, skills → work, command menu, chub-guard playground, GitHub ---------- */
+  // GitHub and the docs come from fixed samples, so this doesn't depend on the network
+  const days = Array.from({ length: 371 }, (_, i) => ({ date: new Date(Date.UTC(2025, 9, 26 + i)).toISOString().slice(0, 10), level: i % 5, count: i % 5 }));
+  await ctx.route('**/api/github', r => r.fulfill({ json: { user: 'rhealaloo45', total: 2039, days } }));
+  await ctx.route('https://api.github.com/**', r => r.fulfill({ json: [{ name: 'chub-guard', html_url: 'https://github.com/rhealaloo45/chub-guard', language: 'Python', stargazers_count: 3, pushed_at: '2026-04-30T00:00:00Z' }] }));
+  await ctx.route('https://raw.githubusercontent.com/**', r => {
+    const u = r.request().url();
+    if (u.endsWith('/deprecations.json')) return r.fulfill({ json: { 'openai/package': { patterns: ['openai.ChatCompletion.create', 'text-davinci-003'] } } });
+    if (u.includes('/openai/docs/package/python/')) return r.fulfill({ body: '## Usage\n```python\nfrom openai import OpenAI\n```\n- `openai.Completion.create` is deprecated → use `client.responses.create`\n' });
+    return r.fulfill({ status: 404, body: '' });
+  });
+  p = await ctx.newPage(); errs = pageErrors(p);
+  await p.goto(url + '/index.html?3d=off');
+  await p.waitForFunction(() => document.querySelectorAll('#gh-cal i:not(.pad)').length > 300 && document.querySelector('#github.has-cal'), null, { timeout: 15000 });
+  const gh = await p.evaluate(() => ({ total: document.getElementById('gh-total').textContent, repos: document.querySelectorAll('.repo').length, live: (document.querySelector('#gh-repo-chub-guard .repo-meta') || {}).textContent || '' }));
+  check('github: contribution graph, total and the chosen repos', gh.total === '2,039' && gh.repos === 3 && /Python/.test(gh.live), JSON.stringify(gh));
+  await p.click('.acts [data-open="quick"]');
+  const qv = await p.evaluate(() => ({ open: document.getElementById('quick').open, hash: location.hash, roles: document.querySelectorAll('#quick .qv-list li').length, projects: document.querySelectorAll('#quick .qv-proj').length }));
+  check('quick view: opens from the top bar, with experience and projects', qv.open && qv.hash === '#quick' && qv.roles >= 3 && qv.projects === 5, JSON.stringify(qv));
+  await p.keyboard.press('Escape');
+  const closed = await p.waitForFunction(() => !document.getElementById('quick').open && location.hash === '', null, { timeout: 3000 }).then(() => true, () => false);
+  check('quick view: closes with Escape and clears the link', closed, await p.evaluate(() => location.hash));
+  const used = await p.$$eval('#tools button.used', b => b.map(x => x.dataset.skill));
+  check('skills: the ones with work behind them are clickable', used.includes('Random Forest') && used.includes('Python') && used.length >= 8, used.join(', '));
+  await p.keyboard.press('Control+k');
+  await p.keyboard.type('random forest');
+  await p.keyboard.press('Enter');
+  await p.waitForSelector('#tools .usage', { timeout: 5000 });
+  const usage = await p.$$eval('#tools .usage [data-jump]', b => b.map(x => x.dataset.jump));
+  check('command menu: finds a skill and shows where it was used', !(await p.evaluate(() => document.getElementById('palette').open)) && usage.includes('story:cattle'), usage.join(', '));
+  await p.click('#work-chub-guard .try');
+  await p.click('#playground .pg-run');
+  await p.waitForSelector('#playground .pg-issues', { timeout: 10000 });
+  const pg = await p.evaluate(() => ({ issues: document.querySelectorAll('#playground .pg-issues li').length, hits: document.querySelectorAll('#playground .pg-gutter b').length, text: document.querySelector('#playground .pg-out').textContent }));
+  check('playground: flags the deprecated OpenAI calls in the example', pg.issues >= 2 && pg.hits === pg.issues && /text-davinci-003/.test(pg.text), JSON.stringify({ issues: pg.issues, hits: pg.hits }));
+  await p.keyboard.press('Escape');
+  check('extras: no errors', errs.length === 0, errs.join('; '));
+  await p.close();
+  await ctx.unrouteAll();
+
   /* ---------- portfolio ---------- */
   p = await ctx.newPage(); errs = pageErrors(p);
   await p.goto(url + '/portfolio.html');

@@ -12,15 +12,18 @@ A static site with no build step, deployed by GitHub Pages:
 ## Run locally
 
 ```bash
-python3 -m http.server 4173      # then open http://localhost:4173
+npm run dev                      # the site plus its Pages Functions (/api/github), at http://localhost:4174
+python3 -m http.server 4173      # static only (no GitHub graph), at http://localhost:4173
 ```
+
+Add `?3d=off` to any landing-page URL to skip the 3D drive (the command menu can also switch it).
 
 ## Tests
 
 ```bash
 npm install                      # dev-only: three.js for Node tests
-npm test                         # vehicle-dynamics + world-generation unit tests (21)
-npm run test:e2e                 # headless Chromium: all pages, the drive and chapter rail, gameplay, circuit regression, phone
+npm test                         # unit tests: vehicle dynamics, world generation, the chub-guard port, the GitHub graph (30)
+npm run test:e2e                 # headless Chromium: all pages, the drive and chapter rail, the landing extras, gameplay, circuit regression, phone
 npm run previews                 # re-capture the menu / title-screen previews (needs ffmpeg)
 npm run perf                     # scroll the landing page with the CPU slowed 4× and report frame times
 node tests/opening-stills.mjs     # re-render the opening stills shown while the 3D starts up
@@ -89,6 +92,10 @@ src/mumbai/props.js            leaf-card trees and palms, lamps, cars, taxis, au
 src/mumbai/play.js             knockable props, chai collectibles, ramps, pigeons, traffic
 src/mumbai/main.js             game loop, states, HUD, panels, settings, secrets
 src/story/                     the landing page's scroll-driven drive (scene, laptop screen, timeline, rail)
+src/landing/features.js        landing extras: quick view (/#quick), skills → work, ⌘K command menu, chub-guard playground, GitHub
+src/landing/chub-engine.js     chub-guard 1.2.1's documentation checks, ported to run in the browser
+src/shared/tech-icons.js       logos and line icons for the stack chips
+functions/api/github.js        Cloudflare Pages Function: the GitHub contribution graph as JSON (cached 6 h)
 ```
 
 Assets and licences: see [ASSETS.md](ASSETS.md). Everything visual and audible is generated in code.
