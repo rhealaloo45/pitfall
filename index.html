@@ -120,6 +120,7 @@
   .stack { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
   .stack span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: var(--dim); background: rgba(255,255,255,.04); border: 1px solid var(--line); }
   .stack svg, .tools dd svg { width: 13px; height: 13px; fill: var(--ink); flex: none; }
+  .stack svg.line, .tools dd svg.line { fill: none; stroke: var(--ink); color: var(--ink); }
   .card .stack { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
 
   /* 01 hello, over the line-art street */
@@ -230,6 +231,7 @@
     .rail a { padding: 8px 9px; font-size: 12.5px; }
   }
 </style>
+<link rel="stylesheet" href="src/landing/features.css?v=1">
 </head>
 <body>
 <script>document.documentElement.classList.add('js');</script>
@@ -239,7 +241,11 @@
   <div class="wrap">
     <a class="brand" href="#hello">Rhea Laloo<span>.</span></a>
     <span class="open"><i></i>Open to AI/ML engineering roles</span>
-    <a class="btn sm" href="assets/rhea-laloo-resume.pdf" download="Rhea-Laloo-Resume.pdf">Résumé</a>
+    <div class="acts">
+      <button class="kbtn" type="button" data-open="palette" aria-label="Search the site"><svg class="ui" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>Search<kbd>⌘K</kbd></button>
+      <button class="btn ghost sm" type="button" data-open="quick">Quick view</button>
+      <a class="btn sm" href="assets/rhea-laloo-resume.pdf" download="Rhea-Laloo-Resume.pdf">Résumé</a>
+    </div>
   </div>
 </header>
 
@@ -268,10 +274,10 @@
             <a class="btn ghost" href="https://linkedin.com/in/rhealaloo" target="_blank" rel="noopener">LinkedIn</a>
           </div>
           <div class="stats" aria-label="Highlights">
-            <div class="stat"><b>9.95 CGPA</b><span>1st rank in college · B.Tech IT, KJSIT</span></div>
             <div class="stat"><b>chub-guard</b><span>AI linter shipped on PyPI, npm &amp; VS Code</span></div>
-            <div class="stat"><b>150+</b><span>students mentored across India · IndiaAI Impact Summit</span></div>
             <div class="stat"><b>Top 80 / 695</b><span>CiiA, twice · RoadHawk pothole detector</span></div>
+            <div class="stat"><b>9.95 CGPA</b><span>1st rank in college · B.Tech IT, KJSIT</span></div>
+            <div class="stat"><b>150+</b><span>students mentored across India · IndiaAI Impact Summit</span></div>
           </div>
           <a class="skipdrive" href="#experience">Skip the drive, straight to experience ↓</a>
         </div>
@@ -299,6 +305,21 @@
   <section class="ch wrap" id="specs" data-veil="0.82" aria-labelledby="h-specs">
     <div class="head rv"><div class="k">Toolkit</div><h2 id="h-specs">Tech specs</h2></div>
     <dl class="tools rv" id="tools"></dl>
+  </section>
+
+  <section class="ch wrap" id="github" data-veil="0.82" aria-labelledby="h-gh">
+    <div class="head rv"><div class="k">Open source</div><h2 id="h-gh">Lately on GitHub</h2></div>
+    <div class="gh rv">
+      <div class="gh-box">
+        <div class="gh-head">
+          <div><b id="gh-total">…</b>contributions in the last year<span id="gh-facts"></span></div>
+          <a href="https://github.com/rhealaloo45" target="_blank" rel="noopener">@rhealaloo45 <svg class="ui" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+        </div>
+        <div class="gh-scroll"><div class="gh-months" id="gh-months" aria-hidden="true"></div><div class="gh-cal" id="gh-cal" role="img" aria-label="GitHub contribution graph for the last year"></div></div>
+        <div class="gh-legend" aria-hidden="true">Less<span></span><i class="l0" style="background:rgba(255,255,255,.06)"></i><i style="background:rgba(57,212,255,.3)"></i><i style="background:rgba(57,212,255,.52)"></i><i style="background:rgba(57,212,255,.76)"></i><i style="background:#5fe0ff"></i><span></span>More</div>
+      </div>
+      <div class="gh-repos" id="gh-repos"></div>
+    </div>
   </section>
 
   <div class="ch wrap" data-veil="0.6">
@@ -329,33 +350,42 @@
   </footer>
 </main>
 
-<script src="src/shared/portfolio-data.js?v=8"></script>
-<script src="src/shared/tech-icons.js?v=1"></script>
+<script src="src/shared/portfolio-data.js?v=9"></script>
+<script src="src/shared/tech-icons.js?v=2"></script>
 <script>
 (function () {
   var R = window.PORTFOLIO && window.PORTFOLIO.RESUME; if (!R) return;
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   var $ = function (id) { return document.getElementById(id); };
   var icon = window.TECH_ICON || function () { return ''; };
+  var PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg>';
+  function acts(o) {
+    var L = o.links && R[o.links], h = '';
+    if (o.tryIt) h += '<button type="button" class="try" data-open="playground">' + PLAY + 'Try it live</button>';
+    if (L) h += [['npm', L.npm], ['PyPI', L.pypi], ['VS Code', L.vscode], ['GitHub', L.github]].filter(function (x) { return x[1]; })
+      .map(function (x) { return '<a class="lnk" href="' + x[1] + '" target="_blank" rel="noopener">' + icon(x[0]) + esc(x[0]) + '</a>'; }).join('');
+    if (o.repo && R.github) h += '<a class="lnk" href="https://github.com/' + R.github.user + '/' + o.repo + '" target="_blank" rel="noopener">' + icon('GitHub') + 'Code on GitHub</a>';
+    return h ? '<div class="card-acts">' + h + '</div>' : '';
+  }
   function stack(list) { return list && list.length ? '<div class="stack">' + list.map(function (n) { return '<span>' + icon(n) + esc(n) + '</span>'; }).join('') + '</div>' : ''; }
   var years = function (w) { var y = String(w).match(/\d{4}/g) || []; return y.length > 1 ? y[0] + ' — ' + y[1] : (y[0] || '') + (/present/i.test(w) ? ' — now' : ''); };
 
   // the drive's beats, each placed where the scene reaches it (fraction of the drive)
   var AT = [0.215, 0.385, 0.56, 0.822, 0.94];
   $('beats').innerHTML = (R.stories || []).map(function (s, i) {
-    return '<article class="beat story" style="--at:' + AT[i] + '"><div class="wrap"><div class="card' + (i === 1 ? ' right' : '') + '">' +
+    return '<article class="beat story" id="story-' + s.id + '" style="--at:' + AT[i] + '"><div class="wrap"><div class="card' + (i === 1 ? ' right' : '') + '">' +
       '<div class="n"><b>' + String(i + 1).padStart(2, '0') + '</b>' + esc(s.tag) + '</div>' +
       '<h3>' + esc(s.title) + '</h3><p>' + esc(s.text) + '</p>' +
-      '<div class="chips">' + s.chips.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') + '</div>' + stack(s.stack) + '</div></div></article>';
+      '<div class="chips">' + s.chips.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') + '</div>' + stack(s.stack) + acts(s) + '</div></div></article>';
   }).join('');
   // the room: a card about the person, as the drive reaches my desk
   var D = R.desk;
   if (D) $('beats').insertAdjacentHTML('beforeend', '<article class="beat story desk" style="--at:0.732"><div class="wrap"><div class="card right"><div class="n"><b>☕</b>' + esc(D.tag) + '</div><h3>' + esc(D.title) + '</h3><p>' + esc(D.text) + '</p><div class="chips">' + D.chips.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') + '</div></div></div></article>');
 
   $('roles').innerHTML = R.experience.map(function (x, i) {
-    return '<article class="role rv"><div><div class="when">' + esc(x.when) + '</div><h3>' + esc(x.org) + '</h3><div class="r">' + esc(x.role) + '</div>' +
+    return '<article class="role rv" id="role-' + x.id + '"><div><div class="when">' + esc(x.when) + '</div><h3>' + esc(x.org) + '</h3><div class="r">' + esc(x.role) + '</div>' +
       (i === 0 ? '<span class="now">Current</span>' : '') + '</div><div class="body">' +
-      (x.work ? '<div class="work">' + x.work.map(function (w) { return '<div class="proj"><div class="tag">' + esc(w.tag) + '</div><h4>' + esc(w.name) + '</h4><p>' + esc(w.text) + '</p>' + stack(w.stack) + '</div>'; }).join('') + '</div>' : '') +
+      (x.work ? '<div class="work">' + x.work.map(function (w) { return '<div class="proj" id="work-' + w.id + '"><div class="tag">' + esc(w.tag) + '</div><h4>' + esc(w.name) + '</h4><p>' + esc(w.text) + '</p>' + stack(w.stack) + acts(w) + '</div>'; }).join('') + '</div>' : '') +
       '<ul>' + (x.short || x.points).map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul>' + stack(x.stack) + '</div></article>';
   }).join('');
 
@@ -377,6 +407,7 @@
   } else document.querySelectorAll('.rv').forEach(function (el) { el.classList.add('in'); });
 })();
 </script>
+<script type="module" src="src/landing/features.js?v=1"></script>
 <script type="module">
   // The drive needs a graphics chip. With software-only WebGL (search engines' page testers, some remote desktops)
   // it would keep the page busy at a few frames a second, so those get the plain page instead.
@@ -384,7 +415,8 @@
   let gpu = gl ? String(gl.getParameter(gl.RENDERER)) : '';
   if (/^webkit webgl$/i.test(gpu)) { const i = gl.getExtension('WEBGL_debug_renderer_info'); if (i) gpu = String(gl.getParameter(i.UNMASKED_RENDERER_WEBGL)); }
   gl?.getExtension('WEBGL_lose_context')?.loseContext();
-  if (gl && (window.__force3d || !/swiftshader|llvmpipe|softpipe|software|basic render/i.test(gpu))) import('./src/story/main.js?v=67');
+  const off = /[?&]3d=off\b/.test(location.search);
+  if (gl && !off && (window.__force3d || !/swiftshader|llvmpipe|softpipe|software|basic render/i.test(gpu))) import('./src/story/main.js?v=67');
   else document.documentElement.classList.add('no-3d');
 </script>
 </body>

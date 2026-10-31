@@ -58,4 +58,6 @@ All sound is synthesized live with the Web Audio API (`src/core/audio.js`): engi
 * Mood boards supplied by the site owner, used for art direction only and not included in the repository.
 * Bruno Simon's portfolio (bruno-simon.com), as general inspiration for playful driving portfolios. No code or assets used.
 * aarya.wtf, named by the site owner as a benchmark for craft and restraint. The site could not be reached from the build environment, so it was used only as a stated quality bar; nothing was copied.
-* Tech logos on the stack chips (`src/shared/tech-icons.js`): Simple Icons 16.34.0, CC0 (simpleicons.org). Each logo is its owner's trademark and is shown only to name the tech used. Brands that asked Simple Icons to remove their logos (Microsoft, OpenAI, Oracle) appear as text only.
+* Tech logos on the stack chips (`src/shared/tech-icons.js`): Simple Icons 16.34.0, CC0 (simpleicons.org). Each logo is its owner's trademark and is shown only to name the tech used. Brands that asked Simple Icons to remove their logos (Microsoft, OpenAI, Oracle) get a generic line icon instead.
+* Line icons (techniques like Random Forest or SHAP, and the interface: search, close, copy…): Lucide 1.56.0, ISC licence (lucide.dev).
+* The chub-guard playground (`src/landing/chub-engine.js`) is a browser port of the documentation checks in chub-guard 1.2.1 (Rhea's own project, MIT). It reads Context Hub docs (github.com/andrewyng/context-hub) and chub-guard's shared pattern file live from GitHub.
