@@ -106,6 +106,14 @@ try {
   const pg = await p.evaluate(() => ({ issues: document.querySelectorAll('#playground .pg-issues li').length, hits: document.querySelectorAll('#playground .pg-gutter b').length, text: document.querySelector('#playground .pg-out').textContent }));
   check('playground: flags the deprecated OpenAI calls in the example', pg.issues >= 2 && pg.hits === pg.issues && /text-davinci-003/.test(pg.text), JSON.stringify({ issues: pg.issues, hits: pg.hits }));
   await p.keyboard.press('Escape');
+  // light mode: the switch in the top bar, remembered across a reload, and back again
+  await p.click('.tbtn');
+  const lightOn = await p.evaluate(() => ({ theme: document.documentElement.dataset.theme, stored: localStorage.getItem('theme'), bg: getComputedStyle(document.body).backgroundColor, label: document.querySelector('.tbtn').title }));
+  check('light mode: the switch turns the page light', lightOn.theme === 'light' && lightOn.stored === 'light' && lightOn.bg === 'rgb(246, 243, 236)' && /dark/.test(lightOn.label), JSON.stringify(lightOn));
+  await p.reload();
+  check('light mode: remembered after a reload', await p.evaluate(() => document.documentElement.dataset.theme === 'light'));
+  await p.click('.tbtn');
+  check('light mode: switches back to dark', await p.evaluate(() => !document.documentElement.dataset.theme && localStorage.getItem('theme') === 'dark'));
   check('extras: no errors', errs.length === 0, errs.join('; '));
   await p.close();
   await ctx.unrouteAll();
