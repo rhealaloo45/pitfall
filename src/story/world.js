@@ -10,18 +10,20 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const INK = { value: 1 };          // 1 = black-and-white line art, 0 = full colour
 export const LINES = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1, depthWrite: false });
+// what the line art is drawn on (display colour, as the page's --stage): near-black, or paper in light mode (set by main.js)
+export const PAPER = { value: new THREE.Vector3(0.012, 0.014, 0.018) };
 const DARK = new THREE.Color(0x030405);
 
-/** Patch a material so INK blends it to black (the fill behind the white edges). */
+/** Patch a material so INK blends it to the paper colour (the fill behind the edges). */
 export function ink(m) {
   if (m.userData.inked) return m;
   m.userData.inked = true;
   const prev = m.onBeforeCompile;
   m.onBeforeCompile = (sh, r) => {
     if (prev) prev(sh, r);
-    sh.uniforms.uInk = INK;
-    sh.fragmentShader = 'uniform float uInk;\n' + sh.fragmentShader.replace('#include <dithering_fragment>',
-      '#include <dithering_fragment>\n  gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.012, 0.014, 0.018), uInk);');
+    sh.uniforms.uInk = INK; sh.uniforms.uPaper = PAPER;
+    sh.fragmentShader = 'uniform float uInk;\nuniform vec3 uPaper;\n' + sh.fragmentShader.replace('#include <dithering_fragment>',
+      '#include <dithering_fragment>\n  gl_FragColor.rgb = mix(gl_FragColor.rgb, uPaper, uInk);');
   };
   m.customProgramCacheKey = () => 'ink' + (m.type || '');
   return m;
@@ -517,11 +519,11 @@ export function buildCrossing(scene) {
 
 /* ---------------- sky ---------------- */
 export function buildSky(scene) {
-  const u = { top: { value: new THREE.Color(0x2b4a7a) }, bottom: { value: new THREE.Color(0xf3c9a2) }, uInk: INK };
+  const u = { top: { value: new THREE.Color(0x2b4a7a) }, bottom: { value: new THREE.Color(0xf3c9a2) }, uInk: INK, uPaper: PAPER };
   const m = new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, uniforms: u,
     vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-    fragmentShader: 'uniform vec3 top; uniform vec3 bottom; uniform float uInk; varying vec3 vP; void main(){ float t = smoothstep(-0.05, 0.55, vP.y); vec3 c = mix(bottom, top, t); gl_FragColor = vec4(mix(c, vec3(0.012,0.014,0.018), uInk), 1.0); }',
+    fragmentShader: 'uniform vec3 top; uniform vec3 bottom; uniform float uInk; uniform vec3 uPaper; varying vec3 vP; void main(){ float t = smoothstep(-0.05, 0.55, vP.y); vec3 c = mix(bottom, top, t); gl_FragColor = vec4(mix(c, uPaper, uInk), 1.0); }',
   });
   const s = new THREE.Mesh(new THREE.SphereGeometry(900, 24, 12), m); s.userData.noEdges = true; s.frustumCulled = false;
   scene.add(s);

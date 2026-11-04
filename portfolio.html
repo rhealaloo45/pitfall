@@ -81,7 +81,7 @@
   }).join('') + '</section>';
   html += '<section><h2>Achievements &amp; certifications</h2><ul>' + R.achievements.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul></section>';
   html += '<section><h2>Technical skills</h2><dl class="skills">' + Object.keys(R.skills).map(function (k) { return '<dt>' + esc(k) + '</dt><dd>' + esc(R.skills[k]) + '</dd>'; }).join('') + '</dl></section>';
-  html += '<section><h2>Contact</h2><div class="skills"><dt>Email</dt><dd><a href="mailto:' + C.email + '">' + C.email + '</a></dd><dt>Phone</dt><dd>' + C.phone + '</dd><dt>GitHub</dt><dd><a href="' + C.github + '" target="_blank" rel="noopener">' + C.githubLabel + '</a></dd><dt>LinkedIn</dt><dd><a href="' + C.linkedin + '" target="_blank" rel="noopener">' + C.linkedinLabel + '</a></dd></div></section>';
+  html += '<section><h2>Contact</h2><div class="skills"><dt>Email</dt><dd><a href="mailto:' + C.email + '">' + C.email + '</a></dd><dt>GitHub</dt><dd><a href="' + C.github + '" target="_blank" rel="noopener">' + C.githubLabel + '</a></dd><dt>LinkedIn</dt><dd><a href="' + C.linkedin + '" target="_blank" rel="noopener">' + C.linkedinLabel + '</a></dd></div></section>';
   document.getElementById('main').innerHTML = html;
 })();
 </script>

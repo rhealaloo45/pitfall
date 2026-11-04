@@ -10,11 +10,11 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { buildCar } from '../vehicle/car-model.js';
 import { CAR_SPEC } from '../vehicle/sim.js';
-import { INK, LINES, NIGHT, ink, outline, freeze, mergeByMaterial, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildSky } from './world.js?v=67';
-import { buildRoom } from './room.js?v=67';
-import { buildMarineDrive, along, LENGTH } from './marine.js?v=67';
-import { screenTex, drawScreen, setWallpaper } from './screen.js?v=67';
-import { loadKit, streetProps, marineProps } from './props.js?v=67';
+import { INK, LINES, NIGHT, PAPER, ink, outline, freeze, mergeByMaterial, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildSky } from './world.js?v=69';
+import { buildRoom } from './room.js?v=69';
+import { buildMarineDrive, along, LENGTH } from './marine.js?v=69';
+import { screenTex, drawScreen, setWallpaper } from './screen.js?v=69';
+import { loadKit, streetProps, marineProps } from './props.js?v=69';
 
 const $ = id => document.getElementById(id);
 const track = $('story'), canvas = $('scene'), detLayer = $('det'), stage = canvas.parentElement, veil = $('veil');
@@ -105,6 +105,22 @@ mergeByMaterial(room.group);   // the room's static furniture (and the model car
 setWallpaper(STILL);
 performance.mark('story:room');
 const marine = buildMarineDrive(scene, facadeMat);
+
+/* ---------- light or dark ---------- */
+// light mode (the page's switch): the opening is ink on paper, the way home stays at golden hour (the room's window
+// shows the sunset too), and morning comes once the car is out on Marine Drive
+let light = false;
+const seaNight = new THREE.Color(0x0a1826), seaDay = new THREE.Color(0x3c7d98);
+function applyTheme() {
+  light = document.documentElement.dataset.theme === 'light';
+  PAPER.value.set(...(light ? [0.965, 0.953, 0.925] : [0.012, 0.014, 0.018]));   // the page's --stage colour
+  LINES.color.set(light ? 0x2b2824 : 0xffffff);
+  const view = room.windowView;
+  if (view) view.material.map = light ? view.userData.sunset : view.userData.night;
+  room.lights.moon.color.set(light ? 0xffa56e : 0x7f9cff);   // the light through the window: sunset or moonlight
+}
+applyTheme();
+addEventListener('themechange', () => { applyTheme(); onScroll(); });
 if (kit) marineProps(marine, kit);
 const car = buildCar();
 standardize(car.root);
@@ -266,7 +282,8 @@ function frame() {
   sim.steerAngle = 0; sim.brakeLight = (p > 0.49 && p < 0.63) || (T > 1 && T < 1.12);
   car.update(carPos, carQuat, sim, dt, 0);
   // evening falls as we head home, and stays night along Marine Drive (moonlight, the Queen's Necklace)
-  const night = sstep(clamp((p - 0.63) / 0.12)), inRoom = T > 0.72 && T < 1.1, outside = clamp((a - 0.08) / 0.06);
+  const dusk = sstep(clamp((p - 0.63) / 0.12));
+  const night = light ? Math.min(dusk, 0.35) * (1 - sstep(clamp((a - 0.04) / 0.1))) : dusk, inRoom = T > 0.72 && T < 1.1, outside = clamp((a - 0.08) / 0.06);
   sun.intensity = inRoom ? 0 : 2.4 * (1 - night) + 0.45 * night * (T > 1 ? outside : 1);
   sun.color.lerpColors(sunDay, moonC, night);
   hemi.intensity = 0.9 * (1 - night) + (inRoom ? 0.1 : T > 1 ? 0.32 * outside : 0.07 * night);
@@ -274,6 +291,8 @@ function frame() {
   const env = 1 - night * 0.82;
   if (Math.abs(env - lastEnv) > 0.01) { lastEnv = env; for (const [m, base] of envMats) m.envMapIntensity = base * env; }
   for (const m of NIGHT.mats) m.emissiveIntensity = night * 1.3;
+  for (const [m, base] of marine.userData.glows || []) m.opacity = base * night;   // the Queen's Necklace glows after dark
+  if (marine.userData.sea) marine.userData.sea.color.lerpColors(seaDay, seaNight, night);
   sky.top.value.lerpColors(dayTop, nightTop, night); sky.bottom.value.lerpColors(dayBot, nightBot, night);
   scene.fog.color.copy(sky.bottom.value); scene.fog.far = T > 1 ? 520 : 340;
   headlight.intensity = night > 0.3 ? 45 * night : 0;
@@ -355,7 +374,9 @@ function onScroll() {
   tTarget = clamp((y - trackTop) / trackSpan) + clamp((y - afterStart) / afterSpan);
   // the veil: dark behind dense sections so text reads, clear during the drive and for "One more thing"
   const mid = y + innerHeight * 0.55, sec = veils.find(v => mid >= v.top && mid < v.bottom), v = sec ? sec.v : '0';
-  if (v !== lastVeil) { lastVeil = v; veil.style.opacity = v; }
+  // light mode needs a little more of its paper-coloured veil: a light wash over a dark road turns grey
+  const key = v + (light ? 'L' : '');
+  if (key !== lastVeil) { lastVeil = key; veil.style.opacity = light ? Math.min(0.95, +v * 1.15) : v; }
 }
 let raf = 0;
 const loop = () => { raf = 0; if (document.hidden) return; frame(); raf = requestAnimationFrame(loop); };

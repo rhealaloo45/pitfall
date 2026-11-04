@@ -13,7 +13,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
-import { ink, facadeMat } from './world.js?v=67';
+import { ink, facadeMat } from './world.js?v=69';
 import { buildCar } from '../vehicle/car-model.js';
 import { CAR_SPEC } from '../vehicle/sim.js';
 
@@ -31,24 +31,39 @@ const HAND = '"Bradley Hand", "Segoe Print", "Comic Sans MS", cursive';
 const SANS = '-apple-system, "SF Pro Display", Inter, Arial, sans-serif';
 
 /* ---------- painted textures ---------- */
-function necklaceView() {
+/** The view from the window: the Queen's Necklace at night, or (light mode) at sunset, matching the street outside. */
+function necklaceView(sunset = false) {
   return canvasTex(1280, 640, (g, w, h) => {
-    const sky = g.createLinearGradient(0, 0, 0, h * 0.6); sky.addColorStop(0, '#060b1d'); sky.addColorStop(1, '#2b2448');
-    g.fillStyle = sky; g.fillRect(0, 0, w, h);
-    for (let i = 0; i < 90; i++) { g.fillStyle = `rgba(255,255,255,${0.3 + (i % 5) / 8})`; g.fillRect((i * 137) % w, (i * 71) % (h * 0.4), 1.6, 1.6); }
     const base = h * 0.57;
+    const sky = g.createLinearGradient(0, 0, 0, base);
+    if (sunset) { sky.addColorStop(0, '#4d4a82'); sky.addColorStop(0.5, '#c97a7a'); sky.addColorStop(0.85, '#f2a56e'); sky.addColorStop(1, '#f8cf96'); }
+    else { sky.addColorStop(0, '#060b1d'); sky.addColorStop(1, '#2b2448'); }
+    g.fillStyle = sky; g.fillRect(0, 0, w, h);
+    if (sunset) {
+      // the sun going down over the bay, left of the towers
+      const sx = w * 0.26, sy = base - 8, sun = g.createRadialGradient(sx, sy, 0, sx, sy, 150);
+      sun.addColorStop(0, 'rgba(255,246,214,1)'); sun.addColorStop(0.12, 'rgba(255,226,160,.95)'); sun.addColorStop(0.4, 'rgba(255,170,100,.35)'); sun.addColorStop(1, 'rgba(255,150,90,0)');
+      g.fillStyle = sun; g.fillRect(sx - 150, sy - 150, 300, 300);
+    } else for (let i = 0; i < 90; i++) { g.fillStyle = `rgba(255,255,255,${0.3 + (i % 5) / 8})`; g.fillRect((i * 137) % w, (i * 71) % (h * 0.4), 1.6, 1.6); }
     for (let i = 0; i < 34; i++) {
       const x = w * 0.4 + i * 22 + (i % 3) * 5, bw = 14 + (i % 4) * 5, bh = 34 + ((i * 37) % 110);
-      g.fillStyle = '#121a2e'; g.fillRect(x, base - bh, bw, bh);
-      for (let y = base - bh + 4; y < base - 3; y += 6) for (let xx = x + 3; xx < x + bw - 3; xx += 5) if (((xx * 7 + y * 3) | 0) % 3 === 0) { g.fillStyle = '#ffd38f'; g.fillRect(xx, y, 2, 2); }
+      g.fillStyle = sunset ? '#5b4058' : '#121a2e'; g.fillRect(x, base - bh, bw, bh);
+      // at sunset only a few windows are lit yet
+      for (let y = base - bh + 4; y < base - 3; y += 6) for (let xx = x + 3; xx < x + bw - 3; xx += 5) if (((xx * 7 + y * 3) | 0) % (sunset ? 7 : 3) === 0) { g.fillStyle = '#ffd38f'; g.fillRect(xx, y, 2, 2); }
     }
-    const sea = g.createLinearGradient(0, base, 0, h); sea.addColorStop(0, '#0d1a33'); sea.addColorStop(1, '#050a14');
+    const sea = g.createLinearGradient(0, base, 0, h);
+    if (sunset) { sea.addColorStop(0, '#e8a477'); sea.addColorStop(0.35, '#b47a7e'); sea.addColorStop(1, '#4a3c63'); }
+    else { sea.addColorStop(0, '#0d1a33'); sea.addColorStop(1, '#050a14'); }
     g.fillStyle = sea; g.fillRect(0, base, w, h - base);
+    if (sunset) for (let i = 0; i < 26; i++) {   // the sun's path on the water
+      const y = base + 6 + i * 9, half = 70 * (1 - i / 30) + (i % 3) * 8;
+      g.fillStyle = `rgba(255,236,190,${0.55 - i * 0.018})`; g.fillRect(w * 0.26 - half, y, half * 2, 2);
+    }
     for (let i = 0; i <= 72; i++) {
-      const t = i / 72, x = -50 + t * (w * 0.96), y = base + 2 + Math.sin(t * Math.PI) * h * 0.2 * (1 - t * 0.4);
-      const r = g.createRadialGradient(x, y, 0, x, y, 13); r.addColorStop(0, 'rgba(255,226,170,1)'); r.addColorStop(0.3, 'rgba(255,190,110,.5)'); r.addColorStop(1, 'rgba(255,170,80,0)');
+      const t = i / 72, x = -50 + t * (w * 0.96), y = base + 2 + Math.sin(t * Math.PI) * h * 0.2 * (1 - t * 0.4), a = sunset ? 0.55 : 1;
+      const r = g.createRadialGradient(x, y, 0, x, y, 13); r.addColorStop(0, `rgba(255,226,170,${a})`); r.addColorStop(0.3, `rgba(255,190,110,${0.5 * a})`); r.addColorStop(1, 'rgba(255,170,80,0)');
       g.fillStyle = r; g.fillRect(x - 13, y - 13, 26, 26);
-      g.fillStyle = 'rgba(255,190,110,.22)'; g.fillRect(x - 1.5, y + 7, 3, 28 + (i % 4) * 7);
+      g.fillStyle = `rgba(255,190,110,${0.22 * a})`; g.fillRect(x - 1.5, y + 7, 3, 28 + (i % 4) * 7);
     }
   });
 }
@@ -322,6 +337,7 @@ export function buildRoom(scene, { screenTex, stillUrl }) {
   /* ---- the dream: the window behind the desk, onto the Queen's Necklace, with curtains and fairy lights ---- */
   const wy = 11.58, wwid = 1.75, whgt = 1.18, bx = R.x1 - 0.03;
   const view = new THREE.Mesh(new THREE.PlaneGeometry(wwid, whgt), glowMat(0xffffff)); view.material.map = necklaceView();
+  view.userData.night = view.material.map; view.userData.sunset = necklaceView(true);   // main.js picks one for dark / light mode
   view.position.set(bx - 0.02, wy, dz); view.rotation.y = -Math.PI / 2; G.add(view);
   const wood = mat(0x2a1d14, { roughness: 0.5 }), sill = mat(0xeee7da, { roughness: 0.6 });
   G.add(box(0.06, 0.05, wwid + 0.1, wood, bx - 0.03, wy - whgt / 2 - 0.025, dz), box(0.06, 0.05, wwid + 0.1, wood, bx - 0.03, wy + whgt / 2 + 0.025, dz));
@@ -561,5 +577,5 @@ export function buildRoom(scene, { screenTex, stillUrl }) {
   const pk = new THREE.InstancedMesh(new THREE.BoxGeometry(0.01, 0.01, 0.01), new THREE.MeshBasicMaterial({ color: 0xff2233, toneMapped: false }), 140);
   pk.visible = false; pk.frustumCulled = false; pk.userData.moving = true;
   G.add(pk);
-  return { group: G, lights: { lampLight, floorLight, moon, alarm }, fairy: { bulbs, glow: fairyGlow }, packets: pk, screenTarget: new THREE.Vector3(sX - 0.06, sY, dz) };
+  return { group: G, lights: { lampLight, floorLight, moon, alarm }, fairy: { bulbs, glow: fairyGlow }, packets: pk, windowView: view, screenTarget: new THREE.Vector3(sX - 0.06, sY, dz) };
 }

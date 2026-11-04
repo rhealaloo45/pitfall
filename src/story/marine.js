@@ -4,7 +4,7 @@
    Night-only, so nothing here needs line-art outlines. */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { ink } from './world.js?v=67';
+import { ink } from './world.js?v=69';
 
 const mat = (color, o = {}) => ink(new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0, ...o }));
 // the centre line, continuing the straight street from z = 345 and curving round the bay (towards −x)
@@ -51,6 +51,7 @@ export function buildMarineDrive(scene, facadeMat) {
   // the bay
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), mat(0x0a1826, { roughness: 0.32, metalness: 0.1, envMapIntensity: 0.15 }));
   sea.rotation.x = -Math.PI / 2; sea.position.set(-500, -0.9, 700); G.add(sea);
+  G.userData.sea = sea.material;
   // road, kerbs, promenade, sea wall, the land behind the buildings
   G.add(new THREE.Mesh(ribbon(-7, 7, 0.005), mat(0x2c2f34, { roughness: 0.95 })));
   G.add(new THREE.Mesh(ribbon(-7.4, -12.6, 0.18), mat(0xb4aa98)));                         // promenade
@@ -87,6 +88,8 @@ export function buildMarineDrive(scene, facadeMat) {
   const reflection = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(refl, 3)),
     new THREE.PointsMaterial({ map: gt, size: 16, sizeAttenuation: true, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending, color: 0xffb76a }));
   G.add(glow, reflection);
+  // for light mode, where Marine Drive is in daylight: the lamps' glow fades and the bay turns blue (main.js)
+  G.userData.glows = [[glow.material, 1], [reflection.material, 0.55]];
   // Art Deco fronts on the outside of the curve: pastel blocks, a rounded corner, a central fin
   const pastels = [0xefe3c8, 0xe8c4b8, 0xcfe0cf, 0xf0dca0, 0xdcd3e8, 0xf3d9c4];
   let k = 0;

@@ -17,6 +17,7 @@ python3 -m http.server 4173      # static only (no GitHub graph), at http://loca
 ```
 
 Add `?3d=off` to any landing-page URL to skip the 3D drive (the command menu can also switch it).
+The sun / moon button in the top bar switches light and dark mode (dark by default; the choice is remembered in the browser). In light mode the opening line art is ink on paper and Marine Drive is in daylight.
 
 ## Tests
 

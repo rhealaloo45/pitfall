@@ -34,7 +34,7 @@ const CONTENT = {
     <div class="row"><div><b>Email</b></div><span><a href="mailto:rhealaloo@gmail.com">rhealaloo@gmail.com</a></span></div>
     <div class="row"><div><b>GitHub</b></div><span><a href="https://github.com/rhealaloo45" target="_blank" rel="noopener">github.com/rhealaloo45</a></span></div>
     <div class="row"><div><b>LinkedIn</b></div><span><a href="https://linkedin.com/in/rhealaloo" target="_blank" rel="noopener">/in/rhealaloo</a></span></div>
-    <div class="row"><div><b>Phone</b></div><span>+91 97695 14152</span></div>`},
+`},
 };
 const SECTION_ORDER = ['about','experience','projects','education','contact'];
 
@@ -89,7 +89,6 @@ const MONITOR_TABS = {
     <div class="mrow"><div><b>Email</b></div><span><a href="mailto:rhealaloo@gmail.com">rhealaloo@gmail.com</a></span></div>
     <div class="mrow"><div><b>GitHub</b></div><span><a href="https://github.com/rhealaloo45" target="_blank" rel="noopener">github.com/rhealaloo45</a></span></div>
     <div class="mrow"><div><b>LinkedIn</b></div><span><a href="https://linkedin.com/in/rhealaloo" target="_blank" rel="noopener">/in/rhealaloo</a></span></div>
-    <div class="mrow"><div><b>Phone</b></div><span>+91 97695 14152</span></div>
     <h4>Availability</h4><p>Open to AI/ML engineering roles and interesting collaborations.</p>`},
 };
 
@@ -98,7 +97,7 @@ window.PORTFOLIO={ACCENTS,CONTENT,SECTION_ORDER,SKILLS,MONITOR_TABS};
 /* Structured resume — used by Mumbai GP and the portfolio page. */
 const RESUME = {
   name:'Rhea Laloo', role:'AI Engineer', location:'Mumbai, India',
-  contact:{ email:'rhealaloo@gmail.com', phone:'+91 97695 14152', website:'https://rhealaloo.com',
+  contact:{ email:'rhealaloo@gmail.com', website:'https://rhealaloo.com',
     github:'https://github.com/rhealaloo45', githubLabel:'github.com/rhealaloo45',
     linkedin:'https://linkedin.com/in/rhealaloo', linkedinLabel:'/in/rhealaloo',
     resume:'assets/rhea-laloo-resume.pdf' },

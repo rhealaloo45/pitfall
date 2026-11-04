@@ -51,8 +51,7 @@ export function panelContent(id) {
         <h3>Contact</h3>
         <div class="item"><div class="hd"><b>Email</b><span><a href="mailto:${C.email}">${C.email}</a></span></div></div>
         <div class="item"><div class="hd"><b>GitHub</b><span><a href="${C.github}" target="_blank" rel="noopener">${C.githubLabel}</a></span></div></div>
-        <div class="item"><div class="hd"><b>LinkedIn</b><span><a href="${C.linkedin}" target="_blank" rel="noopener">${C.linkedinLabel}</a></span></div></div>
-        <div class="item"><div class="hd"><b>Phone</b><span>${C.phone}</span></div></div>`,
+        <div class="item"><div class="hd"><b>LinkedIn</b><span><a href="${C.linkedin}" target="_blank" rel="noopener">${C.linkedinLabel}</a></span></div></div>`,
       footer: `<a class="btn" href="${C.resume}" download="Rhea-Laloo-Resume.pdf">Download résumé (PDF)</a><a class="btn" href="${C.github}" target="_blank" rel="noopener">GitHub</a>` };
     case 'gateway': return landmark('Gateway of India', 'Apollo Bunder, Colaba',
       'A basalt arch on the Apollo Bunder waterfront, completed in 1924 to commemorate the landing of King George V and Queen Mary in 1911. It looks out over Mumbai Harbour, beside the Taj Mahal Palace hotel.');

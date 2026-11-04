@@ -29,6 +29,7 @@ const UI = {
   panel: '<rect width="18" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/>',
   box: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
   spin: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
 };
 const ui = (n, cls = '') => `<svg class="ui ${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${UI[n]}</svg>`;
 const chips = list => list && list.length ? `<div class="stack">${list.map(n => `<span>${techIcon(n)}${esc(n)}</span>`).join('')}</div>` : '';
@@ -51,6 +52,21 @@ function init() {
     else if (e.key === '/' && !e.metaKey && !e.ctrlKey && !typing(e.target) && !$('dialog[open]')) { e.preventDefault(); openPalette(); }
   });
   $$('.kbtn kbd').forEach(k => { k.textContent = isMac ? '⌘K' : 'Ctrl K'; });
+
+  /* ---------- light or dark ---------- */
+  // the switch in the top bar (and the command menu); remembered on this device; the 3D drive listens for 'themechange'
+  const themeBtn = $('[data-theme-toggle]');
+  const isLight = () => document.documentElement.dataset.theme === 'light';
+  const labelTheme = () => { if (themeBtn) { const t = isLight() ? 'Switch to dark mode' : 'Switch to light mode'; themeBtn.setAttribute('aria-label', t); themeBtn.title = t; } };
+  function setTheme(t) {
+    if (t === 'light') document.documentElement.dataset.theme = 'light'; else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem('theme', t); } catch { /* private mode: it just won't be remembered */ }
+    const meta = $('meta[name="theme-color"]'); if (meta) meta.content = t === 'light' ? '#f6f3ec' : '#0b0c0f';
+    labelTheme();
+    dispatchEvent(new CustomEvent('themechange', { detail: t }));
+  }
+  labelTheme();
+  if (themeBtn) themeBtn.addEventListener('click', () => setTheme(isLight() ? 'dark' : 'light'));
   const fromHash = () => { if (location.hash === '#quick') openQuick(); };
   addEventListener('hashchange', fromHash); fromHash();
 
@@ -211,6 +227,7 @@ function init() {
     });
     add('Actions', ui('panel'), 'Quick view', 'The whole portfolio on one screen', openQuick, 'summary overview recruiter');
     add('Actions', ui('play'), 'Try chub-guard', 'Check your code for deprecated APIs', openPlayground, 'playground demo linter');
+    add('Actions', ui('sun'), 'Light or dark mode', 'Switch the colours', () => setTheme(isLight() ? 'dark' : 'light'), 'theme appearance colours colors night day');
     add('Actions', ui('download'), 'Download résumé', 'PDF', () => { const a = document.createElement('a'); a.href = C.resume; a.download = 'Rhea-Laloo-Resume.pdf'; a.click(); }, 'resume cv');
     add('Actions', ui('copy'), 'Copy email address', C.email, async () => toast((await copy(C.email)) ? 'Email address copied' : C.email), 'contact mail');
     add('Actions', ui('mail'), 'Write an email', C.email, () => { location.href = 'mailto:' + C.email; }, 'contact');
