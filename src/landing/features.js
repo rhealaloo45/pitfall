@@ -105,7 +105,11 @@ function init() {
     for (const s of R.stories) for (const n of s.stack || []) add(n, { key: 'story:' + s.id, pid: s.id, label: s.title, sub: s.tag });
     for (const p of R.projects) for (const n of p.stack || []) {
       const s = p.story && R.stories.find(x => x.id === p.story);
-      add(n, s ? { key: 'story:' + s.id, pid: s.id, label: s.title, sub: s.tag } : { key: 'repo:' + p.repo, pid: p.repo, label: p.name, sub: 'On GitHub' });
+      // a project with no card on the page: its repo card in the GitHub section if it has one, else its code on GitHub
+      const featured = R.github.featured.includes(p.repo);
+      add(n, s ? { key: 'story:' + s.id, pid: s.id, label: s.title, sub: s.tag }
+        : featured ? { key: 'repo:' + p.repo, pid: p.repo, label: p.name, sub: 'On GitHub' }
+        : { url: `https://github.com/${R.github.user}/${p.repo}`, pid: p.repo, label: p.name, sub: 'Code on GitHub' });
     }
     return idx;
   }
@@ -132,7 +136,8 @@ function init() {
     const name = b.dataset.skill, uses = usage.get(name);
     b.setAttribute('aria-expanded', 'true');
     b.closest('#tools > div').insertAdjacentHTML('beforeend', `<div class="usage"><p>${techIcon(name)}<b>${esc(name)}</b> shows up in</p><div>${uses.map(u =>
-      `<button type="button" data-jump="${esc(u.key)}"><b>${esc(u.label)}</b><span>${esc(u.sub)}</span>${ui('out')}</button>`).join('')}</div></div>`);
+      u.url ? `<a href="${esc(u.url)}" target="_blank" rel="noopener"><b>${esc(u.label)}</b><span>${esc(u.sub)}</span>${ui('out')}</a>`
+        : `<button type="button" data-jump="${esc(u.key)}"><b>${esc(u.label)}</b><span>${esc(u.sub)}</span>${ui('out')}</button>`).join('')}</div></div>`);
   }
   function showSkill(name) {
     const b = target('skill:' + name);
@@ -170,7 +175,8 @@ function init() {
     const edu = [E.college, E.junior, E.school].map(e => `<li><div class="qv-row"><b>${esc(e.name)}</b><span>${esc(years(e.when))}</span></div><div class="qv-sub">${esc(e.course)} · ${esc(e.score.split(' — ')[0])}</div></li>`).join('');
     const projects = showcase().map(s => `<li><button type="button" class="qv-proj" data-jump="story:${esc(s.id)}"><span class="qv-tag">${esc(s.tag)}</span><b>${esc(s.title)}</b><span class="qv-icons">${s.stack.map(n => techIcon(n)).join('')}</span></button>` +
       (s.tryIt ? `<button type="button" class="qv-try" data-open="playground">${ui('play')}Try it</button>` : '') + '</li>').join('');
-    const awards = R.achievements.filter(a => !/^Secured 1st rank/.test(a)).map(a => `<li>${esc(a.replace(/\.$/, ''))}</li>`).join('');
+    const proof = a => { const p = (R.proof || []).find(x => a.includes(x.match)); return p ? ` <a class="lnk" href="${esc(p.url)}" target="_blank" rel="noopener">${techIcon('Certificate')}${esc(p.label)}</a>` : ''; };
+    const awards = R.achievements.filter(a => !/^Secured 1st rank/.test(a)).map(a => `<li>${esc(a.replace(/\.$/, ''))}${proof(a)}</li>`).join('');
     const skills = Object.entries(R.skills).map(([k, v]) => `<div class="qv-skill"><span>${esc(k)}</span>${chips(v.split(', '))}</div>`).join('');
     const d = sheet('quick', 'qv-sheet', 'Quick view', `
       <div class="qv">
@@ -403,7 +409,7 @@ function init() {
     const user = R.github.user, cal = $('#gh-cal'), months = $('#gh-months'), total = $('#gh-total'), facts = $('#gh-facts'), reposEl = $('#gh-repos');
     cal.style.setProperty('--weeks', 53); months.style.setProperty('--weeks', 53);
     cal.innerHTML = '<i></i>'.repeat(53 * 7);
-    const ours = name => (R.projects.find(p => p.repo === name) || {}).text || ((R.experience.flatMap(x => x.work || []).find(w => w.id === name)) || {}).text || '';
+    const ours = name => (R.projects.find(p => p.repo === name) || {}).text || ((R.experience.flatMap(x => x.work || []).find(w => w.repo === name || w.id === name)) || {}).text || '';
     const COLORS = { Python: '#3572A5', JavaScript: '#f1e05a', TypeScript: '#3178c6', 'Jupyter Notebook': '#DA5B0B', HTML: '#e34c26', CSS: '#663399' };
     const ago = iso => {
       const s = (Date.parse(iso) - Date.now()) / 1000, rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });

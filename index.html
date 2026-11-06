@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rhea Laloo — AI Engineer</title>
-<meta name="description" content="Rhea Laloo, AI Engineer at Tata Consultancy Services. I build AI that notices what's wrong — in logs, in code, on roads — so everything else just works.">
+<meta name="description" content="Rhea Laloo, AI Engineer at Tata Consultancy Services. I build AI that notices what's wrong — in logs, in code, on roads — and agents that act on it.">
 <meta name="theme-color" content="#0b0c0f">
 <script>try { if (localStorage.getItem('theme') === 'light') { document.documentElement.dataset.theme = 'light'; document.querySelector('meta[name="theme-color"]').content = '#f6f3ec'; } } catch (e) {}</script>
 <link rel="canonical" href="https://rhealaloo.com/">
@@ -12,7 +12,7 @@
 <meta property="og:url" content="https://rhealaloo.com/">
 <meta property="og:site_name" content="Rhea Laloo">
 <meta property="og:title" content="Rhea Laloo — AI Engineer">
-<meta property="og:description" content="I build AI that notices what's wrong — in logs, in code, on roads — so everything else just works.">
+<meta property="og:description" content="I build AI that notices what's wrong — in logs, in code, on roads — and agents that act on it.">
 <meta property="og:image" content="https://rhealaloo.com/assets/stills/mumbai-gp-car.webp">
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="720">
@@ -184,6 +184,14 @@
   .stop .note { margin-top: 6px; font-size: 14px; color: var(--body); }
   .awards { margin-top: 44px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 32px; list-style: none; }
   .awards li { padding: 13px 0 13px 30px; border-top: 1px solid var(--line); color: var(--body); position: relative; font-size: 15px; }
+  .awards .lnk { margin-left: 8px; }
+  .sub { margin-top: 40px; font-size: 15px; font-weight: 700; color: var(--dim); letter-spacing: .02em; }
+  .campus { list-style: none; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 32px; margin-top: 10px; }
+  .campus li { padding: 13px 0 13px 30px; border-top: 1px solid var(--line); color: var(--body); position: relative; font-size: 15px; }
+  .campus li::before { content: '◆'; position: absolute; left: 6px; top: 14px; color: var(--cyan); font-size: 11px; }
+  .campus li b { color: var(--ink); font-weight: 600; }
+  .campus .when { margin-left: 10px; color: var(--mute); font-size: 13.5px; }
+  .campus .lnk { margin-top: 4px; }
   .awards li::before { content: '★'; position: absolute; left: 4px; top: 12px; color: #e8b33c; font-size: 14px; }
   .tools > div { display: grid; grid-template-columns: 200px 1fr; gap: 24px; padding: 18px 0; border-top: 1px solid var(--line); align-items: baseline; }
   .tools > div:last-child { border-bottom: 1px solid var(--line); }
@@ -232,7 +240,7 @@
     .card p { font-size: 15px; }
     .ch { padding-top: 96px; }
     .role, .tools > div { grid-template-columns: 1fr; gap: 10px; }
-    .awards { grid-template-columns: 1fr; }
+    .awards, .campus { grid-template-columns: 1fr; }
     .route { grid-template-columns: 1fr; row-gap: 30px; padding: 0 0 0 30px; }
     .route::before { display: block; left: 6px; right: auto; top: 8px; bottom: 8px; width: 2px; height: auto; background: linear-gradient(var(--cyan), var(--pink) 60%, var(--red)); }
     .stop::before { left: -30px; top: 3px; }
@@ -240,7 +248,7 @@
     .rail a { padding: 8px 9px; font-size: 12.5px; }
   }
 </style>
-<link rel="stylesheet" href="src/landing/features.css?v=2">
+<link rel="stylesheet" href="src/landing/features.css?v=3">
 </head>
 <body>
 <script>document.documentElement.classList.add('js');</script>
@@ -276,7 +284,7 @@
         <div class="wrap">
           <div class="k grad">How a machine sees a street</div>
           <h1>Rhea<br>Laloo<span>.</span></h1>
-          <p class="lead">AI Engineer at Tata Consultancy Services. I build <b>AI that notices what's wrong</b> (in logs, in code, on roads) so everything else just works.</p>
+          <p class="lead">AI Engineer at Tata Consultancy Services. I build <b>AI that notices what's wrong</b> (in logs, in code, on roads) <b>and agents that act on it</b>.</p>
           <div class="ctas">
             <a class="btn" href="assets/rhea-laloo-resume.pdf" download="Rhea-Laloo-Resume.pdf">Download résumé</a>
             <a class="btn ghost" href="mailto:rhealaloo@gmail.com">Email me</a>
@@ -284,7 +292,7 @@
             <a class="btn ghost" href="https://linkedin.com/in/rhealaloo" target="_blank" rel="noopener">LinkedIn</a>
           </div>
           <div class="stats" aria-label="Highlights">
-            <div class="stat"><b>chub-guard</b><span>AI linter shipped on PyPI, npm &amp; VS Code</span></div>
+            <div class="stat"><b>chub-guard</b><span>AI linter · 4,900+ downloads on PyPI &amp; npm</span></div>
             <div class="stat"><b>Top 80 / 695</b><span>CiiA, twice · RoadHawk pothole detector</span></div>
             <div class="stat"><b>9.95 CGPA</b><span>1st rank in college · B.Tech IT, KJSIT</span></div>
             <div class="stat"><b>150+</b><span>students mentored across India · IndiaAI Impact Summit</span></div>
@@ -310,6 +318,8 @@
     <div class="head rv"><div class="k"><em>04</em>Education</div><h2 id="h-edu">Where I learned to look</h2></div>
     <ol class="route rv" id="route"></ol>
     <ul class="awards rv" id="awards"></ul>
+    <h3 class="sub rv">On campus</h3>
+    <ul class="campus rv" id="campus"></ul>
   </section>
 
   <section class="ch wrap" id="specs" data-veil="0.82" aria-labelledby="h-specs">
@@ -359,8 +369,8 @@
   </footer>
 </main>
 
-<script src="src/shared/portfolio-data.js?v=9"></script>
-<script src="src/shared/tech-icons.js?v=2"></script>
+<script src="src/shared/portfolio-data.js?v=12"></script>
+<script src="src/shared/tech-icons.js?v=3"></script>
 <script>
 (function () {
   var R = window.PORTFOLIO && window.PORTFOLIO.RESUME; if (!R) return;
@@ -374,28 +384,26 @@
     if (L) h += [['npm', L.npm], ['PyPI', L.pypi], ['VS Code', L.vscode], ['GitHub', L.github]].filter(function (x) { return x[1]; })
       .map(function (x) { return '<a class="lnk" href="' + x[1] + '" target="_blank" rel="noopener">' + icon(x[0]) + esc(x[0]) + '</a>'; }).join('');
     if (o.repo && R.github) h += '<a class="lnk" href="https://github.com/' + R.github.user + '/' + o.repo + '" target="_blank" rel="noopener">' + icon('GitHub') + 'Code on GitHub</a>';
+    (o.more || []).forEach(function (m) { h += '<a class="lnk" href="' + m.url + '" target="_blank" rel="noopener">' + icon(m.icon || 'Website') + esc(m.label) + '</a>'; });
     return h ? '<div class="card-acts">' + h + '</div>' : '';
   }
   function stack(list) { return list && list.length ? '<div class="stack">' + list.map(function (n) { return '<span>' + icon(n) + esc(n) + '</span>'; }).join('') + '</div>' : ''; }
   var years = function (w) { var y = String(w).match(/\d{4}/g) || []; return y.length > 1 ? y[0] + ' — ' + y[1] : (y[0] || '') + (/present/i.test(w) ? ' — now' : ''); };
 
   // the drive's beats, each placed where the scene reaches it (fraction of the drive)
-  var AT = [0.215, 0.385, 0.56, 0.822, 0.94];
-  $('beats').innerHTML = (R.stories || []).map(function (s, i) {
-    return '<article class="beat story" id="story-' + s.id + '" style="--at:' + AT[i] + '"><div class="wrap"><div class="card' + (i === 1 ? ' right' : '') + '">' +
+  // (each card's place on the drive is in the data: at = how far along the drive it appears)
+  $('beats').innerHTML = (R.stories || []).slice().sort(function (a, b) { return a.at - b.at; }).map(function (s, i) {
+    return '<article class="beat story" id="story-' + s.id + '" style="--at:' + s.at + '"><div class="wrap"><div class="card' + (s.right ? ' right' : '') + '">' +
       '<div class="n"><b>' + String(i + 1).padStart(2, '0') + '</b>' + esc(s.tag) + '</div>' +
       '<h3>' + esc(s.title) + '</h3><p>' + esc(s.text) + '</p>' +
       '<div class="chips">' + s.chips.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') + '</div>' + stack(s.stack) + acts(s) + '</div></div></article>';
   }).join('');
-  // the room: a card about the person, as the drive reaches my desk
-  var D = R.desk;
-  if (D) $('beats').insertAdjacentHTML('beforeend', '<article class="beat story desk" style="--at:0.732"><div class="wrap"><div class="card right"><div class="n"><b>☕</b>' + esc(D.tag) + '</div><h3>' + esc(D.title) + '</h3><p>' + esc(D.text) + '</p><div class="chips">' + D.chips.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') + '</div></div></div></article>');
 
   $('roles').innerHTML = R.experience.map(function (x, i) {
     return '<article class="role rv" id="role-' + x.id + '"><div><div class="when">' + esc(x.when) + '</div><h3>' + esc(x.org) + '</h3><div class="r">' + esc(x.role) + '</div>' +
       (i === 0 ? '<span class="now">Current</span>' : '') + '</div><div class="body">' +
       (x.work ? '<div class="work">' + x.work.map(function (w) { return '<div class="proj" id="work-' + w.id + '"><div class="tag">' + esc(w.tag) + '</div><h4>' + esc(w.name) + '</h4><p>' + esc(w.text) + '</p>' + stack(w.stack) + acts(w) + '</div>'; }).join('') + '</div>' : '') +
-      '<ul>' + (x.short || x.points).map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul>' + stack(x.stack) + '</div></article>';
+      '<ul>' + (x.short || x.points).map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul>' + stack(x.stack) + acts(x) + '</div></article>';
   }).join('');
 
   var E = R.education, job = R.experience[0];
@@ -403,9 +411,15 @@
     var s = e.score.split(' — '), main = s[0], note = s[1] || '', cg = /^CGPA /.test(main);
     return '<li class="stop"><div class="when">' + esc(years(e.when)) + '</div><h3>' + esc(e.name) + '</h3><div class="course">' + esc(e.course) + '</div>' +
       '<b class="score">' + esc(main.replace('CGPA ', '')) + (cg ? ' <small>CGPA</small>' : '') + '</b>' + (note ? '<div class="note">' + esc(note.charAt(0).toUpperCase() + note.slice(1)) + '</div>' : '') + '</li>';
-  }).join('') + '<li class="stop now"><div class="when">' + esc(years(job.when)) + '</div><h3>' + esc(job.org) + '</h3><div class="course">' + esc(job.role) + '</div><div class="note" style="margin-top:12px">Putting it to work: anomaly detection, LLM security analysis and chub-guard.</div></li>';
+  }).join('') + '<li class="stop now"><div class="when">' + esc(years(job.when)) + '</div><h3>' + esc(job.org) + '</h3><div class="course">' + esc(job.role) + '</div><div class="note" style="margin-top:12px">Putting it to work: agents, RAG and computer-use automation.</div></li>';
 
-  $('awards').innerHTML = R.achievements.filter(function (a) { return !/^Secured 1st rank/.test(a); }).map(function (a) { return '<li>' + esc(a.replace(/\.$/, '')) + '</li>'; }).join('');
+  // achievements, with a link to the certificate or badge where there is one
+  var proof = function (a) { var p = (R.proof || []).filter(function (x) { return a.indexOf(x.match) >= 0; })[0]; return p ? ' <a class="lnk" href="' + p.url + '" target="_blank" rel="noopener">' + icon('Certificate') + esc(p.label) + '</a>' : ''; };
+  $('awards').innerHTML = R.achievements.filter(function (a) { return !/^Secured 1st rank/.test(a); }).map(function (a) { return '<li>' + esc(a.replace(/\.$/, '')) + proof(a) + '</li>'; }).join('');
+  $('campus').innerHTML = (R.campus || []).map(function (c) {
+    return '<li><b>' + esc(c.role) + '</b><span class="when">' + esc(c.when) + '</span>' + (c.text ? '<div>' + esc(c.text) + '</div>' : '') +
+      (c.url ? '<a class="lnk" href="' + c.url + '" target="_blank" rel="noopener">' + icon('Website') + 'See the website</a>' : '') + '</li>';
+  }).join('');
   $('tools').innerHTML = Object.keys(R.skills).map(function (k) {
     return '<div><dt>' + esc(k) + '</dt><dd>' + R.skills[k].split(', ').map(function (s) { return '<span>' + icon(s) + esc(s) + '</span>'; }).join('') + '</dd></div>';
   }).join('');
@@ -416,7 +430,7 @@
   } else document.querySelectorAll('.rv').forEach(function (el) { el.classList.add('in'); });
 })();
 </script>
-<script type="module" src="src/landing/features.js?v=2"></script>
+<script type="module" src="src/landing/features.js?v=4"></script>
 <script type="module">
   // The drive needs a graphics chip. With software-only WebGL (search engines' page testers, some remote desktops)
   // it would keep the page busy at a few frames a second, so those get the plain page instead.
