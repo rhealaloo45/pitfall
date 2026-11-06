@@ -16,7 +16,7 @@ try {
   check('landing links to the printable page, not the games', links.includes('portfolio.html') && !links.some(h => /mumbai|circuit/.test(h || '')));
   check('landing: résumé and contact on the first screen', await p.$('#hello a[href="assets/rhea-laloo-resume.pdf"]') && await p.$('#hello a[href^="mailto:"]'));
   const land = await p.evaluate(() => ({ stories: document.querySelectorAll('#beats .story:not(.desk)').length, desk: !!document.querySelector('#beats .desk'), roles: document.querySelectorAll('#roles .role').length, stops: document.querySelectorAll('#route .stop').length, tools: document.querySelectorAll('#tools dd span').length }));
-  check('landing: stories, the desk card, experience, education and toolkit render from the shared data', land.stories === 5 && land.desk && land.roles === 3 && land.stops === 4 && land.tools > 10, JSON.stringify(land));
+  check('landing: stories, experience, education and toolkit render from the shared data (no desk card)', land.stories === 6 && !land.desk && land.roles === 3 && land.stops === 4 && land.tools > 10, JSON.stringify(land));
   // the drive: a scroll-driven 3D scene; line art at the top, then each project's "noticing" drawn as boxes
   const at = (page, p) => page.evaluate(async p => {
     const t = document.getElementById('story'), span = t.offsetHeight - innerHeight;
@@ -85,10 +85,10 @@ try {
   await p.goto(url + '/index.html?3d=off');
   await p.waitForFunction(() => document.querySelectorAll('#gh-cal i:not(.pad)').length > 300 && document.querySelector('#github.has-cal'), null, { timeout: 15000 });
   const gh = await p.evaluate(() => ({ total: document.getElementById('gh-total').textContent, repos: document.querySelectorAll('.repo').length, live: (document.querySelector('#gh-repo-chub-guard .repo-meta') || {}).textContent || '' }));
-  check('github: contribution graph, total and the chosen repos', gh.total === '2,039' && gh.repos === 3 && /Python/.test(gh.live), JSON.stringify(gh));
+  check('github: contribution graph, total and the chosen repos', gh.total === '2,039' && gh.repos === 6 && /Python/.test(gh.live), JSON.stringify(gh));
   await p.click('.acts [data-open="quick"]');
   const qv = await p.evaluate(() => ({ open: document.getElementById('quick').open, hash: location.hash, roles: document.querySelectorAll('#quick .qv-list li').length, projects: document.querySelectorAll('#quick .qv-proj').length }));
-  check('quick view: opens from the top bar, with experience and projects', qv.open && qv.hash === '#quick' && qv.roles >= 3 && qv.projects === 5, JSON.stringify(qv));
+  check('quick view: opens from the top bar, with experience and projects', qv.open && qv.hash === '#quick' && qv.roles >= 3 && qv.projects === 6, JSON.stringify(qv));
   await p.keyboard.press('Escape');
   const closed = await p.waitForFunction(() => !document.getElementById('quick').open && location.hash === '', null, { timeout: 3000 }).then(() => true, () => false);
   check('quick view: closes with Escape and clears the link', closed, await p.evaluate(() => location.hash));

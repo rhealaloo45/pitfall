@@ -73,13 +73,20 @@
       x.points.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul></div>';
   }).join('') + '</section>';
   html += '<section><h2>Projects</h2>' + R.projects.map(function (p) {
-    return '<div class="item"><div class="hd"><b>' + esc(p.name) + '<span class="tag">' + esc(p.tag) + '</span></b></div><div>' + esc(p.text) + '</div></div>';
+    var code = p.repo && R.github ? ' <a href="https://github.com/' + R.github.user + '/' + p.repo + '" target="_blank" rel="noopener">Code on GitHub</a>' : '';
+    return '<div class="item"><div class="hd"><b>' + esc(p.name) + '<span class="tag">' + esc(p.tag) + '</span></b></div><div>' + esc(p.text) + code + '</div></div>';
   }).join('') + '</section>';
   var E = R.education;
   html += '<section><h2>Education</h2>' + [E.college, E.junior, E.school].map(function (e) {
     return '<div class="item"><div class="hd"><b>' + esc(e.name) + '</b><span>' + esc(e.when) + '</span></div><div class="sub">' + esc(e.course) + ' · ' + esc(e.place) + '</div><div>' + esc(e.score) + '</div></div>';
   }).join('') + '</section>';
-  html += '<section><h2>Achievements &amp; certifications</h2><ul>' + R.achievements.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul></section>';
+  html += '<section><h2>Achievements &amp; certifications</h2><ul>' + R.achievements.map(function (a) {
+    var p = (R.proof || []).filter(function (x) { return a.indexOf(x.match) >= 0; })[0];
+    return '<li>' + esc(a) + (p ? ' <a href="' + p.url + '" target="_blank" rel="noopener">' + esc(p.label) + '</a>' : '') + '</li>';
+  }).join('') + '</ul></section>';
+  if (R.campus) html += '<section><h2>On campus</h2>' + R.campus.map(function (c) {
+    return '<div class="item"><div class="hd"><b>' + esc(c.role) + '</b><span>' + esc(c.when) + '</span></div>' + (c.text ? '<div>' + esc(c.text) + (c.url ? ' <a href="' + c.url + '" target="_blank" rel="noopener">Website</a>' : '') + '</div>' : '') + '</div>';
+  }).join('') + '</section>';
   html += '<section><h2>Technical skills</h2><dl class="skills">' + Object.keys(R.skills).map(function (k) { return '<dt>' + esc(k) + '</dt><dd>' + esc(R.skills[k]) + '</dd>'; }).join('') + '</dl></section>';
   html += '<section><h2>Contact</h2><div class="skills"><dt>Email</dt><dd><a href="mailto:' + C.email + '">' + C.email + '</a></dd><dt>GitHub</dt><dd><a href="' + C.github + '" target="_blank" rel="noopener">' + C.githubLabel + '</a></dd><dt>LinkedIn</dt><dd><a href="' + C.linkedin + '" target="_blank" rel="noopener">' + C.linkedinLabel + '</a></dd></div></section>';
   document.getElementById('main').innerHTML = html;
