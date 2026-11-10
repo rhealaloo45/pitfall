@@ -2,7 +2,12 @@
    so they run in the browser. Same steps as the CLI: find the libraries a snippet imports, fetch their Context Hub docs,
    pull out what those docs mark as deprecated, merge in chub-guard's shared pattern file, and flag the lines that use it.
    The CLI also runs Ruff's pyupgrade rules and full Python AST checks; those need a Python runtime, so they aren't here
-   (the two AST rules are approximated line by line, and imports are read with a regex instead of Python's parser). */
+   (the two AST rules are approximated line by line, and imports are read with a regex instead of Python's parser).
+
+   One step goes beyond 1.2.1. That release reads any name mentioned near a warning as deprecated, so it flags current
+   calls such as `client.chat.completions.create` or `message.content`. Here, nothing the docs' own current examples use
+   is flagged (currentUsage), and in JavaScript only class-like names from a deprecated pattern are matched, as whole
+   words. `check(..., { legacy: true })` runs the 1.2.1 rules unchanged; tests/chub-bench.mjs compares the two. */
 
 export const VERSION = '1.2.1';
 export const DB_URL = 'https://raw.githubusercontent.com/rhealaloo45/chub-guard/main/deprecations.json';
@@ -83,6 +88,39 @@ export function extractFromDoc(content, js = false) {
   }
   return [...bad];
 }
+
+/**
+ * What a doc presents as current: its code examples (outside deprecated sections and ❌ counter-examples) and the
+ * names in backticks on lines that don't warn against anything. A pattern found in here is in use, not deprecated.
+ */
+export function currentUsage(content) {
+  const ls = lines(content), out = [];
+  let inDep = false, inCode = false, counter = false, para = [];
+  // prose is judged a paragraph (or list item) at a time, so a warning that wraps onto the next line still counts
+  const flush = () => {
+    const text = para.join(' '); para = [];
+    if (text && !inDep && !NEGATIVE.some(k => text.toLowerCase().includes(k))) out.push(...ticks(text));
+  };
+  for (let i = 0; i < ls.length; i++) {
+    const line = ls[i], st = line.trim(), low = st.toLowerCase();
+    if (st.startsWith('```')) {
+      flush();
+      if (!inCode) {
+        const before = ls.slice(Math.max(0, i - 3), i).join(' ');
+        counter = inDep || (['❌', '⛔', '🚫', "**Don't", '**Incorrect', '**Deprecated'].some(m => before.includes(m)) && !['✅', '**Do ', '**Correct', '**Modern'].some(m => before.includes(m)));
+      }
+      inCode = !inCode;
+      continue;
+    }
+    if (inCode) { if (!counter && !NEGATIVE.some(k => low.includes(k))) out.push(line); continue; }
+    if (low.startsWith('#')) { flush(); if (low.startsWith('## ')) inDep = ['deprecated', 'legacy', 'removal', 'removed', 'breaking', 'migration'].some(k => low.includes(k)); continue; }
+    if (!st || /^([-*+]|\d+\.)\s/.test(st)) flush();
+    if (st) para.push(st);
+  }
+  flush();
+  return out.join('\n');
+}
+const word = n => new RegExp('(^|[^\\w$])' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^\\w$])');
 
 /** The doc's own example of current usage (extract_chub_hint). */
 export function extractHint(content, lang = 'python') {
@@ -214,14 +252,19 @@ const JS_QUALITY = [
   [/\.readFileSync\(/, 'Blocking synchronous IO detected. Use `fs.promises.readFile` for better performance.', 'nodejs/fs'],
 ];
 
-/** JavaScript (analyze_js_file): doc patterns, the quality rules, then deprecated names used anywhere. */
-export function analyzeJs(code, patterns, registry = REGISTRY) {
+/** JavaScript (analyze_js_file): doc patterns, the quality rules, then deprecated names used anywhere.
+    `current` maps a doc id to its currentUsage text; with `legacy`, the 1.2.1 rules run unchanged. */
+export function analyzeJs(code, patterns, registry = REGISTRY, { legacy = false, current = new Map() } = {}) {
   const ls = lines(code), out = [], imports = jsImports(code);
-  const push = (line, col, message, mod) => out.push({ line, col, message, mod });
+  const seen = new Set();
+  const push = (line, col, message, mod, key) => {
+    if (!legacy && key) { const k = line + '|' + key; if (seen.has(k)) return; seen.add(k); }
+    out.push({ line, col, message, mod });
+  };
   const docs = new Set([...imports.keys()].filter(m => registry[m]).map(m => registry[m]));
   for (const docId of docs) for (const p of patterns.get(docId) || []) ls.forEach((l, i) => {
     if (l.includes(p) && !['// noqa: UP', '// noqa: CHUB', '/* noqa: CHUB */'].some(k => l.includes(k)))
-      push(i + 1, l.indexOf(p) + 1, `\`${p}\` is flagged as deprecated or incorrect by chub docs.`, modFor(registry, docId));
+      push(i + 1, l.indexOf(p) + 1, `\`${p}\` is flagged as deprecated or incorrect by chub docs.`, modFor(registry, docId), p);
   });
   for (const [re, msg, mod] of JS_QUALITY) ls.forEach((l, i) => {
     if (l.includes('// noqa') || l.includes('/* noqa')) return;
@@ -231,14 +274,18 @@ export function analyzeJs(code, patterns, registry = REGISTRY) {
   const comps = new Map();
   for (const docId of docs) for (const p of patterns.get(docId) || []) for (const part of p.split(/[\s.]+/)) {
     const c = strip(part, "()'\"`)").trim();
-    if (c && c.length > 2 && !['import', 'from', 'as', 'const', 'let', 'var', 'new', 'require'].includes(c) && (c[0] !== c[0].toLowerCase() || p.includes('.')) && !comps.has(c)) comps.set(c, [docId, p]);
+    if (!c || c.length <= 2 || ['import', 'from', 'as', 'const', 'let', 'var', 'new', 'require'].includes(c) || comps.has(c)) continue;
+    if (legacy) { if (c[0] !== c[0].toLowerCase() || p.includes('.')) comps.set(c, [docId, p]); continue; }
+    // class-like names only (ChatCompletion, LLMChain), and never one the docs' current examples use (OpenAI)
+    if (/^[A-Z][A-Za-z0-9_]+$/.test(c) && !word(c).test(current.get(docId) || '')) comps.set(c, [docId, p]);
   }
+  const has = (line, n) => legacy ? line.includes(n) : word(n).test(line);
   ls.forEach((line, i) => {
     if (line.includes('// noqa: CHUB') || line.includes('# noqa: CHUB')) return;
     const done = new Set(), t = line.trim();
     for (const docId of docs) for (const p of patterns.get(docId) || []) if (line.includes(p)) {
       const mod = modFor(registry, docId);
-      if (!done.has(mod)) { done.add(mod); push(i + 1, line.indexOf(p) + 1, `\`${p}\` is flagged as deprecated by chub docs.`, mod); }
+      if (!done.has(mod)) { done.add(mod); push(i + 1, line.indexOf(p) + 1, `\`${p}\` is flagged as deprecated by chub docs.`, mod, p); }
     }
     const names = new Set(); let m;
     if ((m = t.match(/^import\s+\{([^}]+)\}\s+from\s+['"]([^'"]+)['"]/))) m[1].split(',').forEach(n => names.add(n.trim().split(' as ')[0].trim()));
@@ -246,14 +293,14 @@ export function analyzeJs(code, patterns, registry = REGISTRY) {
     if ((m = t.match(/^(?:const|let|var)\s+\{([^}]+)\}\s*=\s*require/))) m[1].split(',').forEach(n => names.add(n.trim().split(':')[0].trim()));
     for (const n of names) if (comps.has(n)) {
       const [docId, full] = comps.get(n), mod = modFor(registry, docId);
-      if (!done.has(mod)) { done.add(mod); push(i + 1, Math.max(1, line.indexOf(n) + 1), `\`${n}\` is deprecated (from pattern: \`${full}\`). See chub docs.`, mod); }
+      if (!done.has(mod)) { done.add(mod); push(i + 1, Math.max(1, line.indexOf(n) + 1), `\`${n}\` is deprecated (from pattern: \`${full}\`). See chub docs.`, mod, full); }
     }
     for (const [n, [docId, full]] of comps) {
-      if (!line.includes(n)) continue;
+      if (!has(line, n)) continue;
       const isImport = /^\s*import\s+.*from\s+['"]/.test(line) || /^\s*import\s+['"]/.test(line) || /^\s*#include\s*[<"]/.test(line) ||
         /^\s*import\s+([a-zA-Z0-9_.]+)/.test(line) || (/require\s*\(\s*['"]/.test(line) && /^\s*(const|let|var)\s/.test(line));
       if (isImport || out.some(v => v.line === i + 1 && v.message.includes(n))) continue;
-      push(i + 1, Math.max(1, line.indexOf(n) + 1), `\`${n}\` is deprecated (from pattern: \`${full}\`). See chub docs.`, modFor(registry, docId));
+      push(i + 1, Math.max(1, line.indexOf(n) + 1), `\`${n}\` is deprecated (from pattern: \`${full}\`). See chub docs.`, modFor(registry, docId), full);
     }
   });
   return out;
@@ -263,15 +310,16 @@ export function analyzeJs(code, patterns, registry = REGISTRY) {
 /**
  * Check a snippet. `get(url)` returns the text at a URL, or null. Returns the issues (with severity and doc id),
  * the docs it read, each doc's example of current usage, and the imports it couldn't map to a doc.
+ * `legacy: true` runs chub-guard 1.2.1's rules as they are, without the current-usage step.
  */
-export async function check(code, lang, get, registry = REGISTRY) {
+export async function check(code, lang, get, { registry = REGISTRY, legacy = false } = {}) {
   const js = lang === 'javascript';
   const imports = js ? jsImports(code) : pyImports(code);
   const docIds = [...new Set([...imports.keys()].filter(m => registry[m]).map(m => registry[m]))];
   const unknown = [...imports.keys()].filter(m => !registry[m] && !m.includes('.') && !m.includes('/') && m.length > 2);
   const dbText = docIds.length ? await get(DB_URL) : null;
   let db = {}; try { db = dbText ? JSON.parse(dbText) : {}; } catch { db = {}; }
-  const patterns = new Map(), docs = [];
+  const patterns = new Map(), current = new Map(), docs = [];
   await Promise.all(docIds.map(async docId => {
     let text = null, source = null;
     if (js) {
@@ -279,10 +327,18 @@ export async function check(code, lang, get, registry = REGISTRY) {
       if (!text && (text = await get(`${CACHED}/${docId.replace('/', '__')}__js.md`))) source = 'chub-guard cache';
     } else if ((text = await get(docUrl(docId, 'python')))) source = docUrl(docId, 'python');
     const fromDoc = text ? extractFromDoc(text, js) : [], shared = (db[docId] && db[docId].patterns) || [];
-    patterns.set(docId, [...new Set([...fromDoc, ...shared])]);
-    docs.push({ id: docId, read: !!text, source, fromDoc: fromDoc.length, shared: shared.length, hint: text ? extractHint(text, js ? 'javascript' : 'python') : null, page: docPage(docId) });
+    let all = [...new Set([...fromDoc, ...shared])], cleared = 0;
+    if (!legacy) {
+      const inUse = text ? currentUsage(text) : '';
+      current.set(docId, inUse);
+      // a version number alone isn't a pattern; and nothing the doc's own current examples use is deprecated
+      const kept = all.filter(p => /[A-Za-z]/.test(p) && !inUse.includes(p));
+      cleared = all.length - kept.length; all = kept;
+    }
+    patterns.set(docId, all);
+    docs.push({ id: docId, read: !!text, source, fromDoc: fromDoc.length, shared: shared.length, cleared, hint: text ? extractHint(text, js ? 'javascript' : 'python') : null, page: docPage(docId) });
   }));
-  const found = (js ? analyzeJs(code, patterns, registry) : analyzePython(code, patterns, registry))
+  const found = (js ? analyzeJs(code, patterns, registry, { legacy, current }) : analyzePython(code, patterns, registry))
     .map(v => ({ ...v, severity: severity(v.message), docId: registry[v.mod] || null }))
     .sort((a, b) => a.line - b.line || a.col - b.col);
   docs.sort((a, b) => a.id.localeCompare(b.id));

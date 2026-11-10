@@ -5,7 +5,7 @@
    - The chub-guard playground: chub-guard's documentation checks, run on any code, in the browser
    - Recent GitHub activity: the contribution graph and a few chosen repos
    Plain DOM, no framework; works with or without the 3D drive. */
-import { check as chubCheck, VERSION as CG_VERSION } from './chub-engine.js?v=1';
+import { check as chubCheck, VERSION as CG_VERSION } from './chub-engine.js?v=2';
 
 const R = window.PORTFOLIO && window.PORTFOLIO.RESUME;
 const $ = (s, el = document) => el.querySelector(s), $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -323,7 +323,7 @@ function init() {
           <div class="pg-install"><code>${esc(cg.install)}</code><button type="button" class="pg-copy">${ui('copy')}<span>Copy</span></button></div>
           <nav aria-label="chub-guard links">${[['npm', cg.npm], ['PyPI', cg.pypi], ['VS Code', cg.vscode], ['GitHub', cg.github]].map(([n, u]) =>
             `<a href="${esc(u)}" target="_blank" rel="noopener">${techIcon(n)}${n}</a>`).join('')}</nav>
-          <p class="pg-note">The same rules as the CLI's documentation scan, fetched live from GitHub. The CLI also runs Ruff's pyupgrade checks and full Python AST checks, which need Python itself.</p>
+          <p class="pg-note">chub-guard's documentation scan, with its rules and the docs fetched live from GitHub, plus one step newer than release ${CG_VERSION}: nothing the docs' own current examples use gets flagged. The CLI also runs Ruff's pyupgrade checks and full Python AST checks, which need Python itself.</p>
         </footer>
       </div>`);
     if (!d.dataset.wired) { d.dataset.wired = '1'; wirePlayground(d); }
@@ -511,6 +511,14 @@ from langchain.prompts import PromptTemplate
 llm = OpenAI(temperature=0)
 prompt = PromptTemplate.from_template("Name a company that makes {product}")
 chain = LLMChain(llm=llm, prompt=prompt)`],
+    ['Current code (nothing to flag)', `from openai import OpenAI
+
+client = OpenAI()
+completion = client.chat.completions.create(
+    model="gpt-5",
+    messages=[{"role": "user", "content": "Hello"}],
+)
+print(completion.choices[0].message.content)`],
     ['Selenium locators', `from selenium import webdriver
 
 driver = webdriver.Chrome()

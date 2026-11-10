@@ -9,6 +9,7 @@
     "serve": "python3 -m http.server 4173",
     "test": "node --test tests/vehicle.test.mjs tests/world.test.mjs tests/chub-engine.test.mjs tests/github.test.mjs",
     "dev": "node tests/dev-server.mjs",
+    "bench": "node tests/chub-bench.mjs",
     "test:e2e": "node tests/e2e.mjs",
     "previews": "node tests/make-previews.mjs",
     "perf": "node tests/perf-scroll.mjs --gpu --throttle 4"

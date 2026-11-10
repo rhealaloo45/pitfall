@@ -1,7 +1,7 @@
 // The browser port of chub-guard's documentation checks (src/landing/chub-engine.js), against small sample docs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { extractFromDoc, extractHint, pyImports, jsImports, analyzePython, analyzeJs, check, DB_URL, docUrl } from '../src/landing/chub-engine.js';
+import { extractFromDoc, extractHint, currentUsage, pyImports, jsImports, analyzePython, analyzeJs, check, DB_URL, docUrl } from '../src/landing/chub-engine.js';
 
 const DOC = [
   '# OpenAI',
@@ -71,4 +71,45 @@ test('the whole check: imports → docs + shared patterns → issues with severi
   assert.equal(r.issues.length, 1);
   assert.equal(r.issues[0].severity, 'breaking');
   assert.equal(r.issues[0].docId, 'openai/package');
+});
+
+// a doc that warns about how to use a current call, the way real docs do
+const CURRENT_DOC = [
+  '# Anthropic',
+  '## Usage',
+  '```python',
+  'message = client.messages.create(model="claude-sonnet-4-5", max_tokens=64, messages=[])',
+  'print(message.content[0].text)',
+  '```',
+  '- Do not treat `message.content` as a single string.',
+  '- Do not use the following deprecated models (or their variants like',
+  '  `claude-2.1`):',
+  '- Legacy: `client.completions.create` is deprecated.',
+].join('\n');
+
+test('currentUsage: the doc\'s own examples count, a wrapped warning does not', () => {
+  const use = currentUsage(CURRENT_DOC);
+  assert.ok(use.includes('message.content'), 'used in the example code');
+  assert.ok(!use.includes('claude-2.1'), 'named on the second line of a warning');
+  assert.ok(!use.includes('client.completions.create'));
+});
+
+test('current code is not flagged; the 1.2.1 rules (legacy) still flag it', async () => {
+  const pages = { [docUrl('anthropic/package', 'python')]: CURRENT_DOC, [DB_URL]: JSON.stringify({ 'anthropic/package': { patterns: ['message.content', 'claude-2', '1.2.11'] } }) };
+  const get = async u => pages[u] || null;
+  const modern = 'import anthropic\nmessage = client.messages.create(model="claude-sonnet-4-5", max_tokens=64, messages=[])\nprint(message.content[0].text)';
+  assert.equal((await check(modern, 'python', get)).issues.length, 0);
+  assert.equal((await check(modern, 'python', get, { legacy: true })).issues.length, 1);
+  const old = 'import anthropic\nclient.completions.create(model="claude-2", prompt="hi")';
+  const r = await check(old, 'python', get);
+  assert.equal(r.issues.length, 1, 'the deprecated call is still caught');
+  assert.equal(r.docs[0].cleared, 2, 'message.content and the bare version number were dropped');
+});
+
+test('JavaScript: only class-like names from a pattern, as whole words', () => {
+  const pats = new Map([['openai/package', ['openai.ChatCompletion.create']]]);
+  const modern = 'import OpenAI from "openai";\nconst client = new OpenAI();\nconst r = await client.chat.completions.create({});\nconst p: ChatCompletionMessageParam = {};';
+  assert.equal(analyzeJs(modern, pats).length, 0);
+  assert.ok(analyzeJs(modern, pats, undefined, { legacy: true }).length > 0, 'the 1.2.1 rules flag `openai` and `create`');
+  assert.equal(analyzeJs('import OpenAI from "openai";\nconst r = await openai.ChatCompletion.create({});', pats).length, 1);
 });

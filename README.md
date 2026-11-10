@@ -27,6 +27,7 @@ npm test                         # unit tests: vehicle dynamics, world generatio
 npm run test:e2e                 # headless Chromium: all pages, the drive and chapter rail, the landing extras, gameplay, circuit regression, phone
 npm run previews                 # re-capture the menu / title-screen previews (needs ffmpeg)
 npm run perf                     # scroll the landing page with the CPU slowed 4× and report frame times
+npm run bench                    # the chub-guard playground on labelled deprecated / current snippets (needs network)
 node tests/opening-stills.mjs     # re-render the opening stills shown while the 3D starts up
 ```
 
