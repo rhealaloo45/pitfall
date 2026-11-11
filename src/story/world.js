@@ -466,6 +466,54 @@ export function buildCows(scene) {
 }
 
 /* ---------------- the crossing: signal, zebra, people (ADHD / mental fitness) ---------------- */
+/** A simple walking figure: capsule body and limbs, legs and arms on pivots so they can swing. */
+function figure(cl, sk, tr, hairM) {
+  const p = new THREE.Group();
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.22, 0.5, 3, 8), cl); torso.position.y = 1.18;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), sk); head.position.y = 1.72;
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), hairM); hair.position.y = 1.75;
+  const legs = [], arms = [];
+  for (const sx of [-1, 1]) {
+    const leg = new THREE.Group(); leg.position.set(sx * 0.11, 0.86, 0);
+    const lm = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.62, 2, 6), tr); lm.position.y = -0.42; leg.add(lm);
+    const arm = new THREE.Group(); arm.position.set(sx * 0.3, 1.42, 0);
+    const am = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.48, 2, 6), cl); am.position.y = -0.3; arm.add(am);
+    p.add(leg, arm); legs.push(leg); arms.push(arm);
+  }
+  p.add(torso, head, hair);
+  p.traverse(o => { if (o.isMesh) o.castShadow = true; o.userData.moving = true; o.userData.keep = true; });
+  p.userData.moving = true;
+  return { p, legs, arms };
+}
+
+/** People out on the pavements, walking the length of the street and round again, so it isn't empty. */
+export function buildWalkers(scene, n = 8) {
+  const G = new THREE.Group(); G.name = 'walkers'; scene.add(G);
+  const skins = [0x8a5a3c, 0x6b4428, 0xa0704c, 0x7d5034, 0x5e3b24, 0x9a6a46].map(c => mat(c));
+  const clothes = [0x3f7cd8, 0xf2b630, 0x44a37b, 0xe0474c, 0x9b59d0, 0xf07f3c, 0x2f9aa0, 0xd8d2c4].map(c => mat(c));
+  const tr = [mat(0x2c3340), mat(0x4a4038)], hairM = mat(0x1b1512), list = [];
+  for (let i = 0; i < n; i++) {
+    const { p, legs, arms } = figure(clothes[i % clothes.length], skins[(i * 2 + 1) % skins.length], tr[i % 2], hairM);
+    const side = i % 2 ? 1 : -1, dir = (i >> 1) % 2 ? 1 : -1;
+    p.userData = { moving: true, keep: true, legs, arms, x: side * (7.92 + (i % 3) * 0.08), dir, speed: 1.05 + (i % 4) * 0.14, start: (i * 41.3) % LOOP };
+    p.rotation.y = dir > 0 ? 0 : Math.PI;
+    p.scale.setScalar(0.94 + (i % 3) * 0.04);
+    G.add(p); list.push(p);
+  }
+  return {
+    group: G,
+    update(time) {
+      for (const p of list) {
+        const u = p.userData, z = ((u.start + u.dir * u.speed * time) % LOOP + LOOP) % LOOP - 12, ph = z * 2.6;
+        p.position.set(u.x, 0.16, z);
+        u.legs[0].rotation.x = Math.sin(ph) * 0.5; u.legs[1].rotation.x = -Math.sin(ph) * 0.5;
+        u.arms[0].rotation.x = -Math.sin(ph) * 0.4; u.arms[1].rotation.x = Math.sin(ph) * 0.4;
+      }
+    },
+  };
+}
+const LOOP = 300;   // metres of pavement the walkers cover before coming round
+
 export function buildCrossing(scene) {
   const G = new THREE.Group(); scene.add(G);
   const white = mat(0xf4f1ea, { roughness: 0.7 });
@@ -485,22 +533,7 @@ export function buildCrossing(scene) {
   const clothes = [0xe0474c, 0x3f7cd8, 0xf2b630, 0x44a37b, 0x9b59d0, 0xf07f3c];
   const people = [];
   for (let i = 0; i < 6; i++) {
-    const p = new THREE.Group();
-    const cl = mat(clothes[i]), sk = mat(skins[i]), tr = mat(0x2c3340);
-    const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.22, 0.5, 3, 8), cl); torso.position.y = 1.18;
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), sk); head.position.y = 1.72;
-    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), mat(0x1b1512)); hair.position.y = 1.75;
-    const legs = [], arms = [];
-    for (const sx of [-1, 1]) {
-      const leg = new THREE.Group(); leg.position.set(sx * 0.11, 0.86, 0);
-      const lm = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.62, 2, 6), tr); lm.position.y = -0.42; leg.add(lm);
-      const arm = new THREE.Group(); arm.position.set(sx * 0.3, 1.42, 0);
-      const am = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.48, 2, 6), cl); am.position.y = -0.3; arm.add(am);
-      p.add(leg, arm); legs.push(leg); arms.push(arm);
-    }
-    p.add(torso, head, hair);
-    p.traverse(o => { if (o.isMesh) o.castShadow = true; o.userData.moving = true; o.userData.keep = true; });
-    p.userData.moving = true;
+    const { p, legs, arms } = figure(mat(clothes[i]), mat(skins[i]), mat(0x2c3340), mat(0x1b1512));
     // brain: a glowing wire icosahedron with neurons
     const brain = new THREE.Group();
     const bw = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(0.34, 1)), new THREE.LineBasicMaterial({ color: i % 2 ? 0x39d4ff : 0xff5fa8, transparent: true, opacity: 0, depthWrite: false }));
@@ -519,11 +552,11 @@ export function buildCrossing(scene) {
 
 /* ---------------- sky ---------------- */
 export function buildSky(scene) {
-  const u = { top: { value: new THREE.Color(0x2b4a7a) }, bottom: { value: new THREE.Color(0xf3c9a2) }, uInk: INK, uPaper: PAPER };
+  const u = { top: { value: new THREE.Color(0x2b4a7a) }, bottom: { value: new THREE.Color(0xf3c9a2) }, glow: { value: new THREE.Color(0, 0, 0) }, uInk: INK, uPaper: PAPER };
   const m = new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, uniforms: u,
     vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-    fragmentShader: 'uniform vec3 top; uniform vec3 bottom; uniform float uInk; uniform vec3 uPaper; varying vec3 vP; void main(){ float t = smoothstep(-0.05, 0.55, vP.y); vec3 c = mix(bottom, top, t); gl_FragColor = vec4(mix(c, uPaper, uInk), 1.0); }',
+    fragmentShader: 'uniform vec3 top; uniform vec3 bottom; uniform vec3 glow; uniform float uInk; uniform vec3 uPaper; varying vec3 vP; void main(){ float t = smoothstep(-0.05, 0.55, vP.y); vec3 c = mix(bottom, top, t); float d = max(normalize(vec3(vP.x, 0.0, vP.z)).z, 0.0); c += glow * pow(d, 10.0) * (1.0 - smoothstep(0.0, 0.34, vP.y)); gl_FragColor = vec4(mix(c, uPaper, uInk), 1.0); }',
   });
   const s = new THREE.Mesh(new THREE.SphereGeometry(900, 24, 12), m); s.userData.noEdges = true; s.frustumCulled = false;
   scene.add(s);
