@@ -3,92 +3,99 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rhea Laloo — AI Engineer · Portfolio</title>
-<meta name="description" content="Rhea Laloo, AI Engineer at Tata Consultancy Services: experience, projects, education, achievements, skills and contact.">
+<title>Rhea Laloo — AI Engineer · Résumé</title>
+<meta name="description" content="Rhea Laloo, AI Engineer at Tata Consultancy Services: experience, projects, education, achievements, skills and contact, on one page.">
 <link rel="canonical" href="https://rhealaloo.com/portfolio">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.png" sizes="96x96" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
-  :root { --ink: #23202b; --dim: #6c6577; --red: #c8151d; --line: #e6e1d9; --font: 'Titillium Web', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  /* The one-page version: the same content as the landing page, laid out as a résumé. It is also what the résumé PDF
+     is printed from (node tests/make-resume.mjs), so the print rules below are tuned for one or two A4 pages. */
+  :root { --ink: #18171b; --body: #3d3a35; --dim: #625d55; --mute: #6b665e; --red: #d0191f; --line: rgba(24,23,27,.14); --bg: #f6f3ec; --paper: #fffdf9;
+    --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: var(--font); color: var(--ink); background: #faf7f3; -webkit-font-smoothing: antialiased; line-height: 1.6; }
-  a { color: #1d5fae; }
-  .top { background: #f2efe9; border-bottom: 1px solid #e5e0d8; }
-  .wrap { max-width: 860px; margin: 0 auto; padding: 0 24px; }
-  .top .wrap { padding-top: 34px; padding-bottom: 34px; }
-  nav { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-  nav a { color: #3d3848; text-decoration: none; }
-  nav a:hover { color: var(--red); }
-  h1 { font-size: clamp(38px, 7vw, 64px); font-weight: 900; line-height: 1; margin-top: 26px; }
+  body { font-family: var(--font); color: var(--body); background: var(--bg); -webkit-font-smoothing: antialiased; line-height: 1.55; font-size: 15.5px; }
+  a { color: inherit; text-decoration-color: rgba(24,23,27,.3); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: var(--red); }
+  .sheet { max-width: 880px; margin: 28px auto 60px; padding: 44px 52px 40px; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; }
+  nav { max-width: 880px; margin: 22px auto 0; padding: 0 6px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 14px; font-weight: 600; }
+  nav a { text-decoration: none; color: var(--dim); }
+  nav a.btn { background: var(--red); color: #fff; padding: 8px 16px; border-radius: 999px; }
+  nav a:hover { color: var(--ink); } nav a.btn:hover { color: #fff; background: #b5141a; }
+  h1 { font-size: 40px; font-weight: 800; letter-spacing: -.035em; line-height: 1; color: var(--ink); }
   h1 span { color: var(--red); }
-  .lead { font-size: 17px; color: #3d3848; margin-top: 10px; max-width: 640px; }
-  .links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
-  .links a { background: #fff; border-radius: 999px; padding: 8px 14px; text-decoration: none; color: var(--ink); font-weight: 700; font-size: 13.5px; border: 1px solid #fff; }
-  .links a.primary { background: var(--ink); color: #fff; }
-  section { padding: 30px 0 6px; }
-  h2 { font-size: 13px; letter-spacing: .26em; text-transform: uppercase; color: var(--dim); margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
-  .item { padding: 12px 0 14px; border-bottom: 1px solid var(--line); }
-  .item:last-child { border-bottom: 0; }
-  .hd { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
-  .hd b { font-size: 17px; }
-  .hd span { color: var(--dim); font-size: 14px; white-space: nowrap; }
-  .sub { color: #4a4456; font-weight: 600; }
-  ul { margin: 6px 0 0 20px; }
-  li { margin: 3px 0; }
-  .tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .12em; padding: 1px 8px; border-radius: 4px; background: #ece8e1; color: #4a463f; margin-left: 8px; vertical-align: 2px; }
-  .skills { display: grid; grid-template-columns: 200px 1fr; gap: 6px 16px; }
-  .skills dt { font-weight: 700; }
-  @media (max-width: 600px) { .skills { grid-template-columns: 1fr; } }
-  @media print { .top { background: none; } nav, .links { display: none; } body { background: #fff; } section { padding-top: 14px; } }
+  .role { margin-top: 8px; font-weight: 600; color: var(--ink); }
+  .lead { margin-top: 6px; max-width: 640px; }
+  .contact { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 14px; font-weight: 600; color: var(--ink); }
+  section { margin-top: 26px; }
+  h2 { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--red); padding-bottom: 6px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+  .item { padding: 10px 0 2px; break-inside: avoid; }
+  .hd { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; }
+  .hd b { font-size: 16px; color: var(--ink); letter-spacing: -.01em; }
+  .hd span { color: var(--mute); font-size: 13.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .sub { color: var(--dim); font-weight: 600; font-size: 14.5px; }
+  ul { margin: 5px 0 0 18px; }
+  li { margin: 2px 0; }
+  li::marker { color: var(--red); }
+  .tag { margin-left: 8px; font-size: 12.5px; font-weight: 600; color: var(--mute); }
+  .rows { display: grid; grid-template-columns: 170px 1fr; gap: 4px 18px; padding-top: 10px; }
+  .rows dt { font-weight: 600; color: var(--ink); }
+  .edu { padding-top: 8px; }
+  .edu .item { padding-top: 4px; }
+  .edu .hd i { font-style: normal; font-weight: 400; color: var(--body); font-size: 14.5px; letter-spacing: 0; }
+  .two { columns: 2; column-gap: 34px; padding-top: 8px; }
+  .two li { break-inside: avoid; }
+  .two ul { margin-top: 0; }
+  @media (max-width: 700px) { .sheet { margin: 14px 10px 40px; padding: 26px 20px; } .rows { grid-template-columns: 1fr; } .two { columns: 1; } .hd { flex-wrap: wrap; } nav { padding: 0 14px; } }
+  @page { size: A4; margin: 8mm 11mm; }
+  @media print {
+    body { background: #fff; font-size: 8.3pt; line-height: 1.32; }
+    nav { display: none; }
+    .sheet { margin: 0; padding: 0; border: 0; border-radius: 0; max-width: none; background: #fff; }
+    h1 { font-size: 20pt; } .role { margin-top: 3pt; } .lead { margin-top: 1pt; max-width: none; } .contact { margin-top: 3pt; font-size: 8.3pt; }
+    section { margin-top: 5.5pt; } h2 { font-size: 7.4pt; padding-bottom: 2pt; margin-bottom: 0; }
+    .item { padding: 2.8pt 0 0; } .hd b { font-size: 9.3pt; } .hd span, .sub, .tag { font-size: 8.1pt; }
+    ul { margin: 1.5pt 0 0 12pt; } li { margin: .3pt 0; }
+    .rows { grid-template-columns: 84pt 1fr; gap: 1pt 12pt; padding-top: 3.5pt; } .edu { padding-top: 2pt; } .edu .item { padding-top: 1.5pt; } .two { padding-top: 3.5pt; column-gap: 20pt; }
+    a { text-decoration: none; }
+    .edu .hd i { font-size: 8.3pt; }
+    .screen { display: none; }
+  }
 </style>
 </head>
 <body>
-<div class="top"><div class="wrap">
-  <nav><a href="index.html">← Back to the drive</a></nav>
-  <h1 id="name">Rhea Laloo<br><span>AI Engineer</span></h1>
-  <p class="lead" id="lead">AI engineer building LLM tooling, anomaly-detection pipelines and full-stack apps.</p>
-  <div class="links" id="links"><a class="primary" href="assets/rhea-laloo-resume.pdf" download="Rhea-Laloo-Resume.pdf">Download résumé (PDF)</a></div>
-</div></div>
-<main class="wrap" id="main">
-  <noscript><p style="padding:30px 0">This page needs JavaScript to show the full portfolio. The <a href="assets/rhea-laloo-resume.pdf">résumé PDF</a> has everything.</p></noscript>
+<nav><a href="index.html">← Back to the drive</a><a class="btn" id="pdf" href="assets/rhea-laloo-resume.pdf" download="Rhea-Laloo-Resume.pdf">Download as PDF</a></nav>
+<main class="sheet" id="main">
+  <noscript><p>This page needs JavaScript. The <a href="assets/rhea-laloo-resume.pdf">résumé PDF</a> has everything.</p></noscript>
 </main>
 <script src="src/shared/portfolio-data.js"></script>
 <script>
 (function () {
   var R = window.PORTFOLIO.RESUME, C = R.contact;
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  document.getElementById('lead').textContent = 'AI Engineer at Tata Consultancy Services, based in ' + R.location + '. Building LLM tooling, anomaly-detection pipelines and full-stack apps.';
-  document.getElementById('links').innerHTML =
-    '<a class="primary" href="' + C.resume + '" download="Rhea-Laloo-Resume.pdf">Download résumé (PDF)</a>' +
-    '<a href="mailto:' + C.email + '">' + C.email + '</a>' +
-    '<a href="' + C.github + '" target="_blank" rel="noopener">' + C.githubLabel + '</a>' +
-    '<a href="' + C.linkedin + '" target="_blank" rel="noopener">LinkedIn ' + C.linkedinLabel + '</a>';
-  var html = '';
+  var link = function (url, label) { return '<a href="' + url + '" target="_blank" rel="noopener">' + esc(label) + '</a>'; };
+  var gh = function (repo) { return 'https://github.com/' + R.github.user + '/' + repo; };
+  var html = '<header><h1>' + esc(R.name) + '<span>.</span></h1>' +
+    '<p class="role">' + esc(R.role) + ' · ' + esc(R.location) + '</p>' +
+    '<p class="lead">' + esc(R.tagline) + '</p>' +
+    '<p class="contact">' + link('mailto:' + C.email, C.email) + link(C.website, C.website.replace('https://', '')) + link(C.github, C.githubLabel) + link(C.linkedin, 'linkedin.com' + C.linkedinLabel) + '</p></header>';
   html += '<section><h2>Experience</h2>' + R.experience.map(function (x) {
     return '<div class="item"><div class="hd"><b>' + esc(x.org) + '</b><span>' + esc(x.when) + '</span></div><div class="sub">' + esc(x.role) + '</div><ul>' +
       x.points.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul></div>';
   }).join('') + '</section>';
   html += '<section><h2>Projects</h2>' + R.projects.map(function (p) {
-    var code = p.repo && R.github ? ' <a href="https://github.com/' + R.github.user + '/' + p.repo + '" target="_blank" rel="noopener">Code on GitHub</a>' : '';
-    return '<div class="item"><div class="hd"><b>' + esc(p.name) + '<span class="tag">' + esc(p.tag) + '</span></b></div><div>' + esc(p.text) + code + '</div></div>';
+    return '<div class="item' + (p.print === false ? ' screen' : '') + '"><div class="hd"><b>' + esc(p.name) + '<span class="tag">' + esc((p.stack || [p.tag]).join(' · ')) + '</span></b>' + (p.repo ? '<span>' + link(gh(p.repo), 'github.com/' + R.github.user + '/' + p.repo) + '</span>' : '') + '</div><div>' + esc(p.text) + '</div></div>';
   }).join('') + '</section>';
+  html += '<section><h2>Technical skills</h2><dl class="rows">' + Object.keys(R.skills).map(function (k) { return '<dt>' + esc(k) + '</dt><dd>' + esc(R.skills[k]) + '</dd>'; }).join('') + '</dl></section>';
   var E = R.education;
-  html += '<section><h2>Education</h2>' + [E.college, E.junior, E.school].map(function (e) {
-    return '<div class="item"><div class="hd"><b>' + esc(e.name) + '</b><span>' + esc(e.when) + '</span></div><div class="sub">' + esc(e.course) + ' · ' + esc(e.place) + '</div><div>' + esc(e.score) + '</div></div>';
-  }).join('') + '</section>';
-  html += '<section><h2>Achievements &amp; certifications</h2><ul>' + R.achievements.map(function (a) {
+  html += '<section><h2>Education</h2><div class="edu">' + [E.college, E.junior, E.school].map(function (e) {
+    return '<div class="item"><div class="hd"><b>' + esc(e.name) + ' <i>· ' + esc(e.course) + ' · ' + esc(e.score.replace(' — ', ', ')) + '</i></b><span>' + esc((e.when.match(/\d{4}/g) || []).join('–')) + '</span></div></div>';
+  }).join('') + '</div></section>';
+  html += '<section><h2>Certifications &amp; achievements</h2><div class="two"><ul>' + R.achievements.filter(function (a) { return !/^Secured 1st rank/.test(a); }).map(function (a) {
     var p = (R.proof || []).filter(function (x) { return a.indexOf(x.match) >= 0; })[0];
-    return '<li>' + esc(a) + (p ? ' <a href="' + p.url + '" target="_blank" rel="noopener">' + esc(p.label) + '</a>' : '') + '</li>';
-  }).join('') + '</ul></section>';
-  if (R.campus) html += '<section><h2>On campus</h2>' + R.campus.map(function (c) {
-    return '<div class="item"><div class="hd"><b>' + esc(c.role) + '</b><span>' + esc(c.when) + '</span></div>' + (c.text ? '<div>' + esc(c.text) + (c.url ? ' <a href="' + c.url + '" target="_blank" rel="noopener">Website</a>' : '') + '</div>' : '') + '</div>';
-  }).join('') + '</section>';
-  html += '<section><h2>Technical skills</h2><dl class="skills">' + Object.keys(R.skills).map(function (k) { return '<dt>' + esc(k) + '</dt><dd>' + esc(R.skills[k]) + '</dd>'; }).join('') + '</dl></section>';
-  html += '<section><h2>Contact</h2><div class="skills"><dt>Email</dt><dd><a href="mailto:' + C.email + '">' + C.email + '</a></dd><dt>GitHub</dt><dd><a href="' + C.github + '" target="_blank" rel="noopener">' + C.githubLabel + '</a></dd><dt>LinkedIn</dt><dd><a href="' + C.linkedin + '" target="_blank" rel="noopener">' + C.linkedinLabel + '</a></dd></div></section>';
+    return '<li>' + esc(a.replace(/\.$/, '')) + (p ? ' <span class="screen">· ' + link(p.url, p.label) + '</span>' : '') + '</li>';
+  }).concat((R.campus || []).map(function (c) { return '<li>' + esc(c.role) + ', ' + esc(c.when.replace(/ — /, '–')) + (c.text ? ': ' + esc(c.text.charAt(0).toLowerCase() + c.text.slice(1)) : '') + '</li>'; })).join('') + '</ul></div></section>';
   document.getElementById('main').innerHTML = html;
 })();
 </script>

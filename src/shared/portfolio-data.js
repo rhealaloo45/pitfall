@@ -97,6 +97,7 @@ window.PORTFOLIO={ACCENTS,CONTENT,SECTION_ORDER,SKILLS,MONITOR_TABS};
 /* Structured resume — used by Mumbai GP and the portfolio page. */
 const RESUME = {
   name:'Rhea Laloo', role:'AI Engineer', location:'Mumbai, India',
+  tagline:'I build AI that notices what\'s wrong (in logs, in code, on roads) and agents that act on it.',
   contact:{ email:'rhealaloo@gmail.com', website:'https://rhealaloo.com',
     github:'https://github.com/rhealaloo45', githubLabel:'github.com/rhealaloo45',
     linkedin:'https://linkedin.com/in/rhealaloo', linkedinLabel:'/in/rhealaloo',
@@ -112,9 +113,9 @@ const RESUME = {
       'Cross-document answers from hybrid BM25 + semantic search (SentenceTransformer embeddings) with grounding checks against hallucination; BM25 shortlisting and page caps cut the cost per query.',
       'Building a Claude computer-use agent that benchmarks brands against competitors across the marketing funnel, taking it from a Claude skills prototype to a standalone Claude API app with a custom control loop, custom tools and step and cost limits.',
       'Built a low-code agent-creation accelerator on LangGraph with multi-provider model support.',
-      'Built an end-to-end log anomaly detection pipeline with Autoencoders and Isolation Forest, using SHAP for root-cause analysis; clustered anomalies and added LLM-based attack-type classification to generate actionable security insights.',
-      'Built chub-guard, an AI-powered linter that flags deprecated and outdated code against documentation indexed in Context Hub; published on PyPI, npm and VS Code Marketplace.',
-      'Mentored 150+ students across Coimbatore, Lucknow, Chennai, Mumbai and more and at the IndiaAI Impact Summit, plus professionals: company secretaries, and HR leaders at the Top Employer Summit.'],
+      'Built an end-to-end log anomaly detection pipeline (Autoencoders, Isolation Forest) with SHAP root-cause analysis, anomaly clustering and LLM-based attack-type classification.',
+      'Built chub-guard, an AI-powered linter that flags deprecated code against documentation indexed in Context Hub; published on PyPI, npm and the VS Code Marketplace, with 4,900+ downloads.',
+      'Mentored 150+ students across Coimbatore, Lucknow, Chennai, Mumbai and more and at the IndiaAI Impact Summit, plus company secretaries, and HR leaders at the Top Employer Summit.'],
       // the landing page shows the TCS work as small project cards, each with its stack
       work:[
         { id:'rag', name:'Legal knowledge assistant', tag:'RAG · proof of concept', text:'Ask, review, compare and draft across interrelated legal documents. Hybrid BM25 + semantic search finds the clauses that matter, grounding checks catch answers the documents don\'t support, and BM25 shortlisting with page caps cuts the cost per query. Tested on up to 1,500 documents.', stack:['Flask', 'Azure OpenAI', 'RAG', 'Hybrid Search', 'Embeddings'], repo:'Legal-Wiki-RAG' },
@@ -125,16 +126,13 @@ const RESUME = {
       ],
       short:['Mentored 150+ students across Coimbatore, Lucknow, Chennai, Mumbai and more and at the IndiaAI Impact Summit, plus company secretaries, and HR leaders at the Top Employer Summit']},
     { id:'nareshwadi', org:'Nareshwadi Learning Centre', role:'Lead Software Development Intern', when:'Jun 2024 — Jun 2025', points:[
-      'Developed and deployed a full-stack React Native cattle management app to manage 50+ cattle, including lifecycle tracking, offline milk entry and alert systems.',
-      'Implemented analysis and report generation, including milk production analysis over the last 7 days.',
+      'Developed and deployed a full-stack React Native cattle management app for 50+ cattle: lifecycle tracking, offline milk entry, alerts, and 7-day milk production analysis and reports.',
       'Built a module to predict cattle diseases and milk-yield trends using Random Forest with 94% accuracy, based on the past 10 days of milk-yield data.',
       'Ran 3+ rounds of user testing with farm staff to gather requirements and improve usability.'],
       short:['Shipped a React Native app managing 50+ cattle: lifecycle tracking, offline milk entry, alerts', 'Disease and milk-yield prediction from the last 10 days of milk records: Random Forest, 94% accuracy', 'Seven-day milk production analysis and reports', 'Requirements and usability from 3+ rounds of testing with farm staff'], stack:['React Native', 'Random Forest'],
       more:[{ label:'Demo video', icon:'Demo video', url:'https://drive.google.com/file/d/11BQ3Qv-VxpQNHI4r4o9K69amzxmMTIhk/view' }, { label:'Milk-yield predictor', icon:'GitHub', url:'https://github.com/rhealaloo45/milk_prod' }]},
     { id:'ibm', org:'AICTE — IBM SkillBuild', role:'Artificial Intelligence Intern', when:'May 2023 — Jul 2023', points:[
-      'Built an AI model to monitor mental fitness trends across 15+ countries.',
-      'Trained on 20+ years of historical data to forecast future mental fitness rates.',
-      'Used regression models to predict the yearly mental fitness rate.'],
+      'Built regression models forecasting yearly mental-fitness rates across 15+ countries, trained on 20+ years of historical data.'],
       short:['Forecast mental-fitness trends across 15+ countries', 'Trained on 20+ years of historical data', 'Regression models predicting the yearly rate'], stack:['Regression'],
       more:[{ label:'Certificate', icon:'Certificate', url:'https://drive.google.com/file/d/13Mco3W0I4dmLcYATuKPSN9OKEgVEXstt/view' }]},
   ],
@@ -142,7 +140,7 @@ const RESUME = {
     { name:'Pitwall — 3D portfolio (rhealaloo.com)', tag:'Three.js', text:'A real-time 3D portfolio where visitors drive a car through the site\'s sections, built in Three.js and JavaScript.', stack:['Three.js', 'JavaScript', 'HTML', 'CSS'], repo:'pitfall' },
     { name:'ADHD Detection Model', tag:'ML', text:'ADHD detection using Naive Bayes, SVM and Random Forest on the ADHD-200 dataset. Random Forest achieved over 87.2% accuracy.', stack:['Python', 'NumPy', 'Pandas', 'Random Forest', 'SVM', 'Naive Bayes'], repo:'adhd-detection', story:'patterns' },
     { name:'RoadHawk — IoT Pothole Detector', story:'roadhawk', tag:'IoT', text:'A Raspberry Pi with three sensors and a camera; a CNN detects potholes, and a Django REST API gives government authorities the data, with locations on Google Maps.', stack:['Raspberry Pi', 'CNNs', 'Sensors', 'Python', 'Django', 'Google Maps'], repo:'RoadHawk' },
-    { name:'SDS — Online Quiz Website', tag:'Web', text:'An online quiz platform with a built-in bank of 200+ questions, separate student and teacher logins (login time halved), scheduling and real-time results.', stack:['Django', 'Python', 'HTML', 'CSS', 'JavaScript', 'SQLite'] },
+    { name:'SDS — Online Quiz Website', tag:'Web', text:'An online quiz platform with a built-in bank of 200+ questions, separate student and teacher logins (login time halved), scheduling and real-time results.', stack:['Django', 'Python', 'HTML', 'CSS', 'JavaScript', 'SQLite'], print:false },
   ],
   // the landing page's story: what each project taught a machine to notice — condensed from the entries above;
   // in the order the landing page's drive reaches them: road, cows, crossing, my desk, the attack on it

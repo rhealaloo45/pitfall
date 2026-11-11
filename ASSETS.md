@@ -61,3 +61,4 @@ All sound is synthesized live with the Web Audio API (`src/core/audio.js`): engi
 * Tech logos on the stack chips (`src/shared/tech-icons.js`): Simple Icons 16.34.0, CC0 (simpleicons.org). Each logo is its owner's trademark and is shown only to name the tech used. Brands that asked Simple Icons to remove their logos (Microsoft, OpenAI, Oracle) get a generic line icon instead.
 * Line icons (techniques like Random Forest or SHAP, and the interface: search, close, copy…): Lucide 1.56.0, ISC licence (lucide.dev).
 * The chub-guard playground (`src/landing/chub-engine.js`) is a browser port of the documentation checks in chub-guard 1.2.1 (Rhea's own project, MIT). It reads Context Hub docs (github.com/andrewyng/context-hub) and chub-guard's shared pattern file live from GitHub.
+* `assets/og-card.jpg` (the link-preview card) and `assets/rhea-laloo-resume.pdf` (the résumé) are generated from the site itself: `npm run og` and `npm run resume`.

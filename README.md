@@ -28,6 +28,8 @@ npm run test:e2e                 # headless Chromium: all pages, the drive and c
 npm run previews                 # re-capture the menu / title-screen previews (needs ffmpeg)
 npm run perf                     # scroll the landing page with the CPU slowed 4× and report frame times
 npm run bench                    # the chub-guard playground on labelled deprecated / current snippets (needs network)
+npm run resume                   # print portfolio.html to assets/rhea-laloo-resume.pdf (run after changing the résumé data)
+npm run og                       # re-render the link-preview card, assets/og-card.jpg
 node tests/opening-stills.mjs     # re-render the opening stills shown while the 3D starts up
 ```
 
