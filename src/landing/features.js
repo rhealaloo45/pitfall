@@ -67,8 +67,8 @@ function init() {
   }
   labelTheme();
   if (themeBtn) themeBtn.addEventListener('click', () => setTheme(isLight() ? 'dark' : 'light'));
-  const fromHash = () => { if (location.hash === '#quick') openQuick(); };
-  addEventListener('hashchange', fromHash); fromHash();
+  const fromHash = () => { if (location.hash === '#quick') openQuick(); else if (location.hash === '#playground') openPlayground(); };   // links that open a dialog
+  addEventListener('hashchange', fromHash); setTimeout(fromHash, 0);   // after this file has finished loading (the playground's examples are defined below)
 
   /* ---------- where things are ---------- */
   function showcase() {
@@ -233,6 +233,7 @@ function init() {
     });
     add('Actions', ui('panel'), 'Quick view', 'The whole portfolio on one screen', openQuick, 'summary overview recruiter');
     add('Actions', ui('play'), 'Try chub-guard', 'Check your code for deprecated APIs', openPlayground, 'playground demo linter');
+    add('Actions', ui('out'), 'Read the chub-guard case study', 'How it works, what broke, the fix', () => { location.href = 'chub-guard.html'; }, 'case study writeup benchmark precision');
     add('Actions', ui('sun'), 'Light or dark mode', 'Switch the colours', () => setTheme(isLight() ? 'dark' : 'light'), 'theme appearance colours colors night day');
     add('Actions', ui('download'), 'Download résumé', 'PDF', () => { const a = document.createElement('a'); a.href = C.resume; a.download = 'Rhea-Laloo-Resume.pdf'; a.click(); }, 'resume cv');
     add('Actions', ui('copy'), 'Copy email address', C.email, async () => toast((await copy(C.email)) ? 'Email address copied' : C.email), 'contact mail');
@@ -325,7 +326,7 @@ function init() {
             `<a href="${esc(u)}" target="_blank" rel="noopener">${techIcon(n)}${n}</a>`).join('')}</nav>
           <p class="pg-note">chub-guard's documentation scan, with its rules and the docs fetched live from GitHub, plus one step newer than release ${CG_VERSION}: nothing the docs' own current examples use gets flagged. The CLI also runs Ruff's pyupgrade checks and full Python AST checks, which need Python itself.</p>
         </footer>
-      </div>`);
+      </div>`, 'playground');
     if (!d.dataset.wired) { d.dataset.wired = '1'; wirePlayground(d); }
     show(d);
     if (matchMedia('(hover: hover)').matches) $('textarea', d).focus();   // not on phones: it would pop up the keyboard

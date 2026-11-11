@@ -389,7 +389,7 @@
   </footer>
 </main>
 
-<script src="src/shared/portfolio-data.js?v=15"></script>
+<script src="src/shared/portfolio-data.js?v=16"></script>
 <script src="src/shared/tech-icons.js?v=3"></script>
 <script>
 (function () {
@@ -416,6 +416,7 @@
     if (o.tryIt) h += '<button type="button" class="try" data-open="playground">' + PLAY + 'Try it live</button>';
     if (L) h += [['npm', L.npm], ['PyPI', L.pypi], ['VS Code', L.vscode], ['GitHub', L.github]].filter(function (x) { return x[1]; })
       .map(function (x) { return '<a class="lnk" href="' + x[1] + '" target="_blank" rel="noopener">' + icon(x[0]) + esc(x[0]) + '</a>'; }).join('');
+    if (o.caseStudy) h += '<a class="lnk" href="chub-guard.html">' + icon('Website') + 'Case study</a>';
     if (o.repo && R.github) h += '<a class="lnk" href="https://github.com/' + R.github.user + '/' + o.repo + '" target="_blank" rel="noopener">' + icon('GitHub') + 'Code on GitHub</a>';
     (o.more || []).forEach(function (m) { h += '<a class="lnk" href="' + m.url + '" target="_blank" rel="noopener">' + icon(m.icon || 'Website') + esc(m.label) + '</a>'; });
     if (o.detail) h += '<a class="lnk" href="#experience" data-jump="' + o.detail + '">More under Experience ↓</a>';
@@ -466,7 +467,7 @@
   } else document.querySelectorAll('.rv').forEach(function (el) { el.classList.add('in'); });
 })();
 </script>
-<script type="module" src="src/landing/features.js?v=5"></script>
+<script type="module" src="src/landing/features.js?v=6"></script>
 <script type="module">
   // The drive needs a graphics chip. With software-only WebGL (search engines' page testers, some remote desktops)
   // it would keep the page busy at a few frames a second, so those get the plain page instead.

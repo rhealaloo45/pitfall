@@ -8,6 +8,7 @@ A static site with no build step, deployed by GitHub Pages:
 | `mumbai.html` | *Not on the live site (`_redirects` sends it home).* **Mumbai GP**: a compact, stylised-real Mumbai to drive — Marine Drive, the Sea Link, Fort, Bandra, BKC — with portfolio chapters at the Pit Wall (career, shown on the grid before the race), K. C. College and KJSIT (the finish). The timed route is ~4 km; the map (M) and Pause → Progress jump straight to any chapter. |
 | `circuit.html` | *Not on the live site (`_redirects` sends it home).* The original F1 Track Day circuit (preserved) |
 | `portfolio.html` | Printable one-page résumé |
+| `chub-guard.html` | Case study: how chub-guard works, what it got wrong, the fix and its benchmark |
 
 ## Run locally
 

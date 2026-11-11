@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>chub-guard: a case study — Rhea Laloo</title>
+<meta name="description" content="How chub-guard catches deprecated AI SDK calls by reading the libraries' current docs, what it got wrong, and how I measured the fix.">
+<meta name="theme-color" content="#0b0c0f">
+<script>try { if (localStorage.getItem('theme') === 'light') { document.documentElement.dataset.theme = 'light'; document.querySelector('meta[name="theme-color"]').content = '#f6f3ec'; } } catch (e) {}</script>
+<link rel="canonical" href="https://rhealaloo.com/chub-guard">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://rhealaloo.com/chub-guard">
+<meta property="og:site_name" content="Rhea Laloo">
+<meta property="og:title" content="chub-guard: catching outdated AI code before it ships">
+<meta property="og:description" content="A linter whose rules come from the libraries' own docs: how it works, what it got wrong, and how I measured the fix.">
+<meta property="og:image" content="https://rhealaloo.com/assets/og-card.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.png" sizes="96x96" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>
+  /* A case study page: the same colours as the landing page (dark by default, light if chosen there), one column. */
+  :root { color-scheme: dark; --ink: #f1efea; --body: #d2cec6; --dim: #a6a29a; --mute: #8a867f; --red: #d81f26; --red-hi: #e8333a; --cyan: #39d4ff; --green: #7fe0a0; --amber: #ffcc33;
+    --bg: #0b0c0f; --panel: #121418; --code: #08090c; --line: rgba(255,255,255,.1); --fill: rgba(255,255,255,.06); --bad: rgba(216,31,38,.16); --good: rgba(60,200,110,.14);
+    --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif; --mono: 'SF Mono', ui-monospace, Menlo, Consolas, monospace; }
+  :root[data-theme="light"] { color-scheme: light; --ink: #18171b; --body: #3d3a35; --dim: #625d55; --mute: #6b665e; --red: #d0191f; --red-hi: #b5141a; --cyan: #07708f; --green: #177a41; --amber: #8f6200;
+    --bg: #f6f3ec; --panel: #fffdf9; --code: #fffefb; --line: rgba(24,23,27,.12); --fill: rgba(24,23,27,.05); --bad: rgba(208,25,31,.1); --good: rgba(23,122,65,.1); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); color: var(--body); background: var(--bg); -webkit-font-smoothing: antialiased; line-height: 1.65; font-size: 17px; }
+  a { color: inherit; text-underline-offset: 3px; text-decoration-color: var(--mute); }
+  a:hover { text-decoration-color: var(--red); }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 4px; }
+  .wrap { max-width: 800px; margin: 0 auto; padding: 0 24px; }
+  nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 20px 0; font-size: 14.5px; font-weight: 600; }
+  nav a { text-decoration: none; color: var(--dim); } nav a:hover { color: var(--ink); }
+  .brand { color: var(--ink); font-weight: 700; font-size: 17px; } .brand span { color: var(--red); }
+  header { padding: 46px 0 8px; }
+  .k { font-size: 15px; font-weight: 600; color: var(--red); }
+  h1 { margin-top: 10px; font-size: clamp(36px, 6vw, 58px); font-weight: 800; line-height: 1.02; letter-spacing: -.035em; color: var(--ink); }
+  .lead { margin-top: 18px; font-size: 20px; line-height: 1.5; color: var(--body); }
+  .facts { margin-top: 28px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .facts div { background: var(--panel); padding: 15px 16px; }
+  .facts b { display: block; font-size: 21px; color: var(--ink); letter-spacing: -.02em; line-height: 1.15; }
+  .facts span { display: block; margin-top: 4px; font-size: 13px; color: var(--dim); line-height: 1.35; }
+  .ctas { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 999px; background: var(--red); border: 1px solid var(--red); color: #fff; font-weight: 600; font-size: 15px; text-decoration: none; }
+  .btn:hover { background: var(--red-hi); border-color: var(--red-hi); }
+  .btn.ghost { background: var(--fill); border-color: var(--line); color: var(--ink); }
+  section { padding-top: 54px; }
+  h2 { font-size: 28px; font-weight: 700; letter-spacing: -.025em; line-height: 1.15; color: var(--ink); }
+  h2 em { font-style: normal; color: var(--mute); font-size: 15px; font-weight: 600; margin-right: 10px; font-variant-numeric: tabular-nums; letter-spacing: 0; }
+  h3 { margin-top: 24px; font-size: 18px; font-weight: 700; color: var(--ink); }
+  p { margin-top: 14px; }
+  p b, li b { color: var(--ink); }
+  ul, ol { margin: 12px 0 0 22px; } li { margin-top: 6px; }
+  code { font: 14.5px var(--mono); background: var(--fill); padding: 1px 6px; border-radius: 5px; color: var(--ink); }
+  pre { margin-top: 16px; padding: 16px 18px; border-radius: 14px; border: 1px solid var(--line); background: var(--code); overflow-x: auto; font: 14px/1.6 var(--mono); color: var(--ink); }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  pre .flag { background: var(--bad); display: inline-block; width: 100%; } pre .c { color: var(--mute); }
+  .steps { list-style: none; margin: 20px 0 0; display: grid; gap: 10px; counter-reset: s; }
+  .steps li { counter-increment: s; margin: 0; display: grid; grid-template-columns: 34px 1fr; gap: 14px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); }
+  .steps li::before { content: counter(s); display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--fill); color: var(--cyan); font: 700 14px var(--mono); }
+  .steps b { display: block; } .steps span { display: block; font-size: 15.5px; color: var(--dim); line-height: 1.5; margin-top: 2px; }
+  .table { margin-top: 20px; border: 1px solid var(--line); border-radius: 14px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 560px; }
+  th, td { text-align: left; padding: 11px 14px; border-top: 1px solid var(--line); }
+  thead th { border-top: 0; font-size: 12.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); background: var(--panel); }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  th:first-child, td:first-child { width: 46%; }
+  tr.total td { font-weight: 700; color: var(--ink); background: var(--panel); }
+  .bad { color: var(--red); font-weight: 700; } .ok { color: var(--green); font-weight: 700; }
+  .score { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .score > div { padding: 18px 20px; border-radius: 14px; border: 1px solid var(--line); }
+  .score .was { background: var(--bad); } .score .now { background: var(--good); }
+  .score b { display: block; font-size: 34px; letter-spacing: -.03em; color: var(--ink); line-height: 1.1; }
+  .score span { display: block; margin-top: 4px; font-size: 14.5px; color: var(--dim); line-height: 1.4; }
+  .note { margin-top: 16px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); font-size: 15.5px; color: var(--dim); }
+  footer { margin-top: 64px; padding: 26px 0 60px; border-top: 1px solid var(--line); font-size: 14.5px; color: var(--mute); display: flex; flex-wrap: wrap; gap: 8px 22px; }
+  footer a { color: var(--dim); }
+  @media (max-width: 640px) { body { font-size: 16px; } .facts { grid-template-columns: 1fr 1fr; } .score { grid-template-columns: 1fr; } .lead { font-size: 18px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav><a class="brand" href="index.html">Rhea Laloo<span>.</span></a><a href="index.html#experience">← Back to the portfolio</a></nav>
+
+  <header>
+    <div class="k">Case study · LLM tooling</div>
+    <h1>chub-guard: catching outdated AI code before it ships</h1>
+    <p class="lead">AI SDKs change faster than linters, and faster than the coding assistants that write against them. chub-guard is a linter whose rules aren't written by hand: it reads each library's current documentation and flags the calls that documentation says are gone.</p>
+    <div class="facts">
+      <div><b>4,900+</b><span>downloads on npm and PyPI</span></div>
+      <div><b>3 ways in</b><span>VS Code extension, pre-commit hook, CLI</span></div>
+      <div><b>4 languages</b><span>Python, JS/TS, Java, C/C++</span></div>
+      <div><b>11 → 0</b><span>wrong flags on my benchmark, after the fix below</span></div>
+    </div>
+    <div class="ctas">
+      <a class="btn" href="index.html#playground">Try it on your code</a>
+      <a class="btn ghost" href="https://github.com/rhealaloo45/chub-guard" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn ghost" href="https://www.npmjs.com/package/chub-guard-init" target="_blank" rel="noopener">npm</a>
+      <a class="btn ghost" href="https://pypi.org/project/chub-guard-init/" target="_blank" rel="noopener">PyPI</a>
+      <a class="btn ghost" href="https://marketplace.visualstudio.com/items?itemName=rhealaloo.chub-guard" target="_blank" rel="noopener">VS Code</a>
+    </div>
+  </header>
+
+  <section>
+    <h2><em>01</em>The problem</h2>
+    <p>Ask a coding assistant for an OpenAI call and there's a fair chance you get this:</p>
+<pre><code>import openai
+
+<span class="flag">resp = openai.ChatCompletion.create(model="gpt-4o-mini", messages=msgs)</span></code></pre>
+    <p>That call was removed in version 1.0 of the SDK. It looks right, a syntax linter passes it, and it fails the first time it runs. The same thing happens with Gemini's old <code>google.generativeai</code> package, Anthropic's legacy text completions and LangChain's pre-1.0 chains. Linters like Ruff and ESLint know a language's rules; they don't know that a library dropped a function last quarter.</p>
+    <p>Hand-writing a rule for every deprecation in every AI SDK doesn't scale, and it would always be a release behind. I wanted the rules to come from somewhere that's already kept current.</p>
+  </section>
+
+  <section>
+    <h2><em>02</em>How it works</h2>
+    <p>The libraries' own documentation already says what's deprecated. <a href="https://github.com/andrewyng/context-hub" target="_blank" rel="noopener">Context Hub</a> publishes that documentation in a form written for LLMs, one Markdown file per library. chub-guard turns those files into lint rules at run time.</p>
+    <ol class="steps">
+      <li><div><b>Find what the code imports</b><span>Python is parsed with the <code>ast</code> module; JavaScript, TypeScript, Java and C/C++ imports are read with patterns.</span></div></li>
+      <li><div><b>Map each import to its documentation</b><span>A registry links module names to Context Hub docs, including aliases such as <code>@anthropic-ai/sdk</code>. Imports with no docs are skipped quietly.</span></div></li>
+      <li><div><b>Fetch the current docs</b><span>Through the <code>chub</code> CLI, or straight from GitHub if it isn't installed. Cached for 24 hours; a network failure warns but never blocks a commit.</span></div></li>
+      <li><div><b>Extract what the docs call deprecated</b><span>Lines that warn against something, "Migration" and "Deprecated" sections, and ❌ counter-examples. A shared pattern file, synced daily, adds what earlier runs found.</span></div></li>
+      <li><div><b>Flag the lines that use it</b><span>With the modern replacement quoted from the same docs, a severity, and a prompt an AI assistant can use to fix every issue in one pass.</span></div></li>
+    </ol>
+    <h3>Decisions that mattered</h3>
+    <ul>
+      <li><b>It doesn't give up on files that don't parse.</b> A Python 2 file, or one that's mid-refactor, falls back to a pattern-only pass instead of being skipped. Those are the files most likely to hold old calls.</li>
+      <li><b>It meets people where they already are.</b> The same engine runs as a VS Code extension (squiggles as you type), a pre-commit hook (the commit is blocked) and a CLI (a full-project report with trends).</li>
+      <li><b>It can be overruled.</b> <code># noqa: CHUB</code> on a line silences it, in every language.</li>
+      <li><b>One command to set up.</b> <code>npx chub-guard-init</code> installs the hook and the registry in an existing project.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><em>03</em>What it got wrong</h2>
+    <p>Building the live playground for this site meant running chub-guard on code I hadn't written the examples for. It flagged this, which is correct, current Anthropic code:</p>
+<pre><code>message = client.messages.create(model="claude-sonnet-4-5", max_tokens=1024, messages=msgs)
+<span class="flag">print(message.content[0].text)   <span class="c"># flagged: `message.content` is deprecated</span></span></code></pre>
+    <p>The cause was one line in Anthropic's docs: <i>"Do not treat <code>message.content</code> as a single string."</i> chub-guard 1.2.1 reads any name mentioned near a warning word as deprecated. That sentence is advice about how to use a current call, not a deprecation, and the same docs use <code>message.content</code> in every example.</p>
+    <p>It wasn't a one-off. The same thing flagged <code>client.chat.completions.create</code> (OpenAI's current chat call) and <code>response.text</code> (Gemini). In JavaScript it was worse: patterns were split into single words, so <code>client</code> and <code>create</code> were flagged wherever they appeared.</p>
+    <p>A linter that cries wolf on correct code gets switched off, so this mattered more than a missed deprecation would have.</p>
+  </section>
+
+  <section>
+    <h2><em>04</em>The fix, and how I measured it</h2>
+    <p>The docs that caused the problem also held the answer. If a library's own current examples use a call, it isn't deprecated, whatever a nearby sentence says. So before flagging anything, the check now collects what each doc presents as current (its example code outside "Deprecated" sections and ❌ blocks, and names on lines that don't warn against anything) and drops any pattern found there. In JavaScript, only class-like names from a deprecated pattern are matched, as whole words.</p>
+    <p>To know whether that helped or just moved the problem, I wrote a small benchmark: 13 snippets, 74 lines, with the 19 lines that really use something deprecated labelled by hand. Six snippets are old code that should be flagged; seven are current code that shouldn't be. Both rule sets run against the live docs.</p>
+    <div class="score">
+      <div class="was"><b>62%</b><span>precision with the 1.2.1 rules: 18 right flags, 11 wrong ones</span></div>
+      <div class="now"><b>100%</b><span>precision with the fix: the same 18 right flags, no wrong ones</span></div>
+    </div>
+    <div class="table"><table>
+      <thead><tr><th>Snippet</th><th class="n">Deprecated lines</th><th class="n">1.2.1 rules</th><th class="n">With the fix</th></tr></thead>
+      <tbody>
+        <tr><td>OpenAI, pre-1.0 module calls</td><td class="n">3</td><td class="n">3 caught</td><td class="n">3 caught</td></tr>
+        <tr><td>Gemini, the old <code>google.generativeai</code> SDK</td><td class="n">4</td><td class="n">3 caught</td><td class="n">3 caught</td></tr>
+        <tr><td>Anthropic, legacy text completions</td><td class="n">4</td><td class="n">4 caught</td><td class="n">4 caught</td></tr>
+        <tr><td>LangChain, pre-1.0 chains</td><td class="n">3</td><td class="n">3 caught</td><td class="n">3 caught</td></tr>
+        <tr><td>Selenium, removed locator methods</td><td class="n">2</td><td class="n">2 caught</td><td class="n">2 caught</td></tr>
+        <tr><td>Node, old habits</td><td class="n">3</td><td class="n">3 caught</td><td class="n">3 caught</td></tr>
+        <tr><td>OpenAI, current: Responses API</td><td class="n">0</td><td class="n"><span class="ok">clean</span></td><td class="n"><span class="ok">clean</span></td></tr>
+        <tr><td>OpenAI, current: chat completions</td><td class="n">0</td><td class="n"><span class="bad">1 wrong</span></td><td class="n"><span class="ok">clean</span></td></tr>
+        <tr><td>Anthropic, current: Messages API</td><td class="n">0</td><td class="n"><span class="bad">1 wrong</span></td><td class="n"><span class="ok">clean</span></td></tr>
+        <tr><td>Gemini, current: google-genai SDK</td><td class="n">0</td><td class="n"><span class="bad">1 wrong</span></td><td class="n"><span class="ok">clean</span></td></tr>
+        <tr><td>LangChain, current: <code>init_chat_model</code></td><td class="n">0</td><td class="n"><span class="bad">1 wrong</span></td><td class="n"><span class="ok">clean</span></td></tr>
+        <tr><td>OpenAI, current, JavaScript</td><td class="n">0</td><td class="n"><span class="bad">2 wrong</span></td><td class="n"><span class="ok">clean</span></td></tr>
+        <tr><td>Anthropic, current, JavaScript</td><td class="n">0</td><td class="n"><span class="bad">5 wrong</span></td><td class="n"><span class="ok">clean</span></td></tr>
+        <tr class="total"><td>Total</td><td class="n">19</td><td class="n">18 caught, 11 wrong</td><td class="n">18 caught, 0 wrong</td></tr>
+      </tbody>
+    </table></div>
+    <p>Recall stayed at 18 of 19 (95%). My first version of the fix actually lost one: it judged the docs line by line, and Gemini's warning about retired models wraps onto a second line, so <code>gemini-1.5-flash</code> was read as current. Judging a whole sentence or list item at a time brought it back. The benchmark caught that before anyone else did, which is the reason to have one.</p>
+    <p>The one line both versions miss is <code>genai.configure(api_key="...")</code>. The docs write the old call with a placeholder, <code>genai.configure(api_key=...)</code>, and the match is on exact text.</p>
+    <p class="note">What this does and doesn't show: 13 snippets is a small set, chosen by me, of the libraries chub-guard is used with most. It's enough to catch a regression and to compare two rule sets; it isn't a claim about every codebase. It's in this site's repository and runs with <code>npm run bench</code>. The fix runs in the <a href="index.html#playground">playground on this site</a> today, and goes into the next release of the CLI.</p>
+  </section>
+
+  <section>
+    <h2><em>05</em>What I'd do next</h2>
+    <ul>
+      <li><b>Ship the current-usage rule in the CLI and the extension</b>, with the benchmark as a test that has to pass before a release.</li>
+      <li><b>Match placeholders</b>, so <code>f(x=...)</code> in the docs matches <code>f(x="anything")</code> in code. That's the one miss above.</li>
+      <li><b>Grow the benchmark from real repositories</b>, not snippets I wrote, and track precision and recall for each library separately.</li>
+      <li><b>Say why.</b> Each flag should quote the sentence in the docs it came from, so a wrong one is obvious at a glance.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <span>Written by Rhea Laloo.</span>
+    <a href="index.html">Portfolio</a>
+    <a href="index.html#playground">Playground</a>
+    <a href="https://github.com/rhealaloo45/chub-guard" target="_blank" rel="noopener">chub-guard on GitHub</a>
+    <a href="mailto:rhealaloo@gmail.com">rhealaloo@gmail.com</a>
+  </footer>
+</div>
+</body>
+</html>

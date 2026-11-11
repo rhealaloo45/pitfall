@@ -117,6 +117,17 @@ try {
   await p.close();
   await ctx.unrouteAll();
 
+  /* ---------- the chub-guard case study ---------- */
+  p = await ctx.newPage(); errs = pageErrors(p);
+  await p.goto(url + '/chub-guard.html');
+  const cs = await p.evaluate(() => ({ h1: document.querySelector('h1').textContent, rows: document.querySelectorAll('tbody tr').length, wide: document.documentElement.scrollWidth > innerWidth, play: !!document.querySelector('a[href="index.html#playground"]') }));
+  check('case study: loads with its results table and a way to the playground', /chub-guard/.test(cs.h1) && cs.rows === 14 && cs.play && !cs.wide, JSON.stringify(cs));
+  check('case study: no errors', errs.length === 0, errs.join('; '));
+  await p.goto(url + '/index.html?3d=off#playground');
+  await p.waitForSelector('#playground[open]', { timeout: 8000 }).catch(() => {});
+  check('case study: its link opens the playground on the landing page', await p.evaluate(() => !!(document.getElementById('playground') || {}).open) && await p.$('#story-chub-guard a[href="chub-guard.html"]'));
+  await p.close();
+
   /* ---------- portfolio ---------- */
   p = await ctx.newPage(); errs = pageErrors(p);
   await p.goto(url + '/portfolio.html');
