@@ -171,13 +171,13 @@
     </table></div>
     <p>Recall stayed at 18 of 19 (95%). My first version of the fix actually lost one: it judged the docs line by line, and Gemini's warning about retired models wraps onto a second line, so <code>gemini-1.5-flash</code> was read as current. Judging a whole sentence or list item at a time brought it back. The benchmark caught that before anyone else did, which is the reason to have one.</p>
     <p>The one line both versions miss is <code>genai.configure(api_key="...")</code>. The docs write the old call with a placeholder, <code>genai.configure(api_key=...)</code>, and the match is on exact text.</p>
-    <p class="note">What this does and doesn't show: 13 snippets is a small set, chosen by me, of the libraries chub-guard is used with most. It's enough to catch a regression and to compare two rule sets; it isn't a claim about every codebase. It's in this site's repository and runs with <code>npm run bench</code>. The fix runs in the <a href="index.html#playground">playground on this site</a> today, and goes into the next release of the CLI.</p>
+    <p class="note">What this does and doesn't show: 13 snippets is a small set, chosen by me, of the libraries chub-guard is used with most. It's enough to catch a regression and to compare two rule sets; it isn't a claim about every codebase. It's in this site's repository and runs with <code>npm run bench</code>. The fix runs in the <a href="index.html#playground">playground on this site</a>, and is in the <a href="https://github.com/rhealaloo45/chub-guard" target="_blank" rel="noopener">chub-guard repository</a> too (with tests, and a switch, <code>CHUB_GUARD_LEGACY=1</code>, to run the old rules); it ships to npm, PyPI and the VS Code Marketplace in the next release.</p>
   </section>
 
   <section>
     <h2><em>05</em>What I'd do next</h2>
     <ul>
-      <li><b>Ship the current-usage rule in the CLI and the extension</b>, with the benchmark as a test that has to pass before a release.</li>
+      <li><b>Publish the release that carries the fix</b>, with the benchmark as a test that has to pass before any release.</li>
       <li><b>Match placeholders</b>, so <code>f(x=...)</code> in the docs matches <code>f(x="anything")</code> in code. That's the one miss above.</li>
       <li><b>Grow the benchmark from real repositories</b>, not snippets I wrote, and track precision and recall for each library separately.</li>
       <li><b>Say why.</b> Each flag should quote the sentence in the docs it came from, so a wrong one is obvious at a glance.</li>
