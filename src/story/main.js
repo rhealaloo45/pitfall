@@ -10,11 +10,11 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { buildCar } from '../vehicle/car-model.js';
 import { CAR_SPEC } from '../vehicle/sim.js';
-import { INK, LINES, NIGHT, PAPER, ink, outline, freeze, mergeByMaterial, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildWalkers, buildSky } from './world.js?v=70';
-import { buildRoom } from './room.js?v=70';
-import { buildMarineDrive, along, LENGTH } from './marine.js?v=70';
-import { screenTex, drawScreen, setWallpaper } from './screen.js?v=70';
-import { loadKit, streetProps, marineProps } from './props.js?v=70';
+import { INK, LINES, NIGHT, PAPER, ink, outline, freeze, mergeByMaterial, facadeMat, buildStreet, buildPotholes, buildCows, buildCrossing, buildWalkers, buildSky } from './world.js?v=71';
+import { buildRoom } from './room.js?v=71';
+import { buildMarineDrive, along, LENGTH } from './marine.js?v=71';
+import { screenTex, drawScreen, setWallpaper } from './screen.js?v=71';
+import { loadKit, streetProps, marineProps } from './props.js?v=71';
 
 const $ = id => document.getElementById(id);
 const track = $('story'), canvas = $('scene'), detLayer = $('det'), stage = canvas.parentElement, veil = $('veil');
@@ -195,7 +195,7 @@ const CAM = [
   { t: 0.735, pos: at(9.25, 11.6, 329), look: at(13.1, 11.25, 329), fov: 52 },
   { t: 0.755, pos: at(10.35, 11.52, 328.55), look: at(13.1, 11.12, 329.05), fov: 60, tall: { pos: at(9.95, 11.5, 329), look: at(13.1, 11.78, 329), fov: 72 } },
   { t: 0.782, pos: at(11.88, 11.3, 328.42), look: at(12.98, 11.06, 328.76), fov: 48, tall: { pos: at(11.7, 11.25, 329), look: at(12.98, 11.02, 329), fov: 64 } },
-  { t: 0.915, pos: at(11.91, 11.29, 328.44), look: at(12.98, 11.06, 328.76), fov: 48, tall: { pos: at(11.72, 11.24, 329), look: at(12.98, 11.02, 329), fov: 64 } },
+  { t: 0.945, pos: at(11.91, 11.29, 328.44), look: at(12.98, 11.06, 328.76), fov: 48, tall: { pos: at(11.72, 11.24, 329), look: at(12.98, 11.02, 329), fov: 64 } },
   { t: 1.0, pos: at(11.55, 11.42, 328.52), look: at(12.98, 11.12, 328.92), fov: 54, tall: { pos: at(11.4, 11.35, 329), look: at(12.98, 11.0, 329), fov: 70 } },
   // act two: turn round to the street window, out, down to the car, and along Marine Drive
   { t: 1.06, pos: at(11.8, 11.6, 329), look: at(4, 11.3, 329), fov: 54 },
@@ -319,7 +319,7 @@ function frame() {
     u.bw.material.opacity = b; u.glow.material.opacity = b * (0.25 + Math.sin(time * 4 + i * 2) * 0.12);
   });
   // my room: warm lamps, fairy lights; then the attack turns it red and packets stream into the laptop
-  const RL = room.lights, attack = sstep(clamp((p - 0.928) / 0.04)) * (1 - sstep(clamp((a - 0.02) / 0.05)));
+  const RL = room.lights, attack = sstep(clamp((p - 0.942) / 0.035)) * (1 - sstep(clamp((a - 0.02) / 0.05)));
   const roomInView = T > 0.6 && T < 1.16;
   const glowOn = roomInView ? night * (inRoom ? 1 : 0.75) : 0;
   RL.lampLight.intensity = 5 * glowOn * (1 - attack * 0.6); RL.floorLight.intensity = 2.2 * glowOn * (1 - attack * 0.7);
@@ -343,7 +343,7 @@ function frame() {
   // the ultrawide: lock screen as we come in, then one window per beat: the legal assistant answering from its
   // documents, the editor where chub-guard flags a call, the agent driving a browser, and the logs during the attack
   if (p > 0.66 && T < 1.12) {
-    const [mode, from, len] = p > 0.922 ? ['logs', 0.922, 0.07] : p > 0.868 ? ['agent', 0.868, 0.045] : p > 0.815 ? ['code', 0.815, 0.04] : p > 0.764 ? ['rag', 0.768, 0.036] : ['lock', 0, 1];
+    const [mode, from, len] = p > 0.936 ? ['logs', 0.936, 0.06] : p > 0.89 ? ['builder', 0.89, 0.044] : p > 0.846 ? ['agent', 0.846, 0.042] : p > 0.804 ? ['code', 0.804, 0.04] : p > 0.764 ? ['rag', 0.768, 0.034] : ['lock', 0, 1];
     drawScreen(mode, time, clamp((p - from) / len));
   }
   // only draw what this part of the page can see

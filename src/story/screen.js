@@ -271,6 +271,88 @@ function agentBody(t, k) {
   });
 }
 
+/* ---------- the agent builder: a workflow drawn as nodes, its config beside it, the model provider switched ---------- */
+const NODES = [
+  ['Input', 'user question', 60, 196, '#8b8e96'],
+  ['Plan', 'LLM · provider', 232, 196, '#39d4ff'],
+  ['Tool', 'get_price()', 404, 120, '#ffcc33'],
+  ['Tool', 'search_docs()', 404, 272, '#ffcc33'],
+  ['Check', 'guardrails', 576, 196, '#ff5fa8'],
+  ['Output', 'answer', 748, 196, '#7fe0a0'],
+];
+const EDGES = [[0, 1], [1, 2], [1, 3], [2, 4], [3, 4], [4, 5]];
+const PROVIDERS = [['Claude', 'anthropic', 'claude-sonnet-4-5'], ['GPT', 'openai', 'gpt-5'], ['Gemini', 'google', 'gemini-2.5-flash']];
+const CONFIG = [
+  ['name', 'support-agent'],
+  ['model', ''],
+  ['  provider', '@p'],
+  ['  name', '@m'],
+  ['tools', ''],
+  ['  - get_price', ''],
+  ['  - search_docs', ''],
+  ['memory', ''],
+  ['  type', 'conversation'],
+  ['middleware', ''],
+  ['  - guardrails', ''],
+  ['  - cost_limit', ''],
+];
+function builderBody(t, k) {
+  const prov = Math.min(2, Math.floor(k * 3 * 0.999)), pk = (k * 3) % 1;
+  // the canvas: a dotted grid, then the nodes arriving one after another, then the edges
+  g.fillStyle = '#14161b'; g.fillRect(0, 0, 640, 590);
+  g.fillStyle = 'rgba(255,255,255,.07)'; for (let x = 16; x < 640; x += 24) for (let y = 16; y < 590; y += 24) g.fillRect(x, y, 2, 2);
+  const S = 0.74, ox = 14, oy = 70;   // the graph was laid out in a 930-wide space; this fits it into the canvas
+  const pos = i => [ox + NODES[i][2] * S, oy + NODES[i][3] * S];
+  const shown = Math.min(NODES.length, Math.floor(k * 9) + 1);
+  g.strokeStyle = 'rgba(255,255,255,.28)'; g.lineWidth = 2;
+  for (const [a, b] of EDGES) {
+    if (Math.max(a, b) >= shown) continue;
+    const [x0, y0] = pos(a), [x1, y1] = pos(b);
+    g.beginPath(); g.moveTo(x0 + 108 * S + 22, y0 + 36 * S); g.bezierCurveTo(x0 + 170 * S, y0 + 36 * S, x1 - 60 * S, y1 + 36 * S, x1, y1 + 36 * S); g.stroke();
+  }
+  // a packet of work travelling the graph while it runs
+  if (k > 0.2) {
+    const f = (t * 0.35) % 1, seg = Math.min(EDGES.length - 1, Math.floor(f * EDGES.length)), u = f * EDGES.length - seg;
+    const [a, b] = EDGES[seg], [x0, y0] = pos(a), [x1, y1] = pos(b);
+    g.fillStyle = '#39d4ff'; g.beginPath(); g.arc(x0 + 108 * S + 22 + (x1 - x0 - 108 * S - 22) * u, y0 + 36 * S + (y1 - y0) * u, 6, 0, Math.PI * 2); g.fill();
+  }
+  NODES.forEach(([kind, label, , , c], i) => {
+    if (i >= shown) return;
+    const [x, y] = pos(i), h = 72 * S;
+    g.fillStyle = '#1f2229'; g.strokeStyle = c; g.lineWidth = 2; roundRect(x, y, 108 * S + 22, h, 10); g.fill(); g.stroke();
+    g.fillStyle = c; g.font = `700 11px ${MONO}`; g.fillText(kind.toUpperCase(), x + 11, y + 20);
+    g.fillStyle = '#e8e8ea'; g.font = `500 12.5px ${MONO}`; g.fillText(label, x + 11, y + 40);
+  });
+  // the provider switch: three choices, one lit
+  g.fillStyle = '#8b8e96'; g.font = `700 12px ${SANS}`; g.fillText('MODEL PROVIDER', 22, 34);
+  PROVIDERS.forEach(([name], i) => {
+    const x = 22 + i * 104; g.font = `600 14px ${SANS}`;
+    g.fillStyle = i === prov ? '#2f6fed' : 'rgba(255,255,255,.06)'; roundRect(x, 44, 94, 30, 15); g.fill();
+    g.fillStyle = i === prov ? '#fff' : '#9a9da4'; g.textAlign = 'center'; g.fillText(name, x + 47, 64); g.textAlign = 'left';
+  });
+  // the run, under the graph: what each step of the last question did
+  const rows = [['plan', 'decides to call get_price'], ['tool', 'get_price("SKU-001") → 4.99'], ['check', 'cost 0.2 of limit 1.0 · grounded'], ['answer', 'SKU-001 costs 4.99.']];
+  g.fillStyle = '#8b8e96'; g.font = `700 12px ${SANS}`; g.fillText('LAST RUN', 22, 386);
+  rows.forEach(([a, b], i) => {
+    if (k * 9 < 4 + i * 0.8) return;
+    const y = 412 + i * 36; g.fillStyle = 'rgba(255,255,255,.05)'; roundRect(22, y - 18, 596, 30, 8); g.fill();
+    g.fillStyle = '#39d4ff'; g.font = `700 13px ${MONO}`; g.fillText(a, 34, y + 2); g.fillStyle = '#d8dadf'; g.font = `500 13px ${MONO}`; g.fillText(b, 100, y + 2);
+  });
+  // agent_config.yaml, typed; only the provider lines change when the provider does
+  g.fillStyle = '#1b1d22'; roundRect(660, 14, 348, 562, 12); g.fill();
+  g.fillStyle = '#f1efea'; g.font = `700 15px ${MONO}`; g.fillText('agent_config.yaml', 680, 44);
+  g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(680, 56, 308, 1);
+  const typed = Math.min(CONFIG.length, Math.floor(k * 18) + 1);
+  CONFIG.slice(0, typed).forEach(([key, val], i) => {
+    const y = 92 + i * 36, v = val === '@p' ? PROVIDERS[prov][1] : val === '@m' ? PROVIDERS[prov][2] : val;
+    const changing = (val === '@p' || val === '@m') && pk < 0.35 && k > 0.34;
+    if (changing) { g.fillStyle = 'rgba(255,204,51,.16)'; g.fillRect(670, y - 20, 328, 28); }
+    g.font = `500 15px ${MONO}`; g.fillStyle = key.trim().startsWith('-') ? '#9fd8a6' : '#6bdfff'; g.fillText(key, 680, y);
+    if (v) { g.fillStyle = '#fc9d6a'; g.fillText(v, 680 + g.measureText(key + ' ').width, y); }
+  });
+  if (k > 0.5) { g.fillStyle = '#7fe0a0'; g.font = `600 13px ${SANS}`; g.fillText('Your code never changes.', 680, 546); }
+}
+
 const ips = ['10.4.2.17', '10.4.2.31', '172.16.8.4', '10.4.3.9', '192.168.1.20'];
 function logsBody(t, k) {
   g.font = `500 17px ${MONO}`;
@@ -305,14 +387,15 @@ function logsBody(t, k) {
 }
 
 let last = '';
-const RATE = { lock: 0, rag: 8, code: 4, agent: 12, logs: 6 };   // redraws a second while that window is up
+const RATE = { lock: 0, rag: 8, code: 4, agent: 12, builder: 10, logs: 6 };   // redraws a second while that window is up
 const WINDOWS = {
   rag: ['Ask — legal knowledge assistant', ragBody],
   code: ['summarise.py — chub-guard', codeBody],
   agent: ['Agent — brand benchmark', agentBody],
+  builder: ['Agent builder — workflow', builderBody],
   logs: ['auth.log — anomaly monitor', logsBody],
 };
-/** mode: 'lock' | 'rag' | 'code' | 'agent' | 'logs'; t seconds, k 0–1 progress through the beat. Redraws only when
+/** mode: 'lock' | 'rag' | 'code' | 'agent' | 'builder' | 'logs'; t seconds, k 0–1 progress through the beat. Redraws only when
     something visible changes: the lock screen twice a minute, the windows a few times a second. */
 export function drawScreen(mode, t, k) {
   const tick = mode + '|' + (mode === 'lock' ? Math.floor(Date.now() / 30000) : Math.floor(t * RATE[mode])) + '|' + Math.round(k * 80);
